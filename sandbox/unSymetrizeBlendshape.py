@@ -44,8 +44,6 @@ vtxs_L = [i for i, v in enumerate(vtxs) if v[0] <= -1 * gap]
 vtxs_R = [i for i, v in enumerate(vtxs) if v[0] >= gap]
 vtxs_C = [i for i, v in enumerate(vtxs) if v[0] <= -1 * gap and v[0] >= gap]
 
-# plop this is a git test
-
 # cmds.select(mshVtx)
 # assignweight(vtxs, 0, 0)
 
