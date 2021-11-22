@@ -33,6 +33,6 @@ for i in midi:
         cmds.setKeyframe(ctrl, at='hand', v=0)
     elif i[0] == "note_on":
         cmds.currentTime(int(frame))
-        cmds.setKeyframe(ctrl, at='rz', v=i[3] + 1)
-        cmds.setKeyframe(ctrl, at='hand', v=pressed)
+        cmds.setKeyframe(ctrl, at='rz', v=pressed)
+        cmds.setKeyframe(ctrl, at='hand', v=i[3] + 1)
     cmds.setKeyframe(ctrl, at='velocity', v=velocity)

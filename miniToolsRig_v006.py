@@ -5,7 +5,7 @@
 
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
-__version__     = "1.4.4-alpha"
+__version__     = "1.4.5-alpha"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import ctypes
@@ -2382,6 +2382,52 @@ class MiniToolRig(Module):
             self.b_createJoints = self.attach(cmds.button(p=self.layout, label="Create Joints", en=True, c=Callback(None)), top=self.b_CreateNurbs, left="FORM", right="FORM")
             self.applyAttach()
 
+    class MTG_blendshapes(Module):
+        
+        def transfertBlendshape():
+            sel = cmds.ls(sl=True)
+            if len(sel) != 2:
+                return
+            src = sel[0]
+            dst = sel[1]
+            originPos = cmds.xform(src, q=True, t=True)
+            bbox = cmds.exactWorldBoundingBox(dst)
+            width = abs(bbox[0] - bbox[3])
+            height = abs(bbox[1] - bbox[4])
+            print(bbox, width, height)
+            pcTmp = cmds.parentConstraint(dst, src, mo=False)
+            cmds.delete(pcTmp)
+            cmds.select(cl=True)
+            cmds.select(dst, src)
+            cmds.CreateWrap()
+            history = cmds.listHistory(src)        
+            blendshapes = cmds.ls(history, type='blendShape')
+            history = cmds.listHistory(dst)  
+            wrapDef = cmds.ls(history, type='wrap')
+            weights = cmds.listAttr(blendshapes[0] + '.w' , m=True)
+            for i, w in enumerate(weights):
+                print(w)
+                cmds.setAttr(blendshapes[0] + "." + w, 1)
+                dup = cmds.duplicate(dst, n=w)[0]
+                for attr in cmds.listAttr(dup, k=True):
+                    cmds.setAttr("{}.{}".format(dup, attr), lock=False)
+                cmds.setAttr("{}.tx".format(dup), i * width + width)
+                if w.endswith("_R"):
+                    cmds.setAttr("{}.ty".format(dup), height * 2)
+                else:
+                    cmds.setAttr("{}.ty".format(dup), height)
+
+                cmds.setAttr(blendshapes[0] + "." + w, 0)
+            cmds.delete(wrapDef)
+
+            cmds.xform(src, t=originPos)
+        
+        def load(self):
+            self.layout = cmds.formLayout(p=self.parent, w=5)
+            self.transfertBsButton = self.attach(cmds.iconTextButton(p=self.layout, i="out_transform.png", c=Callback(self.transfertBlendshape)), top="FORM", left="FORM")
+            self.applyAttach()
+
+
 
     ####################################
     #    core of the main Interface    #
@@ -2427,17 +2473,16 @@ class MiniToolRig(Module):
             if not self.hidden:
                 MiniToolRig.Section.tmp = not MiniToolRig.Section.tmp
             c = 0.25 + 0.05 * MiniToolRig.Section.tmp
-            self.layout = cmds.formLayout(self.name, p=self.parent, bgc=[c, c, c], dgc=Callback(self._dragCb).getCommandArgument(), dpc=Callback(self._dropCb).getCommandArgument(), en=not self.wip, vis=not self.hidden) 
+            self.layout = cmds.formLayout(self.name, p=self.parent, bgc=[c, c, c], dgc=Callback(self._dragCb).getCommandArgument(), dpc=Callback(self._dropCb).getCommandArgument(), en=True, vis=not self.hidden) 
             self.iconLayout = self.attach(cmds.columnLayout(p=self.layout, w=30, h=30,), top="FORM", left="FORM")
             self.icon = cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.iconLayout, image1=self.image, c=Callback(self.collapseSwitch))
             self.childrenLayout = self.attach(cmds.columnLayout(p=self.layout, adj=True, bgc=[0.2, 0.2, 0.2], vis=not self.collapsed, en=not self.locked), top=self.iconLayout, left="FORM", right="FORM", margin=(5,5,5,5))
             
             self.lockStatus = self.attach(cmds.image(p=self.layout, i="lock.png", h=30, w=30, vis=self.locked), top="FORM", right="FORM")
-            self.wipStatus = self.attach(cmds.image(p=self.layout, i="out_time.png", h=30, w=30, vis=self.wip), top="FORM", right="FORM")
-            if self.wip:
-                cmds.formLayout(self.layout, e=True, ann="Section is in Work in Progress")
-            elif self.locked:
-                cmds.formLayout(self.layout, e=True, ann="Section locked")
+            self.wipStatus = self.attach(cmds.image(p=self.layout, i="out_time.png", h=30, w=30, vis=self.wip), top="FORM", right=self.lockStatus)
+            annotation = "\n| [LOCKED] You do not have permission to use this tools" * self.locked + "\n| [WIP] Use with caution\n" * self.wip
+            if self.locked or self.wip:
+                cmds.formLayout(self.layout, e=True, ann=annotation)
             self.title = self.attach(cmds.text(p=self.layout, l=self.name, align="left"), top="FORM", left=self.iconLayout, right="FORM", bottom=self.childrenLayout)
 
             for c in self.childrens:
@@ -2513,7 +2558,7 @@ class MiniToolRig(Module):
             self.reformatChildLay()
             cmds.formLayout(self.layout, e=True, af=self.af, ac=self.ac, ap=self.ap)
             
-    sections_order = ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "switch", "nurbs", "follow", "still", "arc"]
+    sections_order = ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "switch", "nurbs", "follow", "still", "arc", "blendshape"]
 
     def __init__(self):
         Module.__init__(self, None)
@@ -2536,9 +2581,9 @@ class MiniToolRig(Module):
     def cs_defineLockState(self):
         '''Si tu t'es donné•e la peine d'aller jusqu'ici pour dévérouiller des options bonus
         tu le mérite amplement ;)
-        Décomente la ligne qui suit'''
-        # return False
-        return os.path.exists("Q:/") and getpass.getuser() != "a.paris"
+        Ajoute ton login dans la liste qui suit'''
+        authorizedUser = ["a.paris", ]
+        return os.path.exists("Q:/") and getpass.getuser() not in authorizedUser
 
     def defineSections(self):
         self.sections = {}
@@ -2557,6 +2602,7 @@ class MiniToolRig(Module):
         self.sections["arc"] = MiniToolRig.Section(self.pannel_rig, "Arcs", "motionTrail.png")
         self.sections["follow"] = MiniToolRig.Section(self.pannel_rig, "Follows", "menuIconFocus.png")
         self.sections["still"] = MiniToolRig.Section(self.pannel_rig, "Stills", "nodeGrapherDockBack.png", wip=True)
+        self.sections["blendshape"] = MiniToolRig.Section(self.pannel_rig, "BlendShapes", "blendShape.png", wip=True)
 
         MiniToolRig.MG_construction(self.sections["construction"])
         MiniToolRig.MT_squeletton(self.sections["squeletton"])
@@ -2571,6 +2617,7 @@ class MiniToolRig(Module):
         MiniToolRig.MT_follows(self.sections["follow"])
         MiniToolRig.MT_nurbs(self.sections["nurbs"])
         MiniToolRig.MT_arc(self.sections["arc"])
+        MiniToolRig.MTG_blendshapes(self.sections["blendshape"])
 
         unlockSection = self.sections_order[:]
         if self.cs_defineLockState():
