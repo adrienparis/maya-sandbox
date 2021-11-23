@@ -562,20 +562,20 @@ class MiniToolRig(Module):
             cmds.makeIdentity(apply=True, t=t, r=r, s=s)
 
         def resetTransform(self, t=False, r=False, s=False):
-            for s in cmds.ls(sl=True):
+            for o in cmds.ls(sl=True):
                 try:
                     if t:
-                        cmds.setAttr(s + ".tx", 0)
-                        cmds.setAttr(s + ".ty", 0)
-                        cmds.setAttr(s + ".tz", 0)
+                        cmds.setAttr(o + ".tx", 0)
+                        cmds.setAttr(o + ".ty", 0)
+                        cmds.setAttr(o + ".tz", 0)
                     if r:
-                        cmds.setAttr(s + ".rx", 0)
-                        cmds.setAttr(s + ".ry", 0)
-                        cmds.setAttr(s + ".rz", 0)
+                        cmds.setAttr(o + ".rx", 0)
+                        cmds.setAttr(o + ".ry", 0)
+                        cmds.setAttr(o + ".rz", 0)
                     if s:
-                        cmds.setAttr(s + ".sx", 1)
-                        cmds.setAttr(s + ".sy", 1)
-                        cmds.setAttr(s + ".sz", 1)
+                        cmds.setAttr(o + ".sx", 1)
+                        cmds.setAttr(o + ".sy", 1)
+                        cmds.setAttr(o + ".sz", 1)
                 except:
                     pass
         
@@ -1586,14 +1586,14 @@ class MiniToolRig(Module):
                 cmds.setAttr("c_" + name + ".overrideColor", 13 if name.endswith("_L") else 6 if name.endswith("_R") else 17)
 
         def fuseShapes(self):
-            sel = cmds.ls(sl=True)
+            sel = cmds.ls(sl=True, l=True)
             parent = sel.pop()
             for s in sel:    
                 cmds.makeIdentity(s, apply=True, t=True, r=True, s=True)
-            shapes = cmds.listRelatives(sel, c=True)
+            shapes = cmds.listRelatives(sel, c=True, f=True)
             cmds.parent(shapes, parent, r=True, s=True)
 
-            for s in shapes:
+            for s in cmds.listRelatives(parent, c=True, f=True):
                 cmds.setAttr(s + ".ihi", 0)
 
             cmds.delete(sel)
@@ -2384,7 +2384,7 @@ class MiniToolRig(Module):
 
     class MTG_blendshapes(Module):
         
-        def transfertBlendshape():
+        def transfertBlendshape(self):
             sel = cmds.ls(sl=True)
             if len(sel) != 2:
                 return
@@ -2454,6 +2454,9 @@ class MiniToolRig(Module):
                     self.hidden = self.wip
                     self.greyedOut = self.wip or self.greyedOut
 
+        def parentCollapseSwitch(self):
+            pass
+
         def collapseSwitch(self):
             self.collapsed = not self.collapsed
             cmds.layout(self.childrenLayout, e=True, vis=not self.collapsed)
@@ -2475,7 +2478,7 @@ class MiniToolRig(Module):
             c = 0.25 + 0.05 * MiniToolRig.Section.tmp
             self.layout = cmds.formLayout(self.name, p=self.parent, bgc=[c, c, c], dgc=Callback(self._dragCb).getCommandArgument(), dpc=Callback(self._dropCb).getCommandArgument(), en=True, vis=not self.hidden) 
             self.iconLayout = self.attach(cmds.columnLayout(p=self.layout, w=30, h=30,), top="FORM", left="FORM")
-            self.icon = cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.iconLayout, image1=self.image, c=Callback(self.collapseSwitch))
+            self.icon = cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.iconLayout, image1=self.image, c=Callback(self.collapseSwitch),dcc=Callback(self.parentCollapseSwitch))
             self.childrenLayout = self.attach(cmds.columnLayout(p=self.layout, adj=True, bgc=[0.2, 0.2, 0.2], vis=not self.collapsed, en=not self.locked), top=self.iconLayout, left="FORM", right="FORM", margin=(5,5,5,5))
             
             self.lockStatus = self.attach(cmds.image(p=self.layout, i="lock.png", h=30, w=30, vis=self.locked), top="FORM", right="FORM")
@@ -2597,8 +2600,8 @@ class MiniToolRig(Module):
         self.sections["controllers"] = MiniToolRig.Section(self.pannel_rig, "Controllers", "polySuperEllipse.png")
         self.sections["coloring"] = MiniToolRig.Section(self.pannel_rig, "Coloring", "colorProfile.png")
         self.sections["ik"] = MiniToolRig.Section(self.pannel_rig, "Ik", "ikHandle.svg", wip=True)
-        self.sections["switch"] = MiniToolRig.Section(self.pannel_rig, "Switch", "redrawPaintEffects.png", wip=False)
-        self.sections["nurbs"] = MiniToolRig.Section(self.pannel_rig, "Nurbs", "nurbsSurface.svg", wip=False)
+        self.sections["switch"] = MiniToolRig.Section(self.pannel_rig, "Switch", "redrawPaintEffects.png", wip=True)
+        self.sections["nurbs"] = MiniToolRig.Section(self.pannel_rig, "Nurbs", "nurbsSurface.svg", wip=True)
         self.sections["arc"] = MiniToolRig.Section(self.pannel_rig, "Arcs", "motionTrail.png")
         self.sections["follow"] = MiniToolRig.Section(self.pannel_rig, "Follows", "menuIconFocus.png")
         self.sections["still"] = MiniToolRig.Section(self.pannel_rig, "Stills", "nodeGrapherDockBack.png", wip=True)

@@ -15,21 +15,58 @@ import maya.cmds as cmds
 import maya.mel as mel
 # define the global local scale of the name object
 
-class SmoothSkin(object):
-    # Callback function
-    __cbFuncNum = 0
-    __cbFunc = {}
-    @staticmethod
-    def Callback(func, *args, **kwargs):
-        '''callback function to be called when using maya interface system
-        to keep object as an object and not as a string
-        '''
-        if callable(func):
-            SmoothSkin.__cbFuncNum += 1
-            SmoothSkin.__cbFunc[SmoothSkin.__cbFuncNum - 1] = [func, args, kwargs]
-            return "SmoothSkinWin.Callback(" + str(SmoothSkin.__cbFuncNum)  + ")"
-        SmoothSkin.__cbFunc[func - 1][0](*SmoothSkin.__cbFunc[func - 1][1], **SmoothSkin.__cbFunc[func - 1][2])
 
+class Callback():
+    '''Use for maya interface event, because it send you back your argument as strings
+    func : the function you want to call
+    *args : your arguments
+    **kwargs : your keywords arguments
+
+    Example:
+    cmds.button(c=Callback(myFunc, arg1, arg2))
+    cmds.button(c=Callback(myFunc, arg1, arg2).repeatable())
+    '''
+    __author__ = "Adrien PARIS"
+    __email__ = "a.paris.cs@gmail.com"
+    __version__     = "3.1.0"
+    __copyright__   = "Copyright 2021, Creative Seeds"
+    
+    def __init__(self, func, *args, **kwargs):
+        self.func = func
+        self.args = args
+        self.repeatArgs = args
+        self.kwargs = kwargs
+        self.repeatable_value = False
+        self.getCommandArgument_value = False
+
+    def repeatable(self):
+        ''' Call this methode to make the function repeatable with 'g'
+        '''
+        self.repeatable_value = True
+        return self
+
+    def getCommandArgument(self):
+        ''' Call this methode to receive the argument of the event
+        '''
+        self.getCommandArgument_value = True
+        return self
+        
+    def _repeatCall(self):
+        return self.func(*self.repeatArgs, **self.kwargs)
+
+    def __call__(self, *args):
+        ag = self.args + args if self.getCommandArgument_value else self.args
+        if self.repeatable_value:
+            import __main__
+            __main__.cb_repeatLast = self
+            self.repeatArgs = ag
+            cmds.repeatLast(ac='''python("import __main__; __main__.cb_repeatLast._repeatCall()"); ''')
+        return self.func(*ag, **self.kwargs)
+
+
+
+class SmoothSkin(object):
+    
     # Name of the application
     name = u"Skin Smoother"
 
@@ -84,8 +121,8 @@ class SmoothSkin(object):
             self.titleText = cmds.text(p=self.layout, label=" " + self.name.capitalize() + " : ", bgc=self.color )
             if self.type == "PICKER":
                 self.valueText = cmds.text(p=self.layout, label=self.value, bgc=[0.275, 0.275, 0.275], align='left')
-                self.clsBtn = cmds.button(parent=self.layout, label="cls", c=SmoothSkin.Callback(self.clsBtnAct), en=True)
-                self.setBtn = cmds.button(parent=self.layout, label="set", c=SmoothSkin.Callback(self.setBtnAct))
+                self.clsBtn = cmds.button(parent=self.layout, label="cls", c=Callback(self.clsBtnAct), en=True)
+                self.setBtn = cmds.button(parent=self.layout, label="set", c=Callback(self.setBtnAct))
                 cmds.formLayout(self.layout, e=True,
                                 af=[(self.titleText, "left", 3), (self.titleText, "top", 3), (self.titleText, "bottom", 3),
                                     (self.valueText, "top", 3), (self.valueText, "bottom", 3),
@@ -97,7 +134,7 @@ class SmoothSkin(object):
                 )
             elif self.type == "TEXT":
                 # self.valueText = cmds.textField(p=self.layout, text=self.value, bgc=[0.275, 0.275, 0.275], cc="print('plop')")
-                self.valueText = cmds.textField(p=self.layout, text=self.value, bgc=[0.275, 0.275, 0.275], cc=SmoothSkin.Callback(self.valueTextCcAct))
+                self.valueText = cmds.textField(p=self.layout, text=self.value, bgc=[0.275, 0.275, 0.275], cc=Callback(self.valueTextCcAct))
                 cmds.formLayout(self.layout, e=True,
                                 af=[(self.titleText, "left", 3), (self.titleText, "top", 3), (self.titleText, "bottom", 3),
                                     (self.valueText, "top", 3), (self.valueText, "bottom", 3), (self.valueText, "right", 3),
@@ -360,11 +397,22 @@ class SmoothSkin(object):
             return p / self.normeAB
 
     def execute(self):
-        print(self.jointStartInputLay.value)
-        print(self.jointEndInputLay.value)
         self.jStart = SmoothSkin.SkJoin(self.jointStartInputLay.value)
         self.jEnd = SmoothSkin.SkJoin(self.jointEndInputLay.value)
-        self.zone = SmoothSkin.pointInZone(self.jStart.pos, self.jEnd.pos)
+        posStart = self.poseStartInputLay.value
+        posEnd = self.poseEndInputLay.value
+
+        if bool(posStart):
+            posStart = cmds.xform(posStart,q=1,ws=1,rp=1)
+        else:
+            posStart = cmds.xform(self.jointStartInputLay.value,q=1,ws=1,rp=1)
+        if bool(posEnd):
+            posEnd = cmds.xform(posEnd,q=1,ws=1,rp=1)
+        else:
+            posEnd = cmds.xform(self.jointEndInputLay.value,q=1,ws=1,rp=1)
+
+
+        self.zone = SmoothSkin.pointInZone(posStart, posEnd)
         self.vtxSelection.updateSelection()
         print(self.vtxSelection.vtxs)
         for v in self.vtxSelection.vtxs:
@@ -392,7 +440,10 @@ class SmoothSkin(object):
 
         self.jointStartInputLay = SmoothSkin.Line(self, self.layout, "joint start", "le joint d'ou ca commence")
         self.jointEndInputLay = SmoothSkin.Line(self, self.layout, "joint end", "le joint ou ca termine")
-        self.goBtn = cmds.button(parent=self.layout, label="Go!", c=SmoothSkin.Callback(self.execute))
+
+        self.poseStartInputLay = SmoothSkin.Line(self, self.layout, "loc start", "emplacement d'ou ca commence")
+        self.poseEndInputLay = SmoothSkin.Line(self, self.layout, "loc end", "emplacement ou ca termine")
+        self.goBtn = cmds.button(parent=self.layout, label="Go!", c=Callback(self.execute))
 
         af = []
         ac = []
@@ -409,6 +460,15 @@ class SmoothSkin(object):
         ac.append((self.jointEndInputLay.layout, "top", 3, self.jointStartInputLay.layout))
         af.append((self.jointEndInputLay.layout, "left", 3))
         af.append((self.jointEndInputLay.layout, "right", 3))
+
+        ac.append((self.poseStartInputLay.layout, "top", 3, self.jointEndInputLay.layout))
+        af.append((self.poseStartInputLay.layout, "left", 3))
+        af.append((self.poseStartInputLay.layout, "right", 3))
+
+        ac.append((self.poseEndInputLay.layout, "top", 3, self.poseStartInputLay.layout))
+        af.append((self.poseEndInputLay.layout, "left", 3))
+        af.append((self.poseEndInputLay.layout, "right", 3))
+
 
         cmds.formLayout(self.layout, e=True, ac=ac, af=af, ap=ap)
 
