@@ -14,6 +14,7 @@ import os
 import sys
 from math import *
 import inspect
+
 try:
     import maya.cmds as cmds
     import maya.mel as mel
@@ -261,6 +262,9 @@ class Module(object):
         Module.drag.dragged = False
         Module.drag.move(self)
         Module.drag = None
+
+def info(message):
+    mel.eval('trace -where ""; print "{}"; trace -where "";'.format(message))
 
 class Vector:
     @staticmethod
@@ -2197,6 +2201,7 @@ class MiniToolRig(Module):
             Module.__init__(self, parent, name=name)
             self.sections = sections
             self.vis = True
+            self.vscConnect = cmds.commandPort("localhost:7001", q=True)
 
         def switch(self):
             self.vis = not self.vis
@@ -2208,10 +2213,43 @@ class MiniToolRig(Module):
             stateIcon = "switchOff.png" if self.sections[sec].hidden else "switchOn.png"
             cmds.iconTextButton(self.switchsButtons[sec], e=True, image1=stateIcon)
 
+        def loadAllIconWin(self):
+            name = "All Icons"
+            if cmds.workspaceControl(name, exists=1):
+                cmds.deleteUI(name)
+            self.winIcon = cmds.workspaceControl(name, retain=False, iw=840, ih=550, floating=True)
+
+            cl_main = cmds.columnLayout(p=self.winIcon, adj=1)
+            self.label =  cmds.textFieldGrp(label="Resources: ", text="click icons to get icon names")
+            sl_listIcon = cmds.scrollLayout(verticalScrollBarThickness=16, h=500)
+            rcl_list = cmds.rowColumnLayout(numberOfColumns=25)
+                
+            icons = cmds.resourceManager(nameFilter="*")
+            for ico in icons:
+                cmds.iconTextButton(w=32, h=32, style="iconOnly", command=Callback(self.updateIconField, self.label, ico), image1=ico)
+        
+        def updateIconField(self, label, name):
+            cmds.textFieldGrp(label, e=True, text=name)
+
+        def SwitchVscConnection(self):
+            if self.vscConnect:
+                cmds.commandPort(n="localhost:7001", close=True)
+                cmds.iconTextButton(self.SyncIconBtn, e=True, image1="syncOff.png")
+                info("Disconnected")
+            else:
+                try:
+                    cmds.commandPort(n="localhost:7001", stp="mel", echoOutput=True)
+                except:
+                    cmds.error("Can't connect to VS code. The connection must be already established with an other instance of maya")
+                    pass
+                info("Connection Established")
+                cmds.iconTextButton(self.SyncIconBtn, e=True, image1="syncOn.png")
+            self.vscConnect = not self.vscConnect
+
 
         def load(self):
             self.layout = cmds.formLayout("main", p=self.parent, w=5, bgc=[0.4,0.4,0.4], vis=self.vis)
-            self.templayout = cmds.formLayout("tmp", p=self.layout, w=5)
+            self.templayout = self.attach(cmds.formLayout("tmp", p=self.layout, w=5), top="FORM", right="FORM", left="FORM")
             last = "FORM"
             h, w = 20, 20
             if type(self.sections) is not dict:
@@ -2253,8 +2291,11 @@ class MiniToolRig(Module):
 
                 last = line
 
+            self.showIconBtn = self.attach(cmds.iconTextButton(p=self.layout, image1="iconLarge.png", c=self.loadAllIconWin), top=self.templayout, left="FORM")
+            cntIcon = "syncOn.png" if self.vscConnect else "syncOff.png"
+            self.SyncIconBtn = self.attach(cmds.iconTextButton(p=self.layout, image1=cntIcon, c=self.SwitchVscConnection), top=self.showIconBtn, left="FORM")
             self.applyAttach()
-            cmds.formLayout(self.layout, e=True, af=[(self.templayout, "top", 0), (self.templayout, "bottom", 0), (self.templayout, "left", 0), (self.templayout, "right", 0)])
+            # cmds.formLayout(self.layout, e=True, af=[(self.templayout, "top", 0), (self.templayout, "bottom", 0), (self.templayout, "left", 0), (self.templayout, "right", 0)])
 
     class MT_follows(Module):
         presetMainTarget = "c_FLY"
