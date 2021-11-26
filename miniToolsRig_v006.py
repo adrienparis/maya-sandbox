@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -- coding: utf-8 --
 
-"""miniToolRig.py: A little tool to help rigging character."""
+"""miniToolRig.py: A little tool-box to help rigging character."""
 
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
-__version__     = "1.4.5-alpha"
+__version__     = "1.4.6-alpha"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import ctypes
@@ -2452,9 +2452,10 @@ class MiniToolRig(Module):
                 dup = cmds.duplicate(dst, n=w)[0]
                 for attr in cmds.listAttr(dup, k=True):
                     cmds.setAttr("{}.{}".format(dup, attr), lock=False)
-                cmds.setAttr("{}.tx".format(dup), i * width + width)
+                cmds.setAttr("{}.tx".format(dup), (i / 2) * width + width)
                 if w.endswith("_R"):
                     cmds.setAttr("{}.ty".format(dup), height * 2)
+                    cmds.setAttr("{}.tx".format(dup), (i / 2) * width + width)
                 else:
                     cmds.setAttr("{}.ty".format(dup), height)
 
@@ -2626,6 +2627,7 @@ class MiniToolRig(Module):
         '''Si tu t'es donné•e la peine d'aller jusqu'ici pour dévérouiller des options bonus
         tu le mérite amplement ;)
         Ajoute ton login dans la liste qui suit'''
+        return False
         authorizedUser = ["a.paris", ]
         return os.path.exists("Q:/") and getpass.getuser() not in authorizedUser
 
