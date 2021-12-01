@@ -5,7 +5,7 @@
 
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
-__version__     = "1.4.6-alpha"
+__version__     = "1.4.7-BETA"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import ctypes
@@ -13,6 +13,7 @@ import getpass
 import os
 import sys
 from math import *
+import webbrowser
 import inspect
 
 try:
@@ -2623,6 +2624,9 @@ class MiniToolRig(Module):
         self.optionModule.switch()
         cmds.layout(self.optLayout.layout, e=True, vis=self.optionModule.vis)
 
+    def openDoc(self):
+        webbrowser.open("https://mirror-flyaway-413.notion.site/MiniToolRig-Doc-314f657689aa4e54a47428c093e0a3cd")
+
     def cs_defineLockState(self):
         '''Si tu t'es donné•e la peine d'aller jusqu'ici pour dévérouiller des options bonus
         tu le mérite amplement ;)
@@ -2687,6 +2691,7 @@ class MiniToolRig(Module):
 
         self.layout = cmds.formLayout(p=self.win)
         self.optionButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, image1="advancedSettings.png", c=Callback(self.displayOption)), bottom="FORM", right="FORM")
+        self.helpButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, image1="SP_FileIcon.png", c=Callback(self.openDoc)), bottom="FORM", right=self.optionButton)
         self.childrenLayout = self.attach(cmds.tabLayout(innerMarginWidth=5, innerMarginHeight=5), top="FORM", left="FORM", right="FORM", bottom=self.optionButton)
         self.optLayout = self.attach(MiniToolRig.Tabs(self.layout, "Option").load(), top=50, left="FORM", right="FORM", bottom=self.optionButton)
         self.optionModule = MiniToolRig.MT_options(self.optLayout, self.sections).load()

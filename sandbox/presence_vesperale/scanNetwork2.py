@@ -7,7 +7,7 @@ import socket
 
 # I changed this from "192.168.1.%i" to "192.168.0.%i"
 BASE_IP = "192.168.1.%i"
-PORT = 15555
+PORT = 8377
 
 
 class Threader:
@@ -91,7 +91,8 @@ def connect(hostname, port):
             if result == 0:
                 sock.send(b"21h45")
                 name = socket.gethostbyaddr(hostname)
-                stderr.write(f"[{perf_counter() - start:.5f}] Found {hostname} {name}\n")
+
+                stderr.write(f"[{perf_counter() - start:.5f}] Found {hostname} {name} \n")
 
 threader = Threader(2000)
 for i in range(255):
@@ -101,4 +102,18 @@ for i in range(255):
 threader.start()
 threader.join()
 print(f"[{perf_counter() - start:.5f}] Done searching")
-input("Press enter to exit.\n? ")
+# input("Press enter to exit.\n? ")
+
+
+socket.setdefaulttimeout(None)
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.bind(('', 8376))
+
+while True:
+        sock.listen(5)
+        client, address = sock.accept()
+        print("{} connected".format( address ))
+
+        response = client.recv(255)
+        if response != "":
+                print(response)
