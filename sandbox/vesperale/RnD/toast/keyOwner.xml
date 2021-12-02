@@ -2,6 +2,7 @@
 <toast scenario="reminder">
     <visual>
         <binding template="ToastImageAndText04">
+            <image placement="appLogoOverride" hint-crop="circle" src="https://picsum.photos/48?image=883"/>
             <!-- <image placement="appLogoOverride" hint-crop="circle" src="https://picsum.photos/48?image=883"/> -->
             <text id="1">Voulez vous rester ce soir?</text>
             <text id="2">Indiquez un horaire</text>
@@ -25,7 +26,14 @@
             <selection id="45" content="45" />
             <selection id="59" content="59" />
         </input>
-        <action content="Oui" arguments="https://www.google.com" activationType="protocol" />
+        <!-- <action content="Oui" arguments="https://www.google.com" activationType="protocol" /> -->
+        
+        <action
+            content="Oui"
+            arguments="activated"
+            activationType="background"
+            hint-inputId="time"/>
+
         <action content="Non" arguments="dismiss" activationType="protocol" />
         <action content="Oui, sans clefs" arguments="https://www.google.com" activationType="protocol" />
     </actions>    
