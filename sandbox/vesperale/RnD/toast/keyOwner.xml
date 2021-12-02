@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<toast scenario="reminder">
+    <visual>
+        <binding template="ToastImageAndText04">
+            <!-- <image placement="appLogoOverride" hint-crop="circle" src="https://picsum.photos/48?image=883"/> -->
+            <text id="1">Voulez vous rester ce soir?</text>
+            <text id="2">Indiquez un horaire</text>
+            
+    	    <image src="S:/a.paris/Rescources/ToolBox/toast/sunset.jpg" placement="hero"/>
+        </binding>
+    </visual>
+    <actions>
+        <input id="time" type="selection" defaultInput="l18h">
+            <selection id="l18h" content="18h" />
+            <selection id="l19h" content="19h" />
+            <selection id="l20h" content="20h" />
+            <selection id="l21h" content="21h" />
+            <selection id="l22h" content="22h" />
+            <!-- <selection id="l23h" content="23h" /> -->
+        </input>
+        <input id="timeminute" type="selection" defaultInput="00">
+            <selection id="00" content="00" />
+            <selection id="15" content="15" />
+            <selection id="30" content="30" />
+            <selection id="45" content="45" />
+            <selection id="59" content="59" />
+        </input>
+        <action content="Oui" arguments="https://www.google.com" activationType="protocol" />
+        <action content="Non" arguments="dismiss" activationType="protocol" />
+        <action content="Oui, sans clefs" arguments="https://www.google.com" activationType="protocol" />
+    </actions>    
+    <audio src="ms-winsoundevent:Notification.Looping.Call6"/>
+</toast>

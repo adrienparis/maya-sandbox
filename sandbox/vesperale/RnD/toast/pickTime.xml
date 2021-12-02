@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<toast>
+  <visual>
+    <binding template="ToastGeneric">
+	  <text>Upcoming Reservation</text>
+	  <text>You have a booking at Wildfire tonight, make sure you know how to get there!</text>
+      
+	  <image src="S:/a.paris/Rescources/ToolBox/toast/sunset.jpg" placement="appLogoOverride"/>
+	  <!-- <image src="S:/a.paris/Rescources/ToolBox/toast/google-calendar_apple-calendar.jpg" hint-removeMargin="false" /> -->
+	  <!-- <image src="C:\Demos\WildFire.jpg" placement="hero" />
+	  <image src="C:\Demos\ChefIcon.png" placement="appLogoOverride" hint-crop="circle" /> -->
+	</binding>
+  </visual>
+  <actions>
+    <action content="Google Maps" arguments="https://www.google.com/maps/SNIP" activationType="protocol" />
+	<action content="Bing Maps" arguments="https://www.bing.com/maps?SNIP" activationType="protocol" />
+  </actions>
+</toast>
