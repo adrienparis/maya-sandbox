@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<toast scenario="reminder">
+<toast scenario="IncomingCall">
+<!-- <toast scenario="reminder"> -->
     <visual>
         <binding template="ToastImageAndText04">
             <image placement="appLogoOverride" hint-crop="circle" src="https://picsum.photos/48?image=883"/>
@@ -34,8 +35,8 @@
             activationType="background"
             hint-inputId="time"/>
 
+        <action content="Oui, sans clefs" arguments="activated" activationType="protocol" />
         <action content="Non" arguments="dismiss" activationType="protocol" />
-        <action content="Oui, sans clefs" arguments="https://www.google.com" activationType="protocol" />
     </actions>    
     <audio src="ms-winsoundevent:Notification.Looping.Call6"/>
 </toast>

@@ -1,0 +1,18 @@
+<toast>
+
+   <visual>
+      <binding template="ToastGeneric">
+         <text>New notifications</text>
+         <text>Text</text>
+         <text>Second text</text>
+      </binding>
+   </visual>
+
+   <actions>
+      <input id="textBox" type="text" placeHolderContent="Type a reply" />
+      <action content="Send" arguments="action=reply&amp;convId=01" activationType="background" hint-inputId="textBox" />
+
+      <action content="Button 1" arguments="action=viewdetails&amp;contentId=02" activationType="foreground" />
+   </actions>
+
+</toast>

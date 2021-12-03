@@ -12,8 +12,8 @@
     
     <actions>
         <input id="textBox" type="text" placeHolderContent="Adrien PARIS"/>
-        <action content="Oui" arguments="start cmd" activationType="protocol" />
         <action content="Non" arguments="dismiss" activationType="protocol" />
+        <action content="Oui" arguments="start cmd" activationType="protocol" />
     </actions>    
     <audio src="ms-winsoundevent:Notification.Looping.Call6"/>
 </toast>

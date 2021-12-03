@@ -1,10 +1,15 @@
 import winrt.windows.ui.notifications as notifications
 import winrt.windows.data.xml.dom as dom
+import time
 
-def handle_activated(sender, _):
-    with open(r"C:\Users\paris_a\Documents\Creative Seeds\Rescources\toastAction.txt", "w+") as f:
-        f.write([sender, _])
-    print([sender, _])
+def handle_activated(sender, event):
+    print([sender, event])
+    print(dir(sender))
+    print(sender.data)
+    print(dir(sender.data))
+    print(event.reason)
+    print(type(event.reason))
+    print(dir(event))
     print('Button was pressed!')
 
 #create notifier
@@ -23,21 +28,12 @@ with open(temp_file, "r+") as f:
 xDoc = dom.XmlDocument()
 xDoc.load_xml(tString)
 
-for e in dir(notifier):
-    print(e)
 temp = notifications.ToastNotification(xDoc)
-for e in dir(temp):
-    print(e)
-# exit()
 activated_token = temp.add_dismissed(handle_activated)
-for e in dir(activated_token):
-    print(e)
-print(activated_token.value)
-with open("toastAction.txt", "w+") as f:
-    f.write("plop")
 #display notification
 notifier.show(temp)
 
 # print(nManager.OnActivated)
 
 
+time.sleep(20)
