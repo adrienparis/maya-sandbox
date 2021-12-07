@@ -35,17 +35,6 @@ class Callback():
         ag = self.args +  args
         self.func(*ag)
 
-
-if __name__ == "__main__":
-    ctypes.windll.user32.MessageBoxW(0, "Version : {}\n\nJust drag&drop this file to maya's viewport".format(__version__), "Publisher info", 0)
-
-
-def onMayaDroppedPythonFile(*args):
-    '''Just to get rid of the anoying warning message of maya
-    '''
-    window = Publisher()
-    window.load()
-
 class Publisher(object):
     BLUE = [0.32, 0.52, 0.65]
     TURQUOISE = [0.28, 0.66, 0.70]
@@ -699,3 +688,15 @@ class Publisher(object):
 
         self.loadJobs()
 
+if __name__ == "__main__":
+    if sys.executable.endswith(u"bin\maya.exe"):
+        Publisher().load()
+    else:    
+        ctypes.windll.user32.MessageBoxW(0, "Version : {}\n\nJust drag&drop this file to maya's viewport".format(__version__), "Publisher info", 0)
+
+
+def onMayaDroppedPythonFile(*args):
+    '''Just to get rid of the anoying warning message of maya
+    '''
+    window = Publisher()
+    window.load()
