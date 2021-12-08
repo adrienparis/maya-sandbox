@@ -265,6 +265,7 @@ class Module(object):
         Module.drag = None
 
 def info(message):
+    print(" ")
     mel.eval('trace -where ""; print "{}"; trace -where "";'.format(message))
 
 class Vector:
