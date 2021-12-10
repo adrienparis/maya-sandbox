@@ -5,7 +5,7 @@
 
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
-__version__     = "1.4.7-BETA"
+__version__     = "1.4.8-BETA"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import ctypes
@@ -15,6 +15,7 @@ import sys
 from math import *
 import webbrowser
 import inspect
+import datetime
 
 try:
     import maya.cmds as cmds
@@ -760,12 +761,15 @@ class MiniToolRig(Module):
             cmds.formLayout(self.layout, e=True, af=self.af, ac=self.ac, ap=self.ap)
 
     class MGT_constraintGroup(Module):
-        CONSTRAINTS = {"parent" : cmds.parentConstraint,
-                    "point" : cmds.pointConstraint,
-                    "orient" : cmds.orientConstraint,
-                    "scale" : cmds.scaleConstraint,
-                    "aim" : cmds.aimConstraint,
-                    "poleVector" : cmds.PoleVectorConstraint}
+        try:
+            CONSTRAINTS = {"parent" : cmds.parentConstraint,
+                        "point" : cmds.pointConstraint,
+                        "orient" : cmds.orientConstraint,
+                        "scale" : cmds.scaleConstraint,
+                        "aim" : cmds.aimConstraint,
+                        "poleVector" : cmds.PoleVectorConstraint}
+        except:
+            pass
 
         def hideConstraints(self, v):
             constraints = ["{}Constraint".format(k) for k in MiniToolRig.MGT_constraintGroup.CONSTRAINTS.keys()]
@@ -2566,6 +2570,9 @@ class MiniToolRig(Module):
             side_left = None
             col = 0
             side_right = gap * (col + 1) if self.nbColumn - 1 != col else None
+            print(self.name)
+            if self.name == "option":
+                print("option", side_right)
             for c in self.childrens:
                 total_h += c.height
                 if side_top == None:
@@ -2629,31 +2636,60 @@ class MiniToolRig(Module):
         webbrowser.open("https://mirror-flyaway-413.notion.site/MiniToolRig-Doc-314f657689aa4e54a47428c093e0a3cd")
 
     def cs_defineLockState(self):
-        '''Si tu t'es donné•e la peine d'aller jusqu'ici pour dévérouiller des options bonus
+        '''Function to limit Creative seeds' student
+        
+        
+        Si tu t'es donné•e la peine d'aller jusqu'ici pour dévérouiller des options bonus
         tu le mérite amplement ;)
-        Ajoute ton login dans la liste qui suit'''
-        return False
+        Ajoute ton nom dans le authorizedUser
+        '''
         authorizedUser = ["a.paris", ]
-        return os.path.exists("Q:/") and getpass.getuser() not in authorizedUser
+        user = getpass.getuser()
+        present = datetime.datetime.now()
+        yearsPermission = [
+            [],
+            ["naming", "transform", "constraint", "coloring"],
+            ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers"],
+            ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "switch", "nurbs", "follow", "still", "arc", "blendshape"],
+            ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "switch", "nurbs", "follow", "still", "arc", "blendshape"],
+        ]
+
+
+        if present < datetime.datetime(2022, 1, 31):
+            return ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "nurbs", "arc", "blendshape"]
+
+        if not os.path.exists("Q:/"):
+            return self.sections_order[:]
+
+        # if user in authorizedUser:
+        #     return self.sections_order[:]
+
+        for y in range(1, 6):
+            if not os.path.exists("Q:/annee0{}/casiers".format(y)):
+                continue
+            if user in os.listdir("Q:/annee0{}/casiers".format(y)):
+                break
+
+        return yearsPermission[y - 1]
 
     def defineSections(self):
         self.sections = {}
 
-        self.sections["construction"] = MiniToolRig.Section(self.pannel_rig, "Construction", "locator.svg")               #3
-        self.sections["squeletton"] = MiniToolRig.Section(self.pannel_rig, "Squeletton", "HIKCharacterToolSkeleton.png")  #3
-        self.sections["additionalJoint"] = MiniToolRig.Section(self.pannel_rig, "Additional Joint", "ikRPsolver.svg")     #3
-        self.sections["naming"] = MiniToolRig.Section(self.pannel_rig, "Naming", "renamePreset_100.png")                  #2
-        self.sections["constraint"] = MiniToolRig.Section(self.pannel_rig, "Constraint", "out_aimConstraint.png")         #2
-        self.sections["transform"] = MiniToolRig.Section(self.pannel_rig, "Transform", "holder.svg")                      #2
-        self.sections["controllers"] = MiniToolRig.Section(self.pannel_rig, "Controllers", "polySuperEllipse.png")        #3
-        self.sections["coloring"] = MiniToolRig.Section(self.pannel_rig, "Coloring", "colorProfile.png")                  #2
-        self.sections["ik"] = MiniToolRig.Section(self.pannel_rig, "Ik", "ikHandle.svg", wip=True)                        #3
-        self.sections["switch"] = MiniToolRig.Section(self.pannel_rig, "Switch", "redrawPaintEffects.png", wip=True)      #3
-        self.sections["nurbs"] = MiniToolRig.Section(self.pannel_rig, "Nurbs", "nurbsSurface.svg", wip=True)              #3
-        self.sections["arc"] = MiniToolRig.Section(self.pannel_rig, "Arcs", "motionTrail.png")                            #4
-        self.sections["follow"] = MiniToolRig.Section(self.pannel_rig, "Follows", "menuIconFocus.png")                    #3
-        self.sections["still"] = MiniToolRig.Section(self.pannel_rig, "Stills", "nodeGrapherDockBack.png", wip=True)      #3
-        self.sections["blendshape"] = MiniToolRig.Section(self.pannel_rig, "BlendShapes", "blendShape.png", wip=True)     #3
+        self.sections["construction"] = MiniToolRig.Section(self.pannel_rig, "Construction", "locator.svg")  
+        self.sections["squeletton"] = MiniToolRig.Section(self.pannel_rig, "Squeletton", "HIKCharacterToolSkeleton.png")  
+        self.sections["additionalJoint"] = MiniToolRig.Section(self.pannel_rig, "Additional Joint", "ikRPsolver.svg")  
+        self.sections["naming"] = MiniToolRig.Section(self.pannel_rig, "Naming", "renamePreset_100.png")  
+        self.sections["constraint"] = MiniToolRig.Section(self.pannel_rig, "Constraint", "out_aimConstraint.png")  
+        self.sections["transform"] = MiniToolRig.Section(self.pannel_rig, "Transform", "holder.svg")  
+        self.sections["controllers"] = MiniToolRig.Section(self.pannel_rig, "Controllers", "polySuperEllipse.png")  
+        self.sections["coloring"] = MiniToolRig.Section(self.pannel_rig, "Coloring", "colorProfile.png")  
+        self.sections["ik"] = MiniToolRig.Section(self.pannel_rig, "Ik", "ikHandle.svg", wip=True) 
+        self.sections["switch"] = MiniToolRig.Section(self.pannel_rig, "Switch", "redrawPaintEffects.png", wip=True) 
+        self.sections["nurbs"] = MiniToolRig.Section(self.pannel_rig, "Nurbs", "nurbsSurface.svg", wip=True) 
+        self.sections["arc"] = MiniToolRig.Section(self.pannel_rig, "Arcs", "motionTrail.png")  
+        self.sections["follow"] = MiniToolRig.Section(self.pannel_rig, "Follows", "menuIconFocus.png")  
+        self.sections["still"] = MiniToolRig.Section(self.pannel_rig, "Stills", "nodeGrapherDockBack.png", wip=True) 
+        self.sections["blendshape"] = MiniToolRig.Section(self.pannel_rig, "BlendShapes", "blendShape.png", wip=True) 
 
         MiniToolRig.MG_construction(self.sections["construction"])
         MiniToolRig.MT_squeletton(self.sections["squeletton"])
@@ -2673,6 +2709,7 @@ class MiniToolRig(Module):
         unlockSection = self.sections_order[:]
         if self.cs_defineLockState():
             unlockSection = ["naming", "transform", "constraint", "coloring", "squeletton", "construction", "controllers"]
+        unlockSection = self.cs_defineLockState()
         for k, i in self.sections.items():
             if k not in unlockSection:
                 i.locked = True
@@ -2727,10 +2764,12 @@ class MiniToolRig(Module):
 
 if __name__ == "__main__":
     if sys.executable.endswith(u"bin\maya.exe"):
+        print("load Minitool rig")
         plop = MiniToolRig()
         print(plop.__repr__())
         plop.load()
     else:
+        print("display version")
         ctypes.windll.user32.MessageBoxW(0, "Version : {}\n\nJust drag&drop this file to maya's viewport\n\n{}".format(__version__, __doc__), "{} info".format(__file__), 0)
 
 def onMayaDroppedPythonFile(*args):
