@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<detx copyright="Chinkel S.A., 2007-2021">
+
+  <header>
+    <cappella version="3.7.0"/>
+    <videofile timestamp="00:00:00:01">D:\Doublage\Extrait vidéo\Nemo - Dory parle baleine.mp4</videofile>
+    <last_position timecode="00:01:40:04" track="1"/>
+  </header>
+
+  <roles>
+    <role color="#002FA7" description="" id="dory" name="Dory"/>
+    <role color="#370028" description="" id="krill" name="Krill"/>
+    <role color="#C80815" description="" id="marin" name="Marin"/>
+  </roles>
+
+  <body>
+    <loop number="1" timecode="00:00:00:01"/>
+    <line role="dory" track="0">
+      <lipsync timecode="00:00:01:03" type="in_open"/>
+      <text>S'il vous plait ?</text>
+      <lipsync timecode="00:00:01:21" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:02:06" type="mpb"/>
+      <text>Whou ouh</text>
+      <lipsync timecode="00:00:02:19" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:03:02" type="mpb"/>
+      <text>petit petit</text>
+      <lipsync timecode="00:00:03:18" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:00:05:14" type="in_open"/>
+      <text>Bonjour,</text>
+      <lipsync timecode="00:00:06:06" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:06:12" type="mpb"/>
+      <text>sois aimable, salut le </text>
+      <lipsync timecode="00:00:07:24" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:08:03" type="in_open"/>
+      <text>ah ah </text>
+      <lipsync timecode="00:00:08:11" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:08:23" type="mpb"/>
+      <text>Bonjour</text>
+      <lipsync timecode="00:00:10:00" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:00:10:05" type="in_open"/>
+      <text>Son fils Bingo...</text>
+      <lipsync timecode="00:00:11:10" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:11:17" type="mpb"/>
+      <text>Némo</text>
+      <lipsync timecode="00:00:12:04" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:12:13" type="mpb"/>
+      <text>a été emmené a ?...</text>
+      <lipsync timecode="00:00:14:04" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:14:23" type="mpb"/>
+      <text>Sidney</text>
+      <lipsync timecode="00:00:15:04" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:15:19" type="mpb"/>
+      <text>c'est ça et il faut absolument</text>
+      <lipsync timecode="00:00:17:22" type="mpb"/>
+      <text> que nous allions là bas le plus vite possible est ce </text>
+      <lipsync timecode="00:00:19:23" type="mpb"/>
+      <text>que vous pourriez nous indi</text>
+      <lipsync timecode="00:00:20:18" type="mpb"/>
+      <text>quer la route  </text>
+      <lipsync timecode="00:00:21:08" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:11:07" type="in_open"/>
+      <text>Némo</text>
+      <lipsync timecode="00:00:11:18" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:14:10" type="in_open"/>
+      <text>Sidney</text>
+      <lipsync timecode="00:00:14:22" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:00:22:10" type="in_open"/>
+      <text>Gentil petit n'ai pas peur gentil petit</text>
+      <lipsync timecode="00:00:25:04" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:26:18" type="in_open"/>
+      <text>Dory</text>
+      <lipsync timecode="00:00:27:10" type="mpb"/>
+      <text> moi je suis petit,</text>
+      <lipsync timecode="00:00:28:18" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:29:06" type="mpb"/>
+      <text>lui j'ai pas l'impression qu'il soit si pet</text>
+      <lipsync timecode="00:00:31:13" type="mpb"/>
+      <text>it que ça</text>
+      <lipsync timecode="00:00:32:02" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:00:33:03" type="in_open"/>
+      <text>Oh ?</text>
+      <lipsync timecode="00:00:33:14" type="mpb"/>
+      <text>  </text>
+      <lipsync timecode="00:00:33:22" type="mpb"/>
+      <text>Oh ? Gros petit ? Baleine ?</text>
+      <lipsync timecode="00:00:36:02" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:00:36:07" type="in_open"/>
+      <text>D'accord, elle parle peut etre</text>
+      <lipsync timecode="00:00:37:12" type="mpb"/>
+      <text> que baleine</text>
+      <lipsync timecode="00:00:38:14" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:00:39:19" type="in_open"/>
+      <text>Nous vouloir </text>
+      <lipsync timecode="00:00:42:08" type="mpb"/>
+      <lipsync link="off" timecode="00:00:45:05" type="mpb"/>
+      <text>retrouver son fi</text>
+      <lipsync timecode="00:00:46:18" type="mpb"/>
+      <text>ls</text>
+      <lipsync timecode="00:00:47:16" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:42:17" type="in_open"/>
+      <text>Euh  Dory</text>
+      <lipsync timecode="00:00:43:10" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:44:22" type="in_open"/>
+      <text>Dory arrêtes</text>
+      <lipsync timecode="00:00:45:12" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:46:10" type="in_open"/>
+      <text>Qu'est ce que tu fais ?...</text>
+      <lipsync timecode="00:00:47:04" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:47:16" type="mpb"/>
+      <text>est ce que tu es bien sur que tu parles baleine ?</text>
+      <lipsync timecode="00:00:49:10" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:00:49:13" type="in_open"/>
+      <text>Tu pourrais  n</text>
+      <lipsync timecode="00:00:51:11" type="mpb"/>
+      <text>ous i</text>
+      <lipsync timecode="00:00:52:17" type="mpb"/>
+      <text>ndiquer la route </text>
+      <lipsync timecode="00:00:55:18" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:51:18" type="in_open"/>
+      <text>Dory ...</text>
+      <lipsync timecode="00:00:52:02" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:52:10" type="mpb"/>
+      <text>mais va savoir ce qu'elle c</text>
+      <lipsync timecode="00:00:53:07" type="mpb"/>
+      <text>omprend là</text>
+      <lipsync timecode="00:00:53:23" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:55:05" type="in_open"/>
+      <text>Tiens tu vois elle s'en va </text>
+      <lipsync timecode="00:00:56:13" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:00:56:21" type="in_open"/>
+      <text>Re</text>
+      <lipsync timecode="00:00:57:14" type="mpb"/>
+      <text>viens____</text>
+      <lipsync timecode="00:00:59:24" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:00:58:19" type="in_open"/>
+      <text>Elle reviendras pas </text>
+      <lipsync timecode="00:00:59:12" type="mpb"/>
+      <text>tu vois tu l'as vexé</text>
+      <lipsync timecode="00:01:00:19" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:00:24" type="in_open"/>
+      <text>Peut etre un autre dialecte</text>
+      <lipsync timecode="00:01:01:20" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:02:16" type="in_open"/>
+      <text>Moeeeeummmm</text>
+      <lipsync timecode="00:01:04:05" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:01:03:11" type="in_open"/>
+      <text>Dory</text>
+      <lipsync timecode="00:01:03:18" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:04:23" type="in_open"/>
+      <text>Mouhhhaaaaaaaa</text>
+      <lipsync timecode="00:01:07:13" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:01:05:12" type="in_open"/>
+      <text>Arrete ça c'est pas du baleine</text>
+      <lipsync timecode="00:01:06:12" type="mpb"/>
+      <text>       on dirait plutot que t'as... des mo</text>
+      <lipsync timecode="00:01:07:23" type="mpb"/>
+      <text>ts d'estomac</text>
+      <lipsync timecode="00:01:08:17" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:08:23" type="in_open"/>
+      <text>Je peux peut etre essayer le cachalot</text>
+      <lipsync timecode="00:01:09:23" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:01:09:22" type="in_open"/>
+      <text>Non pas le cachalot je t'en prie</text>
+      <lipsync timecode="00:01:10:22" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:11:01" type="in_open"/>
+      <text>Bbleeeeeeeeeeeh</text>
+      <lipsync timecode="00:01:11:23" type="mpb"/>
+      <text> ouhhhhh b</text>
+      <lipsync timecode="00:01:12:16" type="mpb"/>
+      <text>leeeeeeeh</text>
+      <lipsync timecode="00:01:13:16" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:01:11:23" type="in_open"/>
+      <text>Oh c'est terrible</text>
+      <lipsync timecode="00:01:12:17" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:01:13:02" type="in_open"/>
+      <text>C'est de pire en pire</text>
+      <lipsync timecode="00:01:13:23" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:14:06" type="in_open"/>
+      <text>Plus fort peut etre ?</text>
+      <lipsync timecode="00:01:14:24" type="mpb"/>
+      <text>    Raaaaaaaahoouuuuu</text>
+      <lipsync timecode="00:01:15:18" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:01:15:22" type="mpb"/>
+      <text>Raaaaaaaaaah</text>
+      <lipsync timecode="00:01:16:14" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:01:17:00" type="mpb"/>
+      <text>Nan ça c'est de l'orque ça fait grandes orques hein </text>
+      <lipsync timecode="00:01:18:15" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:01:15:21" type="in_open"/>
+      <text>Nan...        arretes</text>
+      <lipsync timecode="00:01:17:01" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:01:18:16" type="in_open"/>
+      <text>Non ça fais pas grandes orques pas du tout ça ressemble a rien de connu</text>
+      <lipsync timecode="00:01:21:16" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:20:03" type="in_open"/>
+      <text>Moouuuuuuu hoouuuuuu         hou</text>
+      <lipsync timecode="00:01:21:19" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:22:20" type="in_open"/>
+      <text>(inspire_______________)</text>
+      <lipsync timecode="00:01:26:21" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:01:23:16" type="in_open"/>
+      <text>(soupir)                   Et s</text>
+      <lipsync timecode="00:01:25:04" type="mpb"/>
+      <text>i ça se trouve elle a rien mangé depuis</text>
+      <lipsync timecode="00:01:26:03" type="mpb"/>
+      <text> quinze jours</text>
+      <lipsync timecode="00:01:26:18" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:26:22" type="in_open"/>
+      <text>T'inquiètes pas les baleines ne mangent pas de poissons </text>
+      <lipsync timecode="00:01:28:12" type="mpb"/>
+      <text>elles mangent du krill</text>
+      <lipsync timecode="00:01:29:10" type="out_open"/>
+    </line>
+    <line role="krill" track="2">
+      <lipsync timecode="00:01:29:16" type="in_open"/>
+      <text>Sauve </text>
+      <lipsync timecode="00:01:29:23" type="mpb"/>
+      <text>qui peut______</text>
+      <lipsync timecode="00:01:31:01" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:30:22" type="in_open"/>
+      <text> Oh regardes du k</text>
+      <lipsync timecode="00:01:31:18" type="mpb"/>
+      <text>rill</text>
+      <lipsync timecode="00:01:32:00" type="out_open"/>
+    </line>
+    <line role="marin" track="1">
+      <lipsync timecode="00:01:35:09" type="in_open"/>
+      <text>Fuyons </text>
+      <lipsync timecode="00:01:35:19" type="mpb"/>
+      <text>Dory</text>
+      <lipsync timecode="00:01:36:14" type="mpb"/>
+      <text>   f</text>
+      <lipsync timecode="00:01:37:09" type="mpb"/>
+      <text>uyons____</text>
+      <lipsync timecode="00:01:38:20" type="out_open"/>
+    </line>
+    <line role="dory" track="0">
+      <lipsync timecode="00:01:36:14" type="in_open"/>
+      <text>Oh euh ah  Aaaaaaaaaahhhh</text>
+      <lipsync timecode="00:01:39:10" type="out_open"/>
+    </line>
+  </body>
+
+</detx>

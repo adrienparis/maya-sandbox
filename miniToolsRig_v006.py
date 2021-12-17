@@ -1152,9 +1152,10 @@ class MiniToolRig(Module):
         class Shape(object):
             size = 10.0
 
-            def __init__(self, joint=None):
+            def __init__(self, joint=None, cnx=True):
                 object.__init__(self)
                 self.created = False
+                self.cnx = cnx
                 self.object = None
                 self.joint = joint if cmds.objExists(joint) else None
                 self.name = joint if self.joint is None else joint.replace("sk_", "FK_")
@@ -1225,7 +1226,7 @@ class MiniToolRig(Module):
             def apply(self):
                 cmds.delete(self.object, constructionHistory = True)
                 cmds.makeIdentity(self.object, apply=True, t=True, r=True, s=True)
-                if self.joint is not None:
+                if self.joint is not None and self.cnx:
                     cmds.parentConstraint(self.object, self.joint, mo=True)
                     # cmds.scaleConstraint(self.object, self.joint, mo=True)
                     self.connectChildCtrl()
@@ -1350,7 +1351,7 @@ class MiniToolRig(Module):
                     j = (j + 3) % 12
                     y = (i / 6 * -2 + 1) * (close + ((j % 6) / 4  + (j % 6) / 6) * (far - close))
                     pointPos.append((x, 0, y))
-                self.object = cmds.curve(d=1, p=pointPos, k=range(0, 13))
+                self.object = cmds.curve(d=1, p=pointPos, k=range(0, 13), n=self.ctrlName)
 
             @classmethod
             def getListAttr(cls):
@@ -1377,17 +1378,90 @@ class MiniToolRig(Module):
                     cmds.xform(cv, a=True, os=True, translation=(x, 0, y))
 
         class ShapeArrow(Shape):
-            width = 50.0
-            pointiness = 1.0
+            height = 10.0
+            width = 10.0
+            thickness = 50.0
+            pointiness = 20.0
             def create(self):
                 pointPos = [
-                            (0, 0, 1),
-                            (4, 0, 1),
-                            (4, 0, 2),
-                            (8, 0, 0),
+                            [0, 0, 1],
+                            [4, 0, 1],
+                            [4, 0, 2],
+                            [8, 0, 0],
                             ]
-                pointPos = pointPos + [(x[0], x[1], x[2] * -1) for x in pointPos[::-1]] + [pointPos[0]]
-                self.object = cmds.curve(d=1, p=pointPos, k=range(0, len(pointPos)), os=True)
+                pointPos = pointPos + [[x[0], x[1], x[2] * -1] for x in pointPos[::-1]] + [pointPos[0]]
+                self.pointPos = pointPos
+                self.object = cmds.curve(d=1, p=pointPos, k=range(0, len(pointPos)), os=True, n=self.ctrlName)
+                cmds.setAttr("{}.tx".format(self.object), -4)
+                cmds.makeIdentity(self.object, t=True)
+
+            @classmethod
+            def getListAttr(cls):
+                attrs = MiniToolRig.MT_controlerShape.Shape.getListAttr(cls)
+                
+                attrs["height"][0] = "Height"
+                attrs["width"][0] = "Width"
+                attrs["thickness"][0] = "Thickness %"
+                attrs["pointiness"][0] = "Pointiness"
+
+                attrs["thickness"][2] = 33.333333
+
+                
+                attrs["height"][3] = "size"
+                attrs["width"][3] = "height"
+                attrs["thickness"][3] = "width"
+                attrs["pointiness"][3] = "thickness"
+
+                attrs["thickness"][4] = [0, 100]
+
+                return attrs
+
+            def _refreshPointPosition(self):
+                for i, p in enumerate(self.pointPos):
+                    cmds.xform("{}.cv[{}]".format(self.object, i), a=True, os=True, translation=p)
+                # cmds.setAttr("{}.tx".format(self.object), 0)
+
+            def update_thickness(self, value):
+                y = (value * 0.01) * self.pointPos[2][2]
+                self.pointPos[8][2] = y
+                self.pointPos[0][2] = y
+                self.pointPos[1][2] = y
+                self.pointPos[6][2] = -y
+                self.pointPos[7][2] = -y
+                self._refreshPointPosition()
+
+            def update_width(self, value):
+                y = value * 0.1
+                thickness = y - (self.pointPos[2][2] - self.pointPos[1][2])
+
+                self.pointPos[2][2] = y
+                self.pointPos[5][2] = -y
+
+                self.pointPos[0][2] = thickness
+                self.pointPos[1][2] = thickness                
+                self.pointPos[8][2] = thickness
+
+                self.pointPos[6][2] = -thickness
+                self.pointPos[7][2] = -thickness
+                self._refreshPointPosition()
+
+            def update_pointiness(self, value):
+                y = value * 0.1 + self.pointPos[1][0]
+                self.pointPos[3][0] = y
+                self.pointPos[4][0] = y
+                self._refreshPointPosition()
+
+            def update_height(self, value):
+                ptns = self.pointPos[3][0] - self.pointPos[1][0] + value * 0.1
+                y = value * 0.1
+                self.pointPos[1][0] = y
+                self.pointPos[2][0] = y
+                self.pointPos[5][0] = y
+                self.pointPos[6][0] = y
+
+                self.pointPos[3][0] = ptns
+                self.pointPos[4][0] = ptns
+                self._refreshPointPosition()
 
         class ShapeDart(Shape):
             width = 50.0
@@ -1401,7 +1475,7 @@ class MiniToolRig(Module):
                             (0, 0, 0),
                             ]
                 pointPos = pointPos + [(x[0], x[1], x[2] * -1) for x in pointPos[::-1]] + [pointPos[0]]
-                self.object = cmds.curve(d=1, p=pointPos, k=range(0, len(pointPos)), os=True)
+                self.object = cmds.curve(d=1, p=pointPos, k=range(0, len(pointPos)), os=True, n=self.ctrlName)
 
         class ShapePin(Shape):
             width = 50.0
@@ -1415,7 +1489,7 @@ class MiniToolRig(Module):
                             (1, 0, 3),
                             (0, 0, 2),
                             ]
-                self.object = cmds.curve(d=1, p=pointPos, k=range(0, len(pointPos)), os=True)
+                self.object = cmds.curve(d=1, p=pointPos, k=range(0, len(pointPos)), os=True, n=self.ctrlName)
         
         class ShapeText(Shape):
             pass
@@ -1445,11 +1519,26 @@ class MiniToolRig(Module):
                 cmds.deleteUI(self.winName)
             for s in self.shapes:
                 s.apply()
+            cmds.select(cl=True)
             cmds.undoInfo(cck=True)
+            cmds.select([s.ctrlName for s in self.shapes], add=True)
             
         def update(self, name, value):
             for s in self.shapes:
                 setattr(s, name, value)
+
+        @staticmethod
+        def sorteAttrs(attrs):
+            newAttrs = []
+            for k, v in attrs:
+                index = newAttrs.index(v[3]) if v[3] in newAttrs else -1
+                print(index)
+                if index > 0:
+                    newAttrs.insert(index, (k, v))
+                else:
+                    newAttrs.append((k, v))
+            print(newAttrs)
+            return newAttrs
 
         def window(self, shapeType):
             cmds.undoInfo(ock=True)
@@ -1463,7 +1552,9 @@ class MiniToolRig(Module):
             self._loadJobs()
 
             cLay = cmds.columnLayout(p=self.win, w=200, adj=True)
-            for k, v in shapeType.getListAttr().items():
+            attrs = shapeType.getListAttr().items()[:]
+            attrs = MiniToolRig.MT_controlerShape.sorteAttrs(attrs)
+            for k, v in attrs:
                 MiniToolRig.MC_slider(cLay, name=v[0], attr=k, changeFunc=self.update, type_=v[1], defaultValue=v[2], minMax=v[4]).load()
             cmds.showWindow(self.win)
 
@@ -1484,7 +1575,7 @@ class MiniToolRig(Module):
                 return None
             return name
 
-        def createShape(self, shape):
+        def createShape(self, shape, cnx=False):
             sel = cmds.ls(sl=True)
             sel = [x for x in sel if cmds.objectType(x) == "joint" and cmds.getAttr(x + ".v")]
             if len(sel) <= 0:
@@ -1511,7 +1602,7 @@ class MiniToolRig(Module):
                 shapeClass = MiniToolRig.MT_controlerShape.ShapePin
 
             for s in sel:
-                self.shapes.append(shapeClass(s))
+                self.shapes.append(shapeClass(s, cnx=cnx))
 
             cmds.select([x.object for x in self.shapes])
             self.window(type(self.shapes[0]))
@@ -1529,8 +1620,8 @@ class MiniToolRig(Module):
                             
             lastSb = "FORM"
             for sb in shapeButton:
-                annotation = "| simple clic:\tCreate a {} shape on world center\n| double clic:\tCreate a FK ctrl with a {} shape along selected joint".format(sb[0], sb[0])
-                lastSb = self.attach(cmds.iconTextButton(parent=self.layout, style='iconOnly', ann=annotation, w=w, h=h, image1=sb[1], c=Callback(self.createShape, sb)), top="FORM", left=lastSb)
+                annotation = "| simple clic:\tCreate a FK ctrl with a {} shape along selecteds joints\n| double clic:\tCreate a FK ctrl with a {} shape along selecteds joints and do the connections".format(sb[0], sb[0])
+                lastSb = self.attach(cmds.iconTextButton(parent=self.layout, style='iconOnly', ann=annotation, w=w, h=h, image1=sb[1], c=Callback(self.createShape, sb), dcc=Callback(self.createShape, sb, True)), top="FORM", left=lastSb)
             lastSb = self.attach(cmds.iconTextButton(parent=self.layout, style='iconOnly', ann="Open Library", w=w, h=h, image1="Objects.png", en=False), top="FORM", right="FORM")
 
             self.applyAttach()

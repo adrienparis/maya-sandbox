@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<detx copyright="Chinkel S.A., 2007-2021">
+
+  <header>
+    <cappella version="3.7.0"/>
+    <videofile timestamp="00:00:00:01">D:\Doublage\Extrait vidéo\Le roi lion - Scar et les hyènes.mp4</videofile>
+    <last_position timecode="00:01:46:09" track="2"/>
+  </header>
+
+  <roles>
+    <role color="#002FA7" description="" id="benzai" name="Benzai"/>
+    <role color="#000000" description="" id="scar" name="Scar"/>
+    <role color="#C80815" description="" id="shenzi" name="Shenzi"/>
+  </roles>
+
+  <body>
+    <loop number="1" timecode="00:00:00:01"/>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:01:05" type="in_open"/>
+      <text>Oh </text>
+      <lipsync timecode="00:00:01:12" type="mpb"/>
+      <text>qu'elle brute ce Mufasa</text>
+      <lipsync timecode="00:00:02:17" type="mpb"/>
+      <text>  </text>
+      <lipsync timecode="00:00:03:06" type="mpb"/>
+      <text>j'vais pas pouvoir m'asseoir pen</text>
+      <lipsync timecode="00:00:04:01" type="mpb"/>
+      <text>dant une</text>
+      <lipsync timecode="00:00:04:10" type="mpb"/>
+      <text> semaine </text>
+      <lipsync timecode="00:00:05:00" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:08:18" type="in_open"/>
+      <text>J'trouve pas ça drole</text>
+      <lipsync timecode="00:00:09:19" type="mpb"/>
+      <text>  Ed</text>
+      <lipsync timecode="00:00:10:08" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:14:07" type="in_open"/>
+      <text>Eh la ferme </text>
+      <lipsync timecode="00:00:15:03" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:16:09" type="in_open"/>
+      <text>(grognement) </text>
+      <lipsync timecode="00:00:17:04" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:19:03" type="in_open"/>
+      <text>C'est finit</text>
+      <lipsync timecode="00:00:19:20" type="mpb"/>
+      <text> oui</text>
+      <lipsync timecode="00:00:20:13" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:22:02" type="in_open"/>
+      <text>Eh c'est lui qu'a commencé</text>
+      <lipsync timecode="00:00:23:03" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:23:09" type="in_open"/>
+      <text>Nan mais r'gardez vous</text>
+      <lipsync timecode="00:00:24:12" type="mpb"/>
+      <text>                 pas </text>
+      <lipsync timecode="00:00:25:05" type="mpb"/>
+      <text>etonnant qu'on s'balance au bout d'la chaine alimentaire</text>
+      <lipsync timecode="00:00:27:14" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:27:18" type="in_open"/>
+      <text>Moi j'aime pas</text>
+      <lipsync timecode="00:00:28:05" type="mpb"/>
+      <text> m'balancer</text>
+      <lipsync timecode="00:00:28:24" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:28:23" type="in_open"/>
+      <text>Ah oui ?</text>
+      <lipsync timecode="00:00:29:12" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:29:17" type="mpb"/>
+      <text>vous savez qu'si y avait pas les lions</text>
+      <lipsync timecode="00:00:31:10" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:31:18" type="mpb"/>
+      <text>c'est nous qui menerions la danse</text>
+      <lipsync timecode="00:00:32:20" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:32:21" type="in_open"/>
+      <text>Moi j'les aime pas non plus les lions </text>
+      <lipsync timecode="00:00:34:09" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:34:10" type="in_open"/>
+      <text>Ils sont poilus</text>
+      <lipsync timecode="00:00:35:09" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:35:09" type="in_open"/>
+      <text>Orgueuilleux</text>
+      <lipsync timecode="00:00:36:07" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:36:08" type="in_open"/>
+      <text>Et puants</text>
+      <lipsync timecode="00:00:37:01" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:37:06" type="in_open"/>
+      <text>Et en plus ils sont</text>
+      <lipsync timecode="00:00:38:06" type="mpb"/>
+      <text>  </text>
+      <lipsync timecode="00:00:38:20" type="mpb"/>
+      <text>aaaf</text>
+      <lipsync timecode="00:00:39:22" type="mpb"/>
+      <text>freux ah ah ah ah ah ah ah </text>
+      <lipsync timecode="00:00:43:03" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:38:20" type="in_open"/>
+      <text>aaaaffreux</text>
+      <lipsync timecode="00:00:40:14" type="mpb"/>
+      <text> ah    ah   ah ah ah ah </text>
+      <lipsync timecode="00:00:43:03" type="out_open"/>
+    </line>
+    <line role="scar" track="2">
+      <lipsync timecode="00:00:42:03" type="in_open"/>
+      <text>Oooooh </text>
+      <lipsync timecode="00:00:42:24" type="mpb"/>
+      <text>tous les lions ne sont pas comm</text>
+      <lipsync timecode="00:00:45:02" type="mpb"/>
+      <text>e ça </text>
+      <lipsync timecode="00:00:45:18" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:46:02" type="in_open"/>
+      <text>Oh oh </text>
+      <lipsync timecode="00:00:46:19" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:46:20" type="in_open"/>
+      <text>Oh Sc</text>
+      <lipsync timecode="00:00:47:18" type="mpb"/>
+      <text>ar   </text>
+      <lipsync timecode="00:00:48:05" type="mpb"/>
+      <text> ça n'est qu'</text>
+      <lipsync timecode="00:00:48:20" type="mpb"/>
+      <text>toi </text>
+      <lipsync timecode="00:00:49:02" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:49:00" type="in_open"/>
+      <text>On croyait qu'c'était quelqu'un </text>
+      <lipsync timecode="00:00:50:09" type="mpb"/>
+      <text>d'important</text>
+      <lipsync timecode="00:00:51:06" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:51:06" type="in_open"/>
+      <text>Dans le genre</text>
+      <lipsync timecode="00:00:51:16" type="mpb"/>
+      <text> Mufasa</text>
+      <lipsync timecode="00:00:52:13" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:52:13" type="in_open"/>
+      <text>Oh oui</text>
+      <lipsync timecode="00:00:53:01" type="out_open"/>
+    </line>
+    <line role="scar" track="2">
+      <lipsync timecode="00:00:53:06" type="in_open"/>
+      <text>Je </text>
+      <lipsync timecode="00:00:53:12" type="mpb"/>
+      <text>vois___</text>
+      <lipsync timecode="00:00:54:08" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:54:01" type="in_open"/>
+      <text>Alors lui</text>
+      <lipsync timecode="00:00:54:17" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:00:54:24" type="mpb"/>
+      <text>il est puissant</text>
+      <lipsync timecode="00:00:55:19" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:55:14" type="in_open"/>
+      <text>M'en parle pas </text>
+      <lipsync timecode="00:00:56:11" type="mpb"/>
+      <text>rien qu'à son nom </text>
+      <lipsync timecode="00:00:57:16" type="mpb"/>
+      <text>j'en peux</text>
+      <lipsync timecode="00:00:58:05" type="mpb"/>
+      <text> plus</text>
+      <lipsync timecode="00:00:58:18" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:00:58:08" type="in_open"/>
+      <text>Mufasa__</text>
+      <lipsync timecode="00:00:59:02" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:00:59:05" type="in_open"/>
+      <text>Ouuuuuh         e</text>
+      <lipsync timecode="00:01:00:07" type="mpb"/>
+      <text>ncore une fois</text>
+      <lipsync timecode="00:01:01:02" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:01:01:03" type="in_open"/>
+      <text>Mufasa</text>
+      <lipsync timecode="00:01:02:01" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:01:01:20" type="in_open"/>
+      <text>Ouuuuh</text>
+      <lipsync timecode="00:01:02:12" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:01:03:00" type="in_open"/>
+      <text>Mufasa </text>
+      <lipsync timecode="00:01:03:11" type="mpb"/>
+      <text>Mufasa M</text>
+      <lipsync timecode="00:01:04:03" type="mpb"/>
+      <text>ufasa</text>
+      <lipsync timecode="00:01:04:20" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:01:03:07" type="in_open"/>
+      <text>Ouuuh  ouuuh ouuuh</text>
+      <lipsync timecode="00:01:05:07" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:01:05:08" type="in_open"/>
+      <text>J'en ai des frissons </text>
+      <lipsync timecode="00:01:06:02" type="mpb"/>
+      <text>partout</text>
+      <lipsync timecode="00:01:06:24" type="out_open"/>
+    </line>
+    <line role="scar" track="2">
+      <lipsync timecode="00:01:07:04" type="in_open"/>
+      <text>Je patauge dans l'i</text>
+      <lipsync timecode="00:01:08:13" type="mpb"/>
+      <text>mbécilité</text>
+      <lipsync timecode="00:01:09:14" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:01:09:18" type="in_open"/>
+      <text>Nan c'est pas pareil toi t'e</text>
+      <lipsync timecode="00:01:11:02" type="mpb"/>
+      <text>s comme nous</text>
+      <lipsync timecode="00:01:11:13" type="mpb"/>
+      <text> </text>
+      <lipsync timecode="00:01:11:17" type="mpb"/>
+      <text>toi t'es notre copain</text>
+      <lipsync timecode="00:01:12:20" type="out_open"/>
+    </line>
+    <line role="scar" track="2">
+      <lipsync timecode="00:01:13:04" type="in_open"/>
+      <text>Cha</text>
+      <lipsync timecode="00:01:13:13" type="mpb"/>
+      <text>rmé</text>
+      <lipsync timecode="00:01:14:04" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:01:14:06" type="in_open"/>
+      <text>Oh quelle cl</text>
+      <lipsync timecode="00:01:15:11" type="mpb"/>
+      <text>asse    il est  pas roi mais il a du savoir vivre</text>
+      <lipsync timecode="00:01:18:16" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:01:18:16" type="in_open"/>
+      <text>Oh oui ! Eh il nous a apporté quelque chose a manger le vieux copain</text>
+      <lipsync timecode="00:01:20:21" type="mpb"/>
+      <text> hein dit dit dit dit dit</text>
+      <lipsync timecode="00:01:22:08" type="out_open"/>
+    </line>
+    <line role="scar" track="2">
+      <lipsync timecode="00:01:22:20" type="in_open"/>
+      <text>Je ne suis pas sur </text>
+      <lipsync timecode="00:01:23:13" type="mpb"/>
+      <text>que vous le </text>
+      <lipsync timecode="00:01:24:01" type="mpb"/>
+      <text>méritiez</text>
+      <lipsync timecode="00:01:25:00" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:01:25:06" type="in_open"/>
+      <text>(halete)____________________________</text>
+      <lipsync timecode="00:01:31:22" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:01:25:06" type="in_open"/>
+      <text>(halete)____________________________</text>
+      <lipsync timecode="00:01:31:22" type="out_open"/>
+    </line>
+    <line role="scar" track="2">
+      <lipsync timecode="00:01:25:06" type="in_open"/>
+      <text>Je vous ai servi les deux lionceaux sur un plateau</text>
+      <lipsync timecode="00:01:28:02" type="mpb"/>
+      <text>      et vous vous êtes conduites c</text>
+      <lipsync timecode="00:01:29:15" type="mpb"/>
+      <text>omme des</text>
+      <lipsync timecode="00:01:30:01" type="mpb"/>
+      <text> incapables</text>
+      <lipsync timecode="00:01:31:06" type="out_open"/>
+    </line>
+    <line role="shenzi" track="1">
+      <lipsync timecode="00:01:33:23" type="in_open"/>
+      <text>Eh il faut dire que</text>
+      <lipsync timecode="00:01:34:16" type="mpb"/>
+      <text>...      </text>
+      <lipsync timecode="00:01:35:03" type="mpb"/>
+      <text>       c'est pas exactement comme si ils avaient été tout</text>
+      <lipsync timecode="00:01:37:22" type="mpb"/>
+      <text> seuls</text>
+      <lipsync timecode="00:01:38:08" type="out_open"/>
+    </line>
+    <line role="benzai" track="0">
+      <lipsync timecode="00:01:38:18" type="in_open"/>
+      <text>Bah oui </text>
+      <lipsync timecode="00:01:39:02" type="mpb"/>
+      <text>      qu'est ce qu'il fallait faire ?</text>
+      <lipsync timecode="00:01:40:11" type="mpb"/>
+      <text>                          Tuer Mufasa ?</text>
+      <lipsync timecode="00:01:42:11" type="out_open"/>
+    </line>
+    <line role="scar" track="2">
+      <lipsync timecode="00:01:44:14" type="in_open"/>
+      <text>Pré</text>
+      <lipsync timecode="00:01:44:22" type="mpb"/>
+      <text>cisément</text>
+      <lipsync timecode="00:01:46:00" type="out_open"/>
+    </line>
+  </body>
+
+</detx>
