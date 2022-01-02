@@ -103,6 +103,7 @@ class Module(object):
         self.childrens = []
         self.parent = None
         self.setParent(parent)
+        self.command = {}
         self._scriptJobIndex = []
         self.childrenLayout = None
         self.layout = None
@@ -240,7 +241,6 @@ class Module(object):
         # Example : 
         # self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", Callback(self.methode)]))
         raise Exception('_loadJobs function not implemented')
-
     def _killJobs(self):
         '''Kill all jobs
         '''
@@ -248,6 +248,7 @@ class Module(object):
             cmds.scriptJob(kill=i, f=True)
         self._scriptJobIndex = []
 
+    # drag&Drop
     def _dragCb(self, dragControl, x, y, modifiers):
         Module.drag = self
         
@@ -257,13 +258,28 @@ class Module(object):
         self.dragged = True
         cmds.layout(self.layout, e=True, ebg=True)
         cmds.layout(self.layout, e=True, bgc=Module.BLUE)
-
     def _dropCb(self, dragControl, dropControl, messages, x, y, dragType):
         cmds.layout(Module.drag.layout, e=True, bgc=Module.drag.bgc)
         cmds.layout(Module.drag.layout, e=True, ebg=Module.drag.ebg)
         Module.drag.dragged = False
         Module.drag.move(self)
         Module.drag = None
+
+    # Events
+    def eventHandler(self, event, c, *args):
+        if not event in self.command:
+            self.command[event] = []
+        self.command[event].append((c, args))
+    def runEvent(self, event, *args):
+        if not event in self.command:
+            return
+        for c in self.command[event]:
+            if c[0] is None:
+                # cmds.error("Event \"" + event + "\" call a function not implemented yet -WIP-")
+                log.warning("Event \"" + event + "\" call a function not implemented yet -WIP-")
+                continue
+            a = c[1] + args
+            c[0](*a)
 
 def info(message):
     print(" ")
@@ -1613,7 +1629,7 @@ class MiniToolRig(Module):
             shapeButton = [["circle", "circle.png"],
                             ["star", "polyUltraShape.png"],
                             ["cross", "QR_add.png"],
-                            ["arrow", "SP_FileDialogForward_Disabled.png"],
+                            ["arrow", "UVTkNudgeRight.png"],
                             ["dart", "nodeGrapherNext.png"],
                             ["pin", "pinItem.png"],
                             ["text", "text.png"]]
