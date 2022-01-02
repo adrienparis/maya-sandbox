@@ -245,6 +245,7 @@ class Module(object):
     def _load(self):
         object.__getattribute__(self, "load")()
         cmds.scriptJob(ro=True, uid=[self.layout, Callback(self._killJobs)])
+        cmds.scriptJob(ro=True, uid=[self.layout, Callback(self.unload)])
         self._loadJobs()
         return self
 
@@ -259,11 +260,14 @@ class Module(object):
         self.unload()
         self.load()
 
-    def unload(self):
+    def _unload(self):
         if self.layout == None:
             return self
-        cmds.deleteUI(self.layout)
+        if cmds.workspaceControl(self.layout, exists=1):
+            cmds.deleteUI(self.layout)
         return self
+    def unload(self):
+        pass
 
     def refresh(self):
         pass
@@ -319,7 +323,6 @@ class Module(object):
             self.command[event] = []
         self.command[event].append((c, args))
     def runEvent(self, event, *args):
-        print(event)
         if not event in self.command:
             return
         for c in self.command[event]:
@@ -567,7 +570,8 @@ class Publisher(Module):
 
 
         def infoColorPath(self, paths):
-            print("infoColorPath", paths)
+            if self.lockColor:
+                return
             for path, state in paths:
                 self.changeColor(path, Publisher.THEME_VALIDATION if state else Publisher.THEME_ERROR)
             self.t_resetColor()
@@ -654,7 +658,6 @@ class Publisher(Module):
                 cmds.formLayout(self.childrenLayout,e=True, w=cmds.scrollLayout(self.scrlLay, q=True, w=True) - 5)
 
         def setActiveTab(self, id):
-            print(self.activeTab)
             self.activeTab = id
             for b, e in zip(self.tabsButtons, self.tabsContent):
                 cmds.control(b, e=True, bgc=Publisher.THEME_BUTTON)
@@ -668,8 +671,9 @@ class Publisher(Module):
                 return
             self.currentTabLay = e.layout if isinstance(e, Module) else e
             cmds.control(self.currentTabLay, e=True, vis=True)
-            print(self.activeTab)
-                
+
+        def getActiveTab(self):
+            return self.activeTab
 
         @callback
         def switch(self, id):
@@ -860,7 +864,6 @@ class Publisher(Module):
     __prefName = "Publisher"
     @staticmethod
     def writePref(name, value):
-        print(name, value)
         prefVars = {} 
         fPath = os.path.join(Publisher.__prefPath, Publisher.__prefName + ".pref")
         if not os.path.isdir(Publisher.__prefPath):
@@ -935,26 +938,27 @@ class Publisher(Module):
         # Events
         #   Common sync 
         self.SyncCommon.eventHandler("btn_backup", self.SyncCommon.backupEvent, self.paths.getLocalPath(), self.paths.getRelativePath(), self.paths.getDrivesPath())
-        self.SyncCommon.eventHandler("btn_publish", info, self.tabs.activeTab)
         self.SyncCommon.eventHandler("btn_upload", self.SyncCommon.backupEvent, self.paths.getLocalPath(), self.paths.getRelativePath(), self.paths.getDrivesPath())
         self.SyncCommon.eventHandler("outputInfoPath", self.paths.infoColorPath)
         #   Anim sync
         self.SyncAnimation.eventHandler("btn_backup", self.SyncCommon.backupEvent, self.paths.getLocalPath(), self.paths.getRelativePath(), self.paths.getDrivesPath())
-        self.SyncAnimation.eventHandler("btn_publish", info, self.tabs.activeTab)
         self.SyncAnimation.eventHandler("btn_upload", self.SyncCommon.backupEvent, self.paths.getLocalPath(), self.paths.getRelativePath(), self.paths.getDrivesPath())
         self.SyncAnimation.eventHandler("outputInfoPath", self.paths.infoColorPath)
 
         self.attach(self.tabs, top=self.paths, bottom="FORM", left="FORM", right="FORM", margin=(2,2,2,2))
 
-        cmds.scriptJob(ro=True, uid=[self.layout, Callback(self.writePref, "currentTab", self.tabs.activeTab)])
         self.applyAttach()
         info("[{}] -> loaded!".format(self.name))
         return self
 
-    def unload(self):
+    def _unload(self):
         if self.win == None:
             return self
-        cmds.deleteUI(self.win)
+        if cmds.workspaceControl(self.win, exists=1):
+            cmds.deleteUI(self.win)
+        return self
+    def unload(self):
+        self.writePref("currentTab", self.tabs.getActiveTab())
         return self
 
 if __name__ == "__main__":
