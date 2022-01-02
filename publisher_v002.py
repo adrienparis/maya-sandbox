@@ -823,7 +823,8 @@ class Publisher(Module):
         img      {{width: 30; height:30;}}
         p        {{margin-left&#58; 30px;}}
         </style>
-        """  
+        """
+        __iconsPath = os.path.expanduser('~/') + "maya/2020/prefs/icons/default/"
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
             self.scrlLay = self.attach(cmds.scrollLayout("scrlLay", parent=self.layout, cr=True), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
@@ -833,9 +834,12 @@ class Publisher(Module):
             themes = {c:'#%02x%02x%02x' % (getattr(Publisher, c)[0] * 255, getattr(Publisher, c)[1] * 255, getattr(Publisher, c)[2] * 255) for c in dir(Publisher) if c.startswith("THEME_")}
             colors = {c:'#%02x%02x%02x' % (getattr(Publisher, c)[0] * 255, getattr(Publisher, c)[1] * 255, getattr(Publisher, c)[2] * 255) for c in dir(Publisher) if c.startswith("COLOR_")}
             images = {i:getattr(Publisher, i) for i in dir(Publisher) if i.startswith("IMAGE_")}
+            if not os.path.exists(self.__iconsPath):
+                os.makedirs(self.__iconsPath)
             for name, path in images.items():
-                cmds.resourceManager(s=(path, "C:/Users/paris_a/Documents/maya/2020/prefs/icons/factory/{0}".format(path)))
-            images = {i:"C:/Users/paris_a/Documents/maya/2020/prefs/icons/factory/{}".format(getattr(Publisher, i)) for i in dir(Publisher) if i.startswith("IMAGE_")}
+                if not os.path.exists(os.path.join(self.__iconsPath, path)):
+                    cmds.resourceManager(s=(path, os.path.join(self.__iconsPath, path)))
+            images = {i:os.path.join(self.__iconsPath, getattr(Publisher, i)) for i in dir(Publisher) if i.startswith("IMAGE_")}
             info = {
                 "NAME": str(Publisher().__class__.__name__),
                 "AUTHOR": __author__,
@@ -852,7 +856,7 @@ class Publisher(Module):
             txt = txt.format(**context)
             prev = "FORM"
             prev = self.attach(cmds.text(p=self.childrenLayout, l=txt), top=prev, bottom=None, left="FORM", right="FORM", margin=(1,1,1,1))
-            with open(r"C:\Users\paris_a\Documents\maya\2020\prefs\icons\factory\test.html", "w+") as f:
+            with open(os.path.join(self.__iconsPath, "test.html"), "w+") as f:
                 f.write(txt)
 
             # for l in Publisher().__doc__.splitlines():
