@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<toast scenario="IncomingCall">
+<!-- <toast scenario="IncomingCall"> -->
 <!-- <toast scenario="reminder"> -->
+<toast>
     <visual>
         <binding template="ToastImageAndText04">
             <image placement="appLogoOverride" hint-crop="circle" src="https://picsum.photos/48?image=883"/>
@@ -31,7 +32,7 @@
         
         <action
             content="Oui"
-            arguments="activated"
+            arguments="action=activated"
             activationType="background"
             hint-inputId="time"/>
 
