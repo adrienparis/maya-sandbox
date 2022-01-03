@@ -328,8 +328,6 @@ class Module(object):
             return
         for c in self.command[event]:
             if c[0] is None:
-                # cmds.error("Event \"" + event + "\" call a function not implemented yet -WIP-")
-                log.warning("Event \"" + event + "\" call a function not implemented yet -WIP-")
                 continue
             a = c[1] + args
             c[0](*a)
@@ -427,21 +425,21 @@ class Publisher(Module):
 
     class MT_Paths(Module):
         """        
-        <h2>The Header of the application</h2>
-        <p>The top part of the application is to define the location of differents path</p>
-        <p>The <span class="publish">top line</span> indicate your "set project"</p>
-        <p>You can add a path to an other "set project" of a drive with <img src="{IMAGE_ADD}" style="background-color:{THEME_BUTTON}"/> to be sync latter</p>
-        <p>The added path will be this <span class="drives" > color</span></p>
-        <p>You can click on <img src="{IMAGE_DELETE}" style="background-color:{THEME_BUTTON}"/> at any time to remove a drive</p>
-        <p>The <span class="local"> last line</span> should display the path of your current opened file in maya relative to your set project</p>
-        <p>The opened file should be in the tree of the current project, or else it will display his absolute path</p>
-        <p>The color code works as follow:</p>
-        <ul>
-        <li> This <span class="publish"> color</span> for local project, or publishs</li>
-        <li> This <span class="drives"> color</span> for project in an other drive. (in a backup/shared drive)</li>
-        <li> This <span class="local"> color</span> for files related to wip files</li>
-        </ul>
-        <p></p>
+            <h2>The Header of the application</h2>
+            <p>The top part of the application is to define the location of differents path</p>
+            <p>The <span class="publish">top line</span> indicate your "set project"</p>
+            <p>You can add a path to an other "set project" of a drive with <img src="{IMAGE_ADD}" style="background-color:{THEME_BUTTON}"/> to be sync latter</p>
+            <p>The added path will be this <span class="drives" > color</span></p>
+            <p>You can click on <img src="{IMAGE_DELETE}" style="background-color:{THEME_BUTTON}"/> at any time to remove a drive</p>
+            <p>The <span class="local"> last line</span> should display the path of your current opened file in maya relative to your set project</p>
+            <p>The opened file should be in the tree of the current project, or else it will display his absolute path</p>
+            <p>The color code works as follow:</p>
+            <ul>
+            <li> This <span class="publish"> color</span> for local project, or publishs</li>
+            <li> This <span class="drives"> color</span> for project in an other drive. (in a backup/shared drive)</li>
+            <li> This <span class="local"> color</span> for files related to wip files</li>
+            </ul>
+            <p></p>
         """
         def __init__(self, parent):
             Module.__init__(self, parent)
@@ -567,7 +565,9 @@ class Publisher(Module):
         def getRelativePath(self):
             return self.relativePath.path
         def getDrivesPath(self):
-            return [p for p in self.savePaths[self.localPath.path]]
+            if self.localPath.path in self.savePaths:
+                return [p for p in self.savePaths[self.localPath.path]]
+            return []
 
 
         def infoColorPath(self, paths):
@@ -721,28 +721,29 @@ class Publisher(Module):
 
     class MT_SyncCommon(Module):
         """
-        <h2>Common Synchronisation</h2>
-        <p>This section is made to match everybody's needs in term of preparing, publishing and uploading your version</p>
-        <p>To publish your version, first of all, you should have a WIP file openned</p>
-        <p>and have this file in the current project</p>
-        <p>then you can press on <img src="{IMAGE_PUBLISH}" class="publish"/></p>
-        <p>That will :</p>
-        <ul>
-            <li>Copy your current wip to the root folder of the asset and rename it</li>
-            <li>Copy it to the "versions" folder in  the root of the asset and rename it</li>
-            <li>Create a tumbnail of the current version and save it at the root and the versions' folder</li>
-            <li>Revert back to your current WIP, if you stored it with a "prepare publish"</li>
-            <li>Save a new WIP and rename it to the next version</li>
-        </ul>
-        <p>If you want to clean your scene before publishing it,</p>
-        <p>but still want to work with messy stuff in the future</p>
-        <p>Use the "prepare publish" button</p>
-        <p><img src="{IMAGE_CLEAN}" class="button"/></p>
-        <p>It will save your current WIP to a new scene, and store it so you can rollback to it if you change your mind</p>
-        <p>or it'll rollback itself when you publish it</p>
-        <p></p>
-        <p>To rollback when you change your mind press <img src="{IMAGE_UNDO}" class="button"/></p>
-        <p>It will restore you're last wip</p>
+            <h2>Common Synchronisation</h2>
+            <p>This section is made to match everybody's needs in term of preparing, publishing and uploading your version</p>
+            <p>To publish your version, first of all, you should have a WIP file openned</p>
+            <p>and have this file in the current project</p>
+            <p>then you can press on <img src="{IMAGE_PUBLISH}" class="publish"/></p>
+            <p>That will :</p>
+            <ul>
+                <li>Copy your current wip to the root folder of the asset and rename it</li>
+                <li>Copy it to the "versions" folder in  the root of the asset and rename it</li>
+                <li>Create a tumbnail of the current version and save it at the root and the versions' folder</li>
+                <li>Clean the Student Licences pop-up</li>
+                <li>Revert back to your current WIP, if you stored it with a "prepare publish"</li>
+                <li>Save a new WIP and rename it to the next version</li>
+            </ul>
+            <p>If you want to clean your scene before publishing it,</p>
+            <p>but still want to work with messy stuff in the future</p>
+            <p>Use the "prepare publish" button</p>
+            <p><img src="{IMAGE_CLEAN}" class="button"/></p>
+            <p>It will save your current WIP to a new scene, and store it so you can rollback to it if you change your mind</p>
+            <p>or it'll rollback itself when you publish it</p>
+            <p></p>
+            <p>To rollback when you change your mind press <img src="{IMAGE_UNDO}" class="button"/></p>
+            <p>It will restore you're last wip</p>
         """
 
         def backupEvent(self, localpath, relativePath, drivesPaths):
@@ -776,8 +777,20 @@ class Publisher(Module):
 
     class MT_SyncAnimation(Module):
         """
-        <h2>Annimation Synchronisation</h2>
-        <p>Work in progress</p>
+            <h2>Annimation Synchronisation</h2>
+            <p>Work in progress</p>
+            <p>This section is made for animator when they want to do a "confo"</p>
+            <p>When pressing the <img src="{IMAGE_PUBLISH}" class="publish" /> confo button</p>
+            <p>It will :</p>
+            <ul>
+                <li>copy</li>
+                <li>replace rig by surf</li>
+                <li>increment version</li>
+                <li>take a playblast</li>
+            </ul>
+            <p></p>
+            <p></p>
+            <p></p>
         """
         def backupEvent(self, localpath, relativePath, drivesPaths):
             #TODO set the real state of sync by path
@@ -805,8 +818,8 @@ class Publisher(Module):
 
     class MT_Settings(Module):
         """
-        <h2>Settings</h2>
-        <p> Work in progress</p>
+            <h2>Settings</h2>
+            <p> Work in progress</p>
         """
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
@@ -814,22 +827,24 @@ class Publisher(Module):
 
     class MT_info(Module):
         style = """
-        <style>
-        *        {{text-align: left;}}
-        .local   {{background-color: {THEME_RELATIVE}; color:{COLOR_BLACK}}}
-        .publish {{background-color: {THEME_LOCAL}; color:{COLOR_BLACK}}}
-        .drives  {{background-color: {THEME_SAVE}; color:{COLOR_BLACK}}}
-        .button  {{background-color: {THEME_BUTTON};}}
-        ul       {{margin-left&#58; 30px;}}
-        img      {{width: 30; height:30;}}
-        p        {{margin-left&#58; 30px;}}
-        </style>
+            <style>
+            *        {{text-align: left;}}
+            .local   {{background-color: {THEME_RELATIVE}; color:{COLOR_BLACK}}}
+            .publish {{background-color: {THEME_LOCAL}; color:{COLOR_BLACK}}}
+            .drives  {{background-color: {THEME_SAVE}; color:{COLOR_BLACK}}}
+            .button  {{background-color: {THEME_BUTTON};}}
+            ul       {{margin-left&#58; 30px;}}
+            img      {{width: 30; height:30;}}
+            p        {{margin-left&#58; 30px;}}
+            </style>
         """
         @callback
         def openTicket(self):
-            subject = "[Ticket] // {} // ...".format(str(Publisher().__class__.__name__))
+            subject = "[Ticket] // {} v{}// ...".format(str(Publisher().__class__.__name__), __version__)
             subject = urllib.quote_plus(subject)
-            body = "v{}".format(__version__)
+            body = r"Your message here\nChange the ... in the subject to the name of the issue\nBe precise, short and nice"
+            "%0D%0A".join(body.splitlines())
+            print(body)
             # body = urllib.quote_plus(body)
             webbrowser.open("mailto:{}?subject={}&body={}".format(__email__, subject, body))
 
@@ -869,6 +884,41 @@ class Publisher(Module):
             with open(os.path.join(self.__iconsPath, "test.html"), "w+") as f:
                 f.write(txt)
             self.applyAttach()
+
+    class Sync():
+        def __init__(self):
+            self.command = []
+        # Events
+        def eventHandler(self, event, c, *args):
+            if not event in self.command:
+                self.command[event] = []
+            self.command[event].append((c, args))
+        def runEvent(self, event, *args):
+            if not event in self.command:
+                return
+            for c in self.command[event]:
+                if c[0] is None:
+                    continue
+                a = c[1] + args
+                c[0](*a)
+
+        def publish(self):
+            pass
+
+        def confo(self):
+            pass
+
+        def backup(self):
+            pass
+
+        def prepPublish(self):
+            pass
+
+        def rollBack(self):
+            pass
+
+        def cleanStudent(self):
+            pass
 
     __prefPath = os.path.expanduser('~/') + "maya/2020/prefs/cs"
     __prefName = "Publisher"
