@@ -745,16 +745,9 @@ class Publisher(Module):
             <p>To rollback when you change your mind press <img src="{IMAGE_UNDO}" class="button"/></p>
             <p>It will restore you're last wip</p>
         """
-
-        def backupEvent(self, localpath, relativePath, drivesPaths):
-            #TODO set the real state of sync by path
-            info = [(p, bool(random.randint(0,1))) for p in drivesPaths]
-            self.runEvent("outputInfoPath", info)
-
-        def uploadToDriveshEvent(self, localpath, relativePath, drivesPaths):
-            #TODO set the real state of sync by path
-            info = [(p, bool(random.randint(0,1))) for p in drivesPaths]
-            self.runEvent("outputInfoPath", info)
+        def lockPrepPublish(self, lock):
+            cmds.control(self.btn_prep, e=True, en=not lock)
+            cmds.control(self.btn_rollBack, e=True, en=lock)
 
         def load(self):
             m = 2
@@ -774,7 +767,7 @@ class Publisher(Module):
             self.lay_comment = self.attach(cmds.scrollField(p=self.lay_stf, editable=True, wordWrap=False, vis=True, fn="smallPlainLabelFont"), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
 
             self.applyAttach()
-
+            
     class MT_SyncAnimation(Module):
         """
             <h2>Annimation Synchronisation</h2>
@@ -842,10 +835,8 @@ class Publisher(Module):
         def openTicket(self):
             subject = "[Ticket] // {} v{}// ...".format(str(Publisher().__class__.__name__), __version__)
             subject = urllib.quote_plus(subject)
-            body = r"Your message here\nChange the ... in the subject to the name of the issue\nBe precise, short and nice"
-            "%0D%0A".join(body.splitlines())
-            print(body)
-            # body = urllib.quote_plus(body)
+            body = r"Your message here%0D%0AChange the ... in the subject to the name of the issue%0D%0ABe precise, short and nice"
+            # body = "%0D%0A".join(body.splitlines())
             webbrowser.open("mailto:{}?subject={}&body={}".format(__email__, subject, body))
 
         __iconsPath = os.path.expanduser('~/') + "maya/2020/prefs/icons/default/"
@@ -886,8 +877,10 @@ class Publisher(Module):
             self.applyAttach()
 
     class Sync():
-        def __init__(self):
-            self.command = []
+        def __init__(self, pathsModule):
+            self.pathsModule = pathsModule
+            self.command = {}
+
         # Events
         def eventHandler(self, event, c, *args):
             if not event in self.command:
@@ -902,23 +895,31 @@ class Publisher(Module):
                 a = c[1] + args
                 c[0](*a)
 
+        def backup(self):
+            info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
+            self.pathsModule.infoColorPath(info)
+
+        def upload(self):
+            info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
+            self.pathsModule.infoColorPath(info)
+
         def publish(self):
-            pass
+            print("Publish")
 
         def confo(self):
-            pass
-
-        def backup(self):
-            pass
+            print("confo")
 
         def prepPublish(self):
-            pass
+            self.runEvent("lockPrepPublish", True)
 
         def rollBack(self):
-            pass
+            self.runEvent("lockPrepPublish", False)
 
         def cleanStudent(self):
-            pass
+            print("cleanStudent")
+
+        def runTest(self):
+            print("runTest")
 
     __prefPath = os.path.expanduser('~/') + "maya/2020/prefs/cs"
     __prefName = "Publisher"
@@ -976,7 +977,6 @@ class Publisher(Module):
             cmds.deleteUI(self.name)
         self.win = cmds.workspaceControl(self.name, ih=100, iw=500, retain=False, floating=True, h=100, w=500)
         self.layout = cmds.formLayout("Publisher_layout",parent=self.win)
-        # cmds.formLayout(self.win, e=True, af=[(self.layout, "top", 0), (self.layout, "bottom", 0), (self.layout, "left", 0), (self.layout, "right", 0)])
         self.childrenLayout = self.attach(cmds.formLayout("Publisher_childLay", parent=self.layout), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
 
         # Main Pannels
@@ -995,15 +995,22 @@ class Publisher(Module):
         # Loading tabs
         self.tabs.load()
 
+        self.syncEvent = Publisher.Sync(self.paths)
         # Events
+        #   Sync
+        self.syncEvent.eventHandler("lockPrepPublish", self.SyncCommon.lockPrepPublish)
         #   Common sync 
-        self.SyncCommon.eventHandler("btn_backup", self.SyncCommon.backupEvent, self.paths.getLocalPath(), self.paths.getRelativePath(), self.paths.getDrivesPath())
-        self.SyncCommon.eventHandler("btn_upload", self.SyncCommon.backupEvent, self.paths.getLocalPath(), self.paths.getRelativePath(), self.paths.getDrivesPath())
-        self.SyncCommon.eventHandler("outputInfoPath", self.paths.infoColorPath)
+        self.SyncCommon.eventHandler("btn_prep", self.syncEvent.prepPublish)
+        self.SyncCommon.eventHandler("btn_rollBack", self.syncEvent.rollBack)
+        self.SyncCommon.eventHandler("btn_backup", self.syncEvent.backup)
+        self.SyncCommon.eventHandler("btn_test", self.syncEvent.runTest)
+        self.SyncCommon.eventHandler("btn_publish", self.syncEvent.publish)
+        self.SyncCommon.eventHandler("btn_upload", self.syncEvent.upload)
+
         #   Anim sync
-        self.SyncAnimation.eventHandler("btn_backup", self.SyncCommon.backupEvent, self.paths.getLocalPath(), self.paths.getRelativePath(), self.paths.getDrivesPath())
-        self.SyncAnimation.eventHandler("btn_upload", self.SyncCommon.backupEvent, self.paths.getLocalPath(), self.paths.getRelativePath(), self.paths.getDrivesPath())
-        self.SyncAnimation.eventHandler("outputInfoPath", self.paths.infoColorPath)
+        self.SyncAnimation.eventHandler("btn_backup", self.syncEvent.backup)
+        self.SyncAnimation.eventHandler("btn_publish", self.syncEvent.confo)
+        self.SyncAnimation.eventHandler("btn_upload", self.syncEvent.upload)
 
         self.attach(self.tabs, top=self.paths, bottom="FORM", left="FORM", right="FORM", margin=(2,2,2,2))
 
