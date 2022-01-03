@@ -6,7 +6,7 @@
 
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
-__version__     = "3.0.1-alpha"
+__version__     = "3.0.0-alpha"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import sys
@@ -17,6 +17,9 @@ import time
 import random
 import webbrowser
 import urllib
+import shutil
+import getpass
+import datetime
 try:
     import maya.cmds as cmds
     import maya.mel as mel
@@ -569,7 +572,6 @@ class Publisher(Module):
                 return [p for p in self.savePaths[self.localPath.path]]
             return []
 
-
         def infoColorPath(self, paths):
             if self.lockColor:
                 return
@@ -749,6 +751,12 @@ class Publisher(Module):
             cmds.control(self.btn_prep, e=True, en=not lock)
             cmds.control(self.btn_rollBack, e=True, en=lock)
 
+        @callback
+        def cb_publishEvent(self):
+            msg = cmds.scrollField(self.lay_comment, q=True, tx=True)
+            self.runEvent("btn_publish", msg)
+            cmds.scrollField(self.lay_comment, e=True, tx="")
+
         def load(self):
             m = 2
             self.layout = cmds.formLayout(parent=self.parent)
@@ -759,7 +767,7 @@ class Publisher(Module):
             self.btn_backup = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_SAVE,     h=30, w=30, bgc=Publisher.THEME_RELATIVE,   c=Callback(self.runEvent, "btn_backup"), ann="Backup current WIP to drives"), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
 
             self.btn_test = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_CHECK,      h=30, w=30, bgc=Publisher.THEME_RELATIVE,   c=Callback(self.runEvent, "btn_test"), ann="Run tests (you might set it in settings pannel)", en=False), top=None, bottom="FORM", left="FORM", right=None, margin=(m,m,m,m))
-            self.btn_publish = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_PUBLISH, h=30, w=30, bgc=Publisher.THEME_LOCAL,      c=Callback(self.runEvent, "btn_publish"), ann="Publish"), top=None, bottom="FORM", left=self.btn_test , right=None, margin=(m,m,m,m))
+            self.btn_publish = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_PUBLISH, h=30, w=30, bgc=Publisher.THEME_LOCAL,      c=self.cb_publishEvent(), ann="Publish"), top=None, bottom="FORM", left=self.btn_test , right=None, margin=(m,m,m,m))
             self.btn_upload = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_NETWORK,  h=30, w=30, bgc=Publisher.THEME_SAVE,       c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top=None, bottom="FORM", left=self.btn_publish, right=None, margin=(m,m,m,m))
 
             self.lab_comment = self.attach(cmds.text(p=self.layout, l="Commentaire : "), top=self.btn_prep, bottom=None, left="FORM", right=None, margin=(m,m,m,m))
@@ -767,7 +775,7 @@ class Publisher(Module):
             self.lay_comment = self.attach(cmds.scrollField(p=self.lay_stf, editable=True, wordWrap=False, vis=True, fn="smallPlainLabelFont"), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
 
             self.applyAttach()
-            
+
     class MT_SyncAnimation(Module):
         """
             <h2>Annimation Synchronisation</h2>
@@ -795,13 +803,19 @@ class Publisher(Module):
             info = [(p, bool(random.randint(0,1))) for p in drivesPaths]
             self.runEvent("outputInfoPath", info)
 
+        @callback
+        def cb_confoEvent(self):
+            msg = cmds.scrollField(self.lay_comment, q=True, tx=True)
+            self.runEvent("btn_publish", msg)
+            cmds.scrollField(self.lay_comment, e=True, tx="")
+
         def load(self):
             m = 2
             self.layout = cmds.formLayout(parent=self.parent)
 
             self.btn_backup   = self.attach(cmds.iconTextButton(image=Publisher.IMAGE_SAVE, h=30, w=30, bgc=Publisher.THEME_RELATIVE, c=Callback(self.runEvent, "btn_backup"), ann="Backup current WIP to drives"), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
 
-            self.btn_publish  = self.attach(cmds.iconTextButton(image=Publisher.IMAGE_PUBLISH, h=30, w=30, bgc=Publisher.THEME_LOCAL, c=Callback(self.runEvent, "btn_publish"), ann="Confo"), top=None, bottom="FORM", left="FORM" , right=None, margin=(m,m,m,m))
+            self.btn_publish  = self.attach(cmds.iconTextButton(image=Publisher.IMAGE_PUBLISH, h=30, w=30, bgc=Publisher.THEME_LOCAL, c=self.cb_confoEvent(), ann="Confo"), top=None, bottom="FORM", left="FORM" , right=None, margin=(m,m,m,m))
             self.btn_upload   = self.attach(cmds.iconTextButton(image=Publisher.IMAGE_NETWORK, h=30, w=30, bgc=Publisher.THEME_SAVE, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top=None, bottom="FORM", left=self.btn_publish, right=None, margin=(m,m,m,m))
 
             self.lab_comment  = self.attach(cmds.text(l="Commentaire : "), top="FORM", bottom=None, left="FORM", right=None, margin=(m,m,m,m))
@@ -880,6 +894,14 @@ class Publisher(Module):
         def __init__(self, pathsModule):
             self.pathsModule = pathsModule
             self.command = {}
+            self.datas = {}
+            self.datas["PublisherVersion"] = "{}".format(__version__)
+
+            self.datas["Comment"] = None
+            self.datas["Author"] = None
+            self.datas["Computer"] = None
+            self.datas["Date"] = None
+            self.datas["Version"] = None
 
         # Events
         def eventHandler(self, event, c, *args):
@@ -896,23 +918,48 @@ class Publisher(Module):
                 c[0](*a)
 
         def backup(self):
-            info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
-            self.pathsModule.infoColorPath(info)
+            
+            localPath = self.pathsModule.getLocalPath()
+            relativePath = self.pathsModule.getRelativePath()
+            drives = self.pathsModule.getDrivesPath()
+            infos = []
+            if localPath in drives:
+                for drive in drives[localPath]:
+                    driveDir = os.path.dirname(os.path.join(drive, relativePath))
+                    if not os.path.exists(drive):
+                        infos.append((drive, False))
+                        continue
+                    if not os.path.exists(driveDir):
+                        os.makedirs(driveDir)
+                    shutil.copy(os.path.join(localPath, relativePath), os.path.join(drive, relativePath))
+                    infos.append((drive, True))
+            self.pathsModule.infoColorPath(infos)
 
         def upload(self):
             info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
             self.pathsModule.infoColorPath(info)
 
-        def publish(self):
-            print("Publish")
+        def publish(self, comment):
+            self.datas["Comment"] = comment
+            print("Publish", comment)
 
-        def confo(self):
-            print("confo")
+        def confo(self, comment):
+            self.datas["Comment"] = comment
+            print("confo", comment)
 
-        def prepPublish(self):
+        def prepPublish(self):        
+            # increment and save
+            mel.eval("incrementAndSaveScene 1;")
+            
+            # store current file
+            self.wipRollback = os.path.abspath(cmds.file(q=True, sn=True))
+            pubPath = self.wipRollback[:-3] + ".pub" + self.wipRollback[-3:]
+            cmds.file(rename=pubPath)
+            cmds.file(save=True, type='mayaAscii')
             self.runEvent("lockPrepPublish", True)
 
         def rollBack(self):
+            cmds.file(self.wipRollback, o=True, f=True)
             self.runEvent("lockPrepPublish", False)
 
         def cleanStudent(self):
@@ -920,6 +967,26 @@ class Publisher(Module):
 
         def runTest(self):
             print("runTest")
+
+        def writeMetadata(self):
+            if cmds.objExists("publisher_metadata"):
+                return
+            node = cmds.createNode('partition', n='publisher_metadata')
+
+
+            # relativePath = self.relativePath.path
+            # nVersion = "Unknown"
+            # if os.path.normpath(relativePath).split(os.sep)[-2] == "wip":
+            #     _, fileNameWip = os.path.split(relativePath)
+            #     nVersion = str(Publisher.getVersionFromName(fileNameWip))
+            # comment = cmds.textField(self.commentTextLay, q=True, text=True)
+            # cmds.textField(self.commentTextLay, e=True, text="")
+
+
+
+            for k, v in self.datas.items():
+                cmds.addAttr(node, longName=k, dataType="string")
+                cmds.setAttr("publisher_metadata.{}".format(k), str(v), type="string")
 
     __prefPath = os.path.expanduser('~/') + "maya/2020/prefs/cs"
     __prefName = "Publisher"
