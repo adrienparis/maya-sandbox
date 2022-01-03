@@ -15,7 +15,8 @@ import ctypes
 import threading
 import time
 import random
-import shlex
+import webbrowser
+import urllib
 try:
     import maya.cmds as cmds
     import maya.mel as mel
@@ -824,6 +825,14 @@ class Publisher(Module):
         p        {{margin-left&#58; 30px;}}
         </style>
         """
+        @callback
+        def openTicket(self):
+            subject = "[Ticket] // {} // ...".format(str(Publisher().__class__.__name__))
+            subject = urllib.quote_plus(subject)
+            body = "v{}".format(__version__)
+            # body = urllib.quote_plus(body)
+            webbrowser.open("mailto:{}?subject={}&body={}".format(__email__, subject, body))
+
         __iconsPath = os.path.expanduser('~/') + "maya/2020/prefs/icons/default/"
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
@@ -856,12 +865,9 @@ class Publisher(Module):
             txt = txt.format(**context)
             prev = "FORM"
             prev = self.attach(cmds.text(p=self.childrenLayout, l=txt), top=prev, bottom=None, left="FORM", right="FORM", margin=(1,1,1,1))
+            self.btn_ticket = self.attach(cmds.button(l="Open a ticket", c=self.openTicket()), top=prev, bottom=None, left="FORM", right=None, margin=(1,1,1,1))
             with open(os.path.join(self.__iconsPath, "test.html"), "w+") as f:
                 f.write(txt)
-
-            # for l in Publisher().__doc__.splitlines():
-            #     l = l.format(**context)
-            #     prev = self.attach(cmds.text(p=self.childrenLayout, l=l), top=prev, bottom=None, left="FORM", right=None, margin=(1,1,1,1))
             self.applyAttach()
 
     __prefPath = os.path.expanduser('~/') + "maya/2020/prefs/cs"
