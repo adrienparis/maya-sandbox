@@ -18,8 +18,9 @@ import random
 import webbrowser
 import urllib
 import shutil
+import re
 import getpass
-import datetime
+from datetime import datetime
 try:
     import maya.cmds as cmds
     import maya.mel as mel
@@ -139,6 +140,7 @@ class Module(object):
     COLOR_LIGHTGREY = [0.36, 0.36, 0.36]
     COLOR_GREEN = [0.48, 0.67, 0.27]
     COLOR_RED = [0.85, 0.34, 0.34]
+    COLOR_YELLOW = [0.86,0.81,0.53]
 
 
     increment = 0
@@ -361,6 +363,7 @@ class Publisher(Module):
     THEME_BUTTON = Module.COLOR_LIGHTGREY
     THEME_VALIDATION = Module.COLOR_GREEN
     THEME_ERROR = Module.COLOR_RED
+    THEME_WARNING = Module.COLOR_YELLOW
 
     # Images
     IMAGE_ADD = "addClip.png"
@@ -576,7 +579,8 @@ class Publisher(Module):
             if self.lockColor:
                 return
             for path, state in paths:
-                self.changeColor(path, Publisher.THEME_VALIDATION if state else Publisher.THEME_ERROR)
+                color = Publisher.THEME_WARNING if state is None else Publisher.THEME_VALIDATION if state else Publisher.THEME_ERROR
+                self.changeColor(path, color)
             self.t_resetColor()
 
         @thread
@@ -893,7 +897,9 @@ class Publisher(Module):
     class Sync():
         def __init__(self, pathsModule):
             self.pathsModule = pathsModule
+            self.wipRollback = None
             self.command = {}
+
             self.datas = {}
             self.datas["PublisherVersion"] = "{}".format(__version__)
 
@@ -918,21 +924,25 @@ class Publisher(Module):
                 c[0](*a)
 
         def backup(self):
+            print("backup")
             
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
             drives = self.pathsModule.getDrivesPath()
             infos = []
-            if localPath in drives:
-                for drive in drives[localPath]:
-                    driveDir = os.path.dirname(os.path.join(drive, relativePath))
-                    if not os.path.exists(drive):
-                        infos.append((drive, False))
-                        continue
-                    if not os.path.exists(driveDir):
-                        os.makedirs(driveDir)
-                    shutil.copy(os.path.join(localPath, relativePath), os.path.join(drive, relativePath))
-                    infos.append((drive, True))
+            print(drives)
+            for drive in drives:
+                driveDir = os.path.dirname(os.path.join(drive, relativePath))
+                print(driveDir)
+                if not os.path.exists(drive):
+                    infos.append((drive, False))
+                    continue
+                if not os.path.exists(driveDir):
+                    os.makedirs(driveDir)
+                state = None if os.path.exists(os.path.join(drive, relativePath)) else True
+                shutil.copy(os.path.join(localPath, relativePath), os.path.join(drive, relativePath))
+                infos.append((drive, state))
+            print(infos)
             self.pathsModule.infoColorPath(infos)
 
         def upload(self):
@@ -940,14 +950,51 @@ class Publisher(Module):
             self.pathsModule.infoColorPath(info)
 
         def publish(self, comment):
+            localPath = self.pathsModule.getLocalPath()
+            relativePath = self.pathsModule.getRelativePath()
+            
+            paths, names = self.getPathsAndNames()
+            
+            # Prepare meta-data
             self.datas["Comment"] = comment
+            self.setDatas()
+            self.prepPublish()
+            self.writeMetadata()
+            cmds.file( save=True, type='mayaAscii' )
+            
+            # Check if it's a wip
+            if os.path.normpath(relativePath).split(os.sep)[-2] != "wip":
+                cmds.warning("The current file is not a WIP")
+                return
+
+            # create a version folder if not existing
+            if not os.path.exists(os.path.join(localPath, paths["version"])):
+                os.makedirs(os.path.join(localPath, paths["version"]))
+
+            # Screenshot
+            image = self.takeSnapshot()
+            shutil.copy(image, os.path.join(localPath, paths["publish"], names["imgPublish"]))
+            shutil.copy(image, os.path.join(localPath, paths["version"], names["imgVersion"]))
+
+            # Publish
+            shutil.copy(os.path.join(localPath, relativePath), os.path.join(localPath, paths["version"], names["version"]))
+            shutil.copy(os.path.join(localPath, relativePath), os.path.join(localPath, paths["publish"], names["publish"]))
+
+
+            # Rollback wip and increment its version
+            if self.wipRollback is not None:
+                cmds.file(self.wipRollback, o=True, f=True)
+            self.wipRollback = None 
+            cmds.file(rename="/".join([localPath, paths["wip"], names["incWip"]]))
+            cmds.file(save=True, type='mayaAscii' )
+            info("{} -> Published !".format(names["publish"]))
             print("Publish", comment)
 
         def confo(self, comment):
             self.datas["Comment"] = comment
             print("confo", comment)
 
-        def prepPublish(self):        
+        def prepPublish(self):
             # increment and save
             mel.eval("incrementAndSaveScene 1;")
             
@@ -959,8 +1006,11 @@ class Publisher(Module):
             self.runEvent("lockPrepPublish", True)
 
         def rollBack(self):
+            if self.wipRollback is None:
+                return
             cmds.file(self.wipRollback, o=True, f=True)
             self.runEvent("lockPrepPublish", False)
+            self.wipRollback = None
 
         def cleanStudent(self):
             print("cleanStudent")
@@ -973,20 +1023,63 @@ class Publisher(Module):
                 return
             node = cmds.createNode('partition', n='publisher_metadata')
 
-
-            # relativePath = self.relativePath.path
-            # nVersion = "Unknown"
-            # if os.path.normpath(relativePath).split(os.sep)[-2] == "wip":
-            #     _, fileNameWip = os.path.split(relativePath)
-            #     nVersion = str(Publisher.getVersionFromName(fileNameWip))
-            # comment = cmds.textField(self.commentTextLay, q=True, text=True)
-            # cmds.textField(self.commentTextLay, e=True, text="")
-
-
-
             for k, v in self.datas.items():
+                print(k,v)
                 cmds.addAttr(node, longName=k, dataType="string")
                 cmds.setAttr("publisher_metadata.{}".format(k), str(v), type="string")
+
+        def setDatas(self):
+            self.datas["Author"] = getpass.getuser()
+            self.datas["Computer"] = os.environ['COMPUTERNAME']
+            self.datas["Date"] = datetime.now().strftime("%H:%M:%S")
+
+        def getPathsAndNames(self):
+            relativePath = self.pathsModule.getRelativePath()
+            paths = {}
+            names = {}
+
+            paths["wip"], names["wip"] = os.path.split(relativePath)
+            paths["publish"], _ = os.path.split(paths["wip"])
+            paths["version"]= os.path.join(paths["publish"], "versions")
+            nVersion = Publisher.Sync.getVersionFromName(names["wip"])
+
+            self.datas["Version"] = nVersion
+            
+            fileName = "_".join(names["wip"].split(".")[0].split("_")[:-1])
+            names["publish"] = fileName + "." + names["wip"].split(".")[-1]
+            names["version"] = fileName + "_v{0:0>3d}.".format(nVersion) + names["wip"].split(".")[-1]
+            names["incWip"] = fileName + "_v{0:0>3d}.0001.ma".format(nVersion + 1)
+            names["imgPublish"] = "thumbnail.jpg"
+            names["imgVersion"] = "thumbnail_v{0:0>3d}.jpg".format(nVersion)
+
+            return (paths, names)
+
+        def takeSnapshot(self, name="tmp", width=1920, height=1080):
+            imagePath = "/".join([self.pathsModule.getLocalPath(), "images", name + ".jpg"])
+            frame = cmds.currentTime( query=True )
+            cmds.playblast(fr=frame, v=False, fmt="image", c="jpg", orn=False, cf=imagePath, wh=[width,height], p=100)
+            return imagePath
+
+        @staticmethod
+        def getVersionFromName(name):
+            n = name.split(".")
+            if n == None or len(n) < 1:
+                return 1
+            n = n[0]
+            n = re.findall('_v[0-9]{3}', n)[0].replace("_v", "")
+            return int(n)
+
+        @staticmethod
+        def getLastVersion(path):
+            i = 0
+            if os.path.isdir(path + "/versions"):
+                versions = os.listdir(path + "/versions")
+                for v in versions:
+                    j = re.findall('[0-9]{3}', v)
+                    if len(j) == 1:
+                        i = max(int(j[0]), i)
+            return i
+
 
     __prefPath = os.path.expanduser('~/') + "maya/2020/prefs/cs"
     __prefName = "Publisher"

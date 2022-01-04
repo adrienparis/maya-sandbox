@@ -21,8 +21,9 @@ class manInTheMiddle():
         
     def __call__(self, *args):
         self.func(*args)
+        
         print("I'm in the middle")
-    def __del
+    def restore(self):
 
 
 #module.executeDroppedPythonFile("S:/a.paris/Rescources/Toolbox/createFollows.py", "")
