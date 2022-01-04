@@ -950,9 +950,9 @@ class Publisher(Module):
             self.pathsModule.infoColorPath(info)
 
         def publish(self, comment):
+            
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
-            
             paths, names = self.getPathsAndNames()
             
             # Prepare meta-data
@@ -961,7 +961,7 @@ class Publisher(Module):
             self.prepPublish()
             self.writeMetadata()
             cmds.file( save=True, type='mayaAscii' )
-            
+
             # Check if it's a wip
             if os.path.normpath(relativePath).split(os.sep)[-2] != "wip":
                 cmds.warning("The current file is not a WIP")
@@ -977,8 +977,10 @@ class Publisher(Module):
             shutil.copy(image, os.path.join(localPath, paths["version"], names["imgVersion"]))
 
             # Publish
-            shutil.copy(os.path.join(localPath, relativePath), os.path.join(localPath, paths["version"], names["version"]))
-            shutil.copy(os.path.join(localPath, relativePath), os.path.join(localPath, paths["publish"], names["publish"]))
+            print(os.path.join(localPath, relativePath))
+            print(self.pubPath)
+            shutil.copy(self.pubPath, os.path.join(localPath, paths["version"], names["version"]))
+            shutil.copy(self.pubPath, os.path.join(localPath, paths["publish"], names["publish"]))
 
 
             # Rollback wip and increment its version
@@ -987,6 +989,7 @@ class Publisher(Module):
             self.wipRollback = None 
             cmds.file(rename="/".join([localPath, paths["wip"], names["incWip"]]))
             cmds.file(save=True, type='mayaAscii' )
+            self.runEvent("lockPrepPublish", False)
             info("{} -> Published !".format(names["publish"]))
             print("Publish", comment)
 
@@ -1000,8 +1003,8 @@ class Publisher(Module):
             
             # store current file
             self.wipRollback = os.path.abspath(cmds.file(q=True, sn=True))
-            pubPath = self.wipRollback[:-3] + ".pub" + self.wipRollback[-3:]
-            cmds.file(rename=pubPath)
+            self.pubPath = self.wipRollback[:-3] + ".pub" + self.wipRollback[-3:]
+            cmds.file(rename=self.pubPath)
             cmds.file(save=True, type='mayaAscii')
             self.runEvent("lockPrepPublish", True)
 
