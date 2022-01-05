@@ -1,2 +1,4 @@
 *.pyc
 .vscode/*
+./pull.bat
+./push.bat
