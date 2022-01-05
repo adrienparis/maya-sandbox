@@ -84,6 +84,8 @@ poses["bonjour"] = 110
 poses["quiMoi"] = 120
 poses["regardeHeure"] = 140
 poses["tocToc"] = 150
+poses["tocTocSeduce"] = 155
+poses["drink"] = 160
 
 old_sl = cmds.ls(sl=True)
 current_view = cmds.lookThru(q=True)
