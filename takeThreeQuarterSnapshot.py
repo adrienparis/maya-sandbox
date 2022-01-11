@@ -83,6 +83,7 @@ poses = {}
 poses["bonjour"] = 110
 poses["quiMoi"] = 120
 poses["regardeHeure"] = 140
+poses["regardeHeureStress"] = 146
 poses["tocToc"] = 150
 poses["tocTocSeduce"] = 155
 poses["drink"] = 160
