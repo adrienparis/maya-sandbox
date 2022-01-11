@@ -1028,18 +1028,50 @@ class Publisher(Module):
 
             self.applyAttach()
 
+    class MC_SettingSection(Module):
+        def __init__(self, parent, name):
+            Module.__init__(self, parent)
+            self.name = name
+
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            self.title = self.attach(cmds.text(l=self.name), top="FORM", left="FORM")
+            self.separator = self.attach(cmds.separator( height=10, style='in' ), top="FORM", left=self.title, right="FORM", margin=(3,3,15,3))
+            self.childrenLayout = self.attach(cmds.formLayout(parent=self.layout, bgc=Publisher.Theme.MAIN_BGC, h=50), top=self.title, left="FORM", right="FORM", margin=(3,3,25,3))
+
+
+            self.applyAttach()
+
+    class MT_SettingLanguage(Module):
+        @callback
+        def cb_changeLanguage(self, lg):
+            print(lg)
+
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            self.btn_En = self.attach(cmds.button(p=self.layout, l="En", c=self.cb_changeLanguage("En")), top="FORM", left="FORM", margin=(3,3,3,3))
+            self.btn_Fr = self.attach(cmds.button(p=self.layout, l="Fr", c=self.cb_changeLanguage("Fr")), top="FORM", left=self.btn_En, margin=(3,3,3,3))
+            self.btn_folder = self.attach(cmds.iconTextButton(image=Publisher.Image.FOLDER, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top="FORM", right="FORM", margin=(3,3,3,3))
+            self.applyAttach()
+
     class MT_Settings(Module):
+        def __init__(self, parent):
+            Module.__init__(self, parent)
+            self.section = {}
+
         @callback
         def cb_switchToEnglish(self):
             Publisher.lg = Publisher.Language.En if Publisher.lg == Publisher.Language.Fr else Publisher.Language.Fr
             Publisher().reload()
             Publisher.writePref("lg", Publisher.lg.__name__)
 
-
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
             self.tmp = self.attach(cmds.text(p=self.layout, l="WIP"), top="FORM", left="FORM")
             self.btn = self.attach(cmds.button(p=self.layout, l="switch To English", c=self.cb_switchToEnglish()), top=self.tmp, left="FORM", margin=(3,3,3,3))
+            self.section["language"] = self.attach(Publisher.MC_SettingSection(self.layout, "Language").load(), top=self.btn, left="FORM", right="FORM", margin=(3,3,3,3))
+            self.section["nameDef"] = self.attach(Publisher.MC_SettingSection(self.layout, "Publish/Version name definition").load(), top=self.btn, left="FORM", right="FORM", margin=(3,3,3,3))
+            self.section["test"] = self.attach(Publisher.MC_SettingSection(self.layout, "Test Definition").load(), top=self.btn, left="FORM", right="FORM", margin=(3,3,3,3))
             self.applyAttach()
 
     class MT_info(Module):
