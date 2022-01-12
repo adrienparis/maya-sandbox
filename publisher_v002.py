@@ -20,7 +20,9 @@ import urllib
 import shutil
 import re
 import getpass
+import io
 from datetime import datetime
+
 try:
     import maya.cmds as cmds
     import maya.mel as mel
@@ -134,6 +136,7 @@ class Module(object):
     COLOR_BLACK = [0, 0, 0]
     COLOR_BLUE = [0.32, 0.52, 0.65]
     COLOR_TURQUOISE = [0.28, 0.66, 0.70]
+    COLOR_EUCALYPTUS = [0.37,0.68,0.53]
     COLOR_ORANGE = [0.86, 0.58, 0.34]
     COLOR_DARKGREY = [0.21, 0.21, 0.21]
     COLOR_GREY = [0.26, 0.26, 0.26]
@@ -172,6 +175,8 @@ class Module(object):
     def __getattribute__(self, name):
         if name == 'load':
             return object.__getattribute__(self, "_load")
+        if name == 'unload':
+            return object.__getattribute__(self, "_unload")
         if name == "height":
             return cmds.layout(self.layout, q=True, h=True)
         if name == "width":
@@ -246,12 +251,16 @@ class Module(object):
             af = parLayoutAf[pl] if pl in parLayoutAf else []
             ac = parLayoutAc[pl] if pl in parLayoutAc else []
             ap = parLayoutAp[pl] if pl in parLayoutAp else []
-            cmds.formLayout(pl, e=True, af=af, ac=ac, ap=ap)
+            try:
+                cmds.formLayout(pl, e=True, af=af, ac=ac, ap=ap)
+            except Exception as inst:
+                print(inst)
+                raise Exception("Can't attach {} {}".format(pl, inst))
 
     def _load(self):
         object.__getattribute__(self, "load")()
         cmds.scriptJob(ro=True, uid=[self.layout, Callback(self._killJobs)])
-        cmds.scriptJob(ro=True, uid=[self.layout, Callback(self.unload)])
+        cmds.scriptJob(ro=True, uid=[self.layout, Callback(self.unloadEvent)])
         self._loadJobs()
         return self
 
@@ -269,10 +278,16 @@ class Module(object):
     def _unload(self):
         if self.layout == None:
             return self
+        for c in self.childrens:
+            c.unload()
         if cmds.workspaceControl(self.layout, exists=1):
             cmds.deleteUI(self.layout)
         return self
+
     def unload(self):
+        pass
+    
+    def unloadEvent(self):
         pass
 
     def refresh(self):
@@ -342,51 +357,288 @@ def info(message):
 
 @singleton
 class Publisher(Module):
-    """
-        <h1 style="background-color:{THEME_MAIN_BGC}; color:{THEME_SAVE};text-align: left;">{NAME} </h1>
-        <p>The {NAME} is a tool to help publish and sync maya files in a pipeline like Creative Seeds' one.</p>
-        <h4>Author :</h4> 
-        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{AUTHOR}</p>
-        <h4>Contact :</h4> 
-        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{EMAIL}</p>
-        <h4>Version :</h4> 
-        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{VERSION}</p>
-        <h4>Copyright :</h4> 
-        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{COPYRIGHT}</p>
-    """
-    # Color Theme
-    THEME_SAVE = Module.COLOR_BLUE
-    THEME_LOCAL = Module.COLOR_TURQUOISE
-    THEME_RELATIVE = Module.COLOR_ORANGE
-    THEME_SEC_BGC = Module.COLOR_DARKGREY
-    THEME_MAIN_BGC = Module.COLOR_GREY
-    THEME_BUTTON = Module.COLOR_LIGHTGREY
-    THEME_VALIDATION = Module.COLOR_GREEN
-    THEME_ERROR = Module.COLOR_RED
-    THEME_WARNING = Module.COLOR_YELLOW
+    __prefPath = os.path.expanduser('~/') + "maya/2020/prefs/cs"
+    __prefName = "Publisher"
+    @staticmethod
+    def writePref(name, value):
+        prefVars = {} 
+        fPath = os.path.join(Publisher.__prefPath, Publisher.__prefName + ".pref")
+        if not os.path.isdir(Publisher.__prefPath):
+            os.makedirs(Publisher.__prefPath)
+        if os.path.isfile(fPath):   
+            with open(fPath, "r") as f:
+                l = f.readline()
+                while l:
+                    try:
+                        res = eval(l)
+                        prefVars[res[0]] = res[1]
+                    except:
+                        pass
+                    l = f.readline()
+        prefVars[name] = value
+        with open(fPath, "w+") as f:
+            for key in prefVars:
+                f.writelines(str([key, prefVars[key]]) + "\n")
 
-    # Images
-    IMAGE_ADD = "addClip.png"
-    IMAGE_ANIMATION = "animateSnapshot.png"
-    IMAGE_DELETE = "deleteClip.png"
-    IMAGE_CHECK = "SP_FileDialogContentsView.png"
-    IMAGE_CLEAN = "brush.png"
-    IMAGE_COMMON = "volumeCube.png"
-    IMAGE_FOLDER = "openLoadGeneric.png"
-    IMAGE_HELP = "help.png"
-    IMAGE_LINE = "UVEditorUAxisDisabled.png"
-    IMAGE_NETWORK = "SP_DriveNetIcon.png"
-    IMAGE_PUBLISH = "SP_FileDialogForward.png"
-    IMAGE_RIGHTARROW = "moveUVRight.png"
-    IMAGE_SETTING = "QR_settings.png"
-    IMAGE_SAVE = "UVTkSaveValue.png"
-    IMAGE_UNDO = "undo_s.png"
-    IMAGE_UNKNOW = "UVTkBtnHead.png"
-    IMAGE_UPLOAD = "SP_FileDialogToParent.png"
+    @staticmethod
+    def readPref(name):
+        fPath = os.path.join(Publisher.__prefPath, Publisher.__prefName + ".pref")
+        if not os.path.isdir(Publisher.__prefPath):
+            return None
+        if not os.path.isfile(fPath):
+            return None
+        prefVars = {}    
+        with open(fPath, "r") as f:
+            l = f.readline()
+            try:
+                while l:
+                    res = eval(l)
+                    prefVars[res[0]] = res[1]
+                    if res[0] == name:
+                        return(res[1])
+                    l = f.readline()
+            except:
+                pass
+        return None
+
+    class Theme():
+        SAVE = Module.COLOR_BLUE
+        LOCAL = Module.COLOR_TURQUOISE
+        RELATIVE = Module.COLOR_ORANGE
+        SEC_BGC = Module.COLOR_DARKGREY
+        MAIN_BGC = Module.COLOR_GREY
+        BUTTON = Module.COLOR_LIGHTGREY
+        VALIDATION = Module.COLOR_GREEN
+        ERROR = Module.COLOR_RED
+        WARNING = Module.COLOR_YELLOW
+
+    class Image():
+        ADD = "addClip.png"
+        ANIMATION = "animateSnapshot.png"
+        DELETE = "deleteClip.png"
+        CHECK = "SP_FileDialogContentsView.png"
+        CLEAN = "brush.png"
+        COMMON = "volumeCube.png"
+        FOLDER = "openLoadGeneric.png"
+        HELP = "help.png"
+        LINE = "UVEditorUAxisDisabled.png"
+        NETWORK = "SP_DriveNetIcon.png"
+        PUBLISH = "SP_FileDialogForward.png"
+        RIGHTARROW = "moveUVRight.png"
+        SETTING = "QR_settings.png"
+        SAVE = "UVTkSaveValue.png"
+        UNDO = "undo_s.png"
+        UNKNOW = "UVTkBtnHead.png"
+        UPLOAD = "SP_FileDialogToParent.png"
+
+    class Language():
+        class En():
+            class Button():
+                prepare = "Prepare publish to be cleaned"
+                rollback = "Rollback to last WIP"
+                backup = "Backup current WIP to drives"
+                check = "Run tests (you might set it in settings pannel)"
+                publish = "Publish"
+                upload = "Upload to drives"
+                confo = "Confo"
+                ticket = "Open a ticket"
+                delete = "Delete"
+                add = "Add"
+                common = "Common"
+                animation = "Animation"
+                about = "About"
+                settings = "Settings"
+
+            class Label():
+                comment = "Comments : "
+
+            class About():
+                PUBLISHER = """
+                        <h1 style="background-color:{THEME_MAIN_BGC}; color:{THEME_SAVE};text-align: left;">{NAME} </h1>
+                        <p>The {NAME} is a tool to help publish and sync maya files in a pipeline like Creative Seeds' one.</p>
+                        <h4>Author :</h4> 
+                        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{AUTHOR}</p>
+                        <h4>Contact :</h4> 
+                        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{EMAIL}</p>
+                        <h4>Version :</h4> 
+                        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{VERSION}</p>
+                        <h4>Copyright :</h4> 
+                        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{COPYRIGHT}</p>
+                    """
+                PATHS = """        
+                        <h2>The Header of the application</h2>
+                        <p>The top part of the application is to define the location of differents path</p>
+                        <p>The <span class="publish">top line</span> indicate your "set project"</p>
+                        <p>You can add a path to an other "set project" of a drive with <img src="{IMAGE_ADD}" style="background-color:{THEME_BUTTON}"/> to be sync latter</p>
+                        <p>The added path will be this <span class="drives" > color</span></p>
+                        <p>You can click on <img src="{IMAGE_DELETE}" style="background-color:{THEME_BUTTON}"/> at any time to remove a drive</p>
+                        <p>The <span class="local"> last line</span> should display the path of your current opened file in maya relative to your set project</p>
+                        <p>The opened file should be in the tree of the current project, or else it will display his absolute path</p>
+                        <p>The color code works as follow:</p>
+                        <ul>
+                        <li> This <span class="publish"> color</span> for local project, or publishs</li>
+                        <li> This <span class="drives"> color</span> for project in an other drive. (in a backup/shared drive)</li>
+                        <li> This <span class="local"> color</span> for files related to wip files</li>
+                        </ul>
+                        <p></p>
+                    """
+                SYNCCOMMON = """
+                        <h2>Common Synchronisation</h2>
+                        <p>This section is made to match everybody's needs in term of preparing, publishing and uploading your version</p>
+                        <p>To publish your version, first of all, you should have a WIP file openned</p>
+                        <p>and have this file in the current project</p>
+                        <p>then you can press on <img src="{IMAGE_PUBLISH}" class="publish"/></p>
+                        <p>That will :</p>
+                        <ul>
+                            <li>Copy your current wip to the root folder of the asset and rename it</li>
+                            <li>Copy it to the "versions" folder in  the root of the asset and rename it</li>
+                            <li>Create a tumbnail of the current version and save it at the root and the versions' folder</li>
+                            <li>Clean the Student Licences pop-up</li>
+                            <li>Revert back to your current WIP, if you stored it with a "prepare publish"</li>
+                            <li>Save a new WIP and rename it to the next version</li>
+                        </ul>
+                        <p>If you want to clean your scene before publishing it,</p>
+                        <p>but still want to work with messy stuff in the future</p>
+                        <p>Use the "prepare publish" button</p>
+                        <p><img src="{IMAGE_CLEAN}" class="button"/></p>
+                        <p>It will save your current WIP to a new scene, and store it so you can rollback to it if you change your mind</p>
+                        <p>or it'll rollback itself when you publish it</p>
+                        <p></p>
+                        <p>To rollback when you change your mind press <img src="{IMAGE_UNDO}" class="button"/></p>
+                        <p>It will restore you're last wip</p>
+                    """
+                SYNCANIMATION = """
+                        <h2>Annimation Synchronisation</h2>
+                        <p>Work in progress</p>
+                        <p>This section is made for animator when they want to do a "confo"</p>
+                        <p>When pressing the <img src="{IMAGE_PUBLISH}" class="publish" /> confo button</p>
+                        <p>It will :</p>
+                        <ul>
+                            <li>copy</li>
+                            <li>replace rig by surf</li>
+                            <li>increment version</li>
+                            <li>take a playblast</li>
+                        </ul>
+                        <p></p>
+                        <p></p>
+                        <p></p>
+                    """
+                SETTINGS = """
+                        <h2>Settings</h2>
+                        <p> Work in progress</p>
+                    """
+        
+        class Fr():
+            class Button():
+                prepare = u"Préparer votre version avant de la publier"
+                rollback = u"Revenir sur votre TEC précedent"
+                backup = u"Sauvegarder votre TEC sur les périphérique de sauvegarde"
+                check = u"Lancer les tests (vous devrer les configurer dans Paramètre)"
+                publish = u"Publier"
+                upload = u"Télécharger votre publication ainsi que \nla dernière sauvegarde vers vos périphérique de sauvegarde"
+                confo = u"Confo"
+                ticket = u"Ouvrir un ticket"
+                delete = u"Supprimer"
+                add = u"Ajouter"
+                common = u"Commun"
+                animation = u"Animation"
+                about = u"À propos"
+                settings = u"Paramètre"
+
+            class Label():
+                comment = u"Commentaires : "
+
+            class About():
+                PUBLISHER = u"""
+                        <h1 style="background-color:{THEME_MAIN_BGC}; color:{THEME_SAVE};text-align: left;">{NAME} </h1>
+                        <p>Le {NAME} est un outils pour publier et syncronisser des scènes maya dans un pipeline semblable à celui de Creative Seeds.</p>
+                        <h4>Auteur :</h4> 
+                        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{AUTHOR}</p>
+                        <h4>Contact :</h4> 
+                        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{EMAIL}</p>
+                        <h4>Version :</h4> 
+                        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{VERSION}</p>
+                        <h4>Droits d'auteur :</h4> 
+                        <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{COPYRIGHT}</p>
+                    """
+                PATHS = u"""        
+                        <h2>Définition des chemins</h2>
+                        <p>La partie haute de l'application est pour définir les différents chemins du projets</p>
+                        <p>La <span class="publish">ligne du haut</span> indique le chemin du projet que vous avez initialisé avec "set project"</p>
+                        <p>En cliquant sur <img src="{IMAGE_ADD}" style="background-color:{THEME_BUTTON}"/> Vous pouvez ajouter un autre chemin de sauvegarde</p>
+                        <p>Le chemin de sauvegarde ajouté sera de cette <span class="drives" > couleur</span></p>
+                        <p>Vous pouvez cliquer sur <img src="{IMAGE_DELETE}" style="background-color:{THEME_BUTTON}"/> pour supprimer un chemin de sauvegarde</p>
+                        <p>La <span class="local"> dernière ligne</span> Devrait afficher le chemin de la scène ouverte dans maya, relatif au chemin du projet</p>
+                        <p>Le fichier ouvert doit être dans l'arborescence du projet en cours, sinon il affichera le chemin absolue</p>
+                        <p>Si le chemin est absolu, l'application ne fonctionnera pas</p>
+                        <p>Le code couleur fonctionne ainsi : </p>
+                        <ul>
+                            <li> Cette <span class="publish"> couleur</span> pour tout ce qui est en rapport avec les publication local</li>
+                            <li> Cette <span class="drives"> couleur</span> pour les chemin de sauvegarde sur d'autres disques/péréphérique</li>
+                            <li> Cette <span class="local"> couleur</span> pour files related to wip files</li>
+                        </ul>
+                        <p></p>
+                    """
+                SYNCCOMMON = u"""
+                        <h2>Common Synchronisation</h2>
+                        <p>This section is made to match everybody's needs in term of preparing, publishing and uploading your version</p>
+                        <p>To publish your version, first of all, you should have a WIP file openned</p>
+                        <p>and have this file in the current project</p>
+                        <p>then you can press on <img src="{IMAGE_PUBLISH}" class="publish"/></p>
+                        <p>That will :</p>
+                        <ul>
+                            <li>Copy your current wip to the root folder of the asset and rename it</li>
+                            <li>Copy it to the "versions" folder in  the root of the asset and rename it</li>
+                            <li>Create a tumbnail of the current version and save it at the root and the versions' folder</li>
+                            <li>Clean the Student Licences pop-up</li>
+                            <li>Revert back to your current WIP, if you stored it with a "prepare publish"</li>
+                            <li>Save a new WIP and rename it to the next version</li>
+                        </ul>
+                        <p>If you want to clean your scene before publishing it,</p>
+                        <p>but still want to work with messy stuff in the future</p>
+                        <p>Use the "prepare publish" button</p>
+                        <p><img src="{IMAGE_CLEAN}" class="button"/></p>
+                        <p>It will save your current WIP to a new scene, and store it so you can rollback to it if you change your mind</p>
+                        <p>or it'll rollback itself when you publish it</p>
+                        <p></p>
+                        <p>To rollback when you change your mind press <img src="{IMAGE_UNDO}" class="button"/></p>
+                        <p>It will restore you're last wip</p>
+                    """
+                SYNCANIMATION = u"""
+                        <h2>Synchronisation pour les fichier d'animation</h2>
+                        <p>Travail en cours</p>
+                        <p>Cette section est faite pour les animateur pour effectuer une "confo"</p>
+                        <p>En appuyant sur <img src="{IMAGE_PUBLISH}" class="publish" alt="confo"/> confo button</p>
+                        <p>It will :</p>
+                        <ul>
+                            <li>copy</li>
+                            <li>replace rig by surf</li>
+                            <li>increment version</li>
+                            <li>take a playblast</li>
+                        </ul>
+                        <p></p>
+                        <p></p>
+                        <p></p>
+                    """
+                SETTINGS = u"""
+                        <h2>Paramètres</h2>
+                        <p> En cours de création</p>
+                    """
+        
+        @staticmethod
+        def getLg(name):
+            if name is None:
+                return None
+            if name.upper() == "FR":
+                return Publisher.Language.Fr
+            if name.upper() == "EN":
+                return Publisher.Language.En
+
+    lg = Language.Fr
 
     class MC_PathLine(Module):
 
-        def __init__(self, parent, image=None, color=Module.COLOR_BLUE):
+        def __init__(self, parent, image=None, color=Module.COLOR_BLUE, annotation=""):
             Module.__init__(self, parent)
             self.parent = parent
             self.color = color
@@ -394,6 +646,7 @@ class Publisher(Module):
             self.pathVisibility = True
             self.func = None
             self.image = image
+            self.annotation = annotation
         
         def __setattr__(self, name, value):
             self.__dict__[name] = value
@@ -411,6 +664,8 @@ class Publisher(Module):
                     if self.image is not None:
                         cmds.iconTextButton(self.button, e=True, image=self.image)
                     self._setButtonVis()
+                if name == "annotation":
+                    cmds.iconTextButton(self.button, e=True, ann=self.annotation)
 
         def _setButtonVis(self):
             btnVis = self.image is not None
@@ -424,29 +679,12 @@ class Publisher(Module):
             self.layout = cmds.formLayout(parent=self.parent, h=35)
             self.field = cmds.scrollField(parent=self.layout, editable=False, h=27, wordWrap=False, bgc=self.color, text=self.path, vis=self.pathVisibility)
             if self.image is not None:
-                self.button = cmds.iconTextButton(parent=self.layout, w=35, bgc=Publisher.COLOR_LIGHTGREY, image=self.image)
+                self.button = cmds.iconTextButton(parent=self.layout, w=35, bgc=Publisher.COLOR_LIGHTGREY, ann=self.annotation, image=self.image)
             else:
-                self.button = cmds.iconTextButton(parent=self.layout, w=35, bgc=Publisher.COLOR_LIGHTGREY)
+                self.button = cmds.iconTextButton(parent=self.layout, w=35, bgc=Publisher.COLOR_LIGHTGREY, ann=self.annotation)
             self._setButtonVis()
 
     class MT_Paths(Module):
-        """        
-            <h2>The Header of the application</h2>
-            <p>The top part of the application is to define the location of differents path</p>
-            <p>The <span class="publish">top line</span> indicate your "set project"</p>
-            <p>You can add a path to an other "set project" of a drive with <img src="{IMAGE_ADD}" style="background-color:{THEME_BUTTON}"/> to be sync latter</p>
-            <p>The added path will be this <span class="drives" > color</span></p>
-            <p>You can click on <img src="{IMAGE_DELETE}" style="background-color:{THEME_BUTTON}"/> at any time to remove a drive</p>
-            <p>The <span class="local"> last line</span> should display the path of your current opened file in maya relative to your set project</p>
-            <p>The opened file should be in the tree of the current project, or else it will display his absolute path</p>
-            <p>The color code works as follow:</p>
-            <ul>
-            <li> This <span class="publish"> color</span> for local project, or publishs</li>
-            <li> This <span class="drives"> color</span> for project in an other drive. (in a backup/shared drive)</li>
-            <li> This <span class="local"> color</span> for files related to wip files</li>
-            </ul>
-            <p></p>
-        """
         def __init__(self, parent):
             Module.__init__(self, parent)
             self.lockColor = False
@@ -483,8 +721,9 @@ class Publisher(Module):
             Use attachPaths() to apply change
             '''
             fieldPath = Publisher.MC_PathLine(self.layout).load()
-            fieldPath.image = Publisher.IMAGE_DELETE
-            fieldPath.color = Publisher.THEME_SAVE
+            fieldPath.image = Publisher.Image.DELETE
+            fieldPath.annotation = Publisher.lg.Button.delete
+            fieldPath.color = Publisher.Theme.SAVE
             fieldPath.func = self.cb_removePathEvent(fieldPath)
             fieldPath.path = path
             self.pathsLays.append(fieldPath)
@@ -561,7 +800,8 @@ class Publisher(Module):
             self.cb_reloadPathEvent()()
 
         def changeColor(self, path, color):
-            for fp in self.pathsLays:
+            allpaths = self.pathsLays + [self.relativePath] 
+            for fp in allpaths:
                 if fp.path == path:
                     fp.color = color
                     break
@@ -579,7 +819,7 @@ class Publisher(Module):
             if self.lockColor:
                 return
             for path, state in paths:
-                color = Publisher.THEME_WARNING if state is None else Publisher.THEME_VALIDATION if state else Publisher.THEME_ERROR
+                color = Publisher.Theme.WARNING if state is None else Publisher.Theme.VALIDATION if state else Publisher.Theme.ERROR
                 self.changeColor(path, color)
             self.t_resetColor()
 
@@ -594,13 +834,15 @@ class Publisher(Module):
 
             colorsList = []
             for fp in self.pathsLays:
-                colorsList.append([(e-s) / gap for s,e in zip(fp.color[:], Publisher.THEME_SAVE)])
+                colorsList.append([(e-s) / gap for s,e in zip(fp.color[:], Publisher.Theme.SAVE)])
+            allpaths = self.pathsLays + [self.relativePath] 
+            colorsList.append([(e-s) / gap for s,e in zip(self.relativePath.color[:], Publisher.Theme.RELATIVE)])
 
             time.sleep(0.5)
 
             for i in range(0, gap):
                 time.sleep(1.0 / fps)
-                for fp, colorGap in zip(self.pathsLays, colorsList):
+                for fp, colorGap in zip(allpaths, colorsList):
                     fp.color = [n + g for n, g in zip(fp.color, colorGap)]
             self.lockColor = False
 
@@ -610,11 +852,11 @@ class Publisher(Module):
             self._scriptJobIndex.append(cmds.scriptJob(event=["workspaceChanged", self.cb_refreshUI()]))
 
         def load(self):
-            self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.THEME_SEC_BGC)
+            self.layout = cmds.formLayout("Paths_lay", parent=self.parent, bgc=Publisher.Theme.SEC_BGC)
  
             # Path layout
             #   local path layout
-            self.localPath = Publisher.MC_PathLine(self.layout, color=Publisher.THEME_LOCAL).load()
+            self.localPath = Publisher.MC_PathLine(self.layout, color=Publisher.Theme.LOCAL).load()
             self.localPath.func = self.cb_getProjectEvent()
             self.cb_getProjectEvent()()
 
@@ -623,12 +865,12 @@ class Publisher(Module):
                     self.addPathLay(p)
 
             #   add Path Layout
-            self.addPath = Publisher.MC_PathLine(self.layout, color=Publisher.THEME_SAVE, image=Publisher.IMAGE_ADD).load()
+            self.addPath = Publisher.MC_PathLine(self.layout, color=Publisher.Theme.SAVE, image=Publisher.Image.ADD, annotation=Publisher.lg.Button.add).load()
             self.addPath.pathVisibility = False
             self.addPath.func = self.cb_addPathEvent()
             
             #   relative path layout
-            self.relativePath = Publisher.MC_PathLine(self.layout, color=Publisher.THEME_RELATIVE).load()
+            self.relativePath = Publisher.MC_PathLine(self.layout, color=Publisher.Theme.RELATIVE).load()
             self.relativePath.func = self.cb_getRelativePathEvent()
 
             # attach aboves' layout to self.layout
@@ -667,12 +909,12 @@ class Publisher(Module):
         def setActiveTab(self, id):
             self.activeTab = id
             for b, e in zip(self.tabsButtons, self.tabsContent):
-                cmds.control(b, e=True, bgc=Publisher.THEME_BUTTON)
+                cmds.control(b, e=True, bgc=Publisher.Theme.BUTTON)
                 if e is None:
                     continue
                 lay = e.layout if isinstance(e, Module) else e
                 cmds.layout(lay, e=True, vis=False)
-            cmds.control(self.tabsButtons[id], e=True, bgc=Publisher.THEME_SEC_BGC)
+            cmds.control(self.tabsButtons[id], e=True, bgc=Publisher.Theme.SEC_BGC)
             e = self.tabsContent[id]
             if e is None:
                 return
@@ -689,16 +931,16 @@ class Publisher(Module):
             self.setActiveTab(id)
 
         def load(self):
-            self.layout = cmds.formLayout("tab_lay", parent=self.parent, bgc=Publisher.THEME_MAIN_BGC)
+            self.layout = cmds.formLayout("tab_lay", parent=self.parent, bgc=Publisher.Theme.MAIN_BGC)
             # self.rszLay = self.attach(cmds.scrollLayout("rszLay", parent=self.layout, cr=True), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,2,30,2))
             # self.scrlLay = cmds.scrollLayout("scrlLay", parent=self.rszLay, cr=True, rc=self.cb_resize())
             self.scrlLay = self.attach(cmds.scrollLayout("scrlLay", parent=self.layout, rc=self.cb_resize()), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,2,30,2))
-            self.childrenLayout = cmds.formLayout("tab_content",p=self.scrlLay, bgc=Publisher.THEME_SEC_BGC)
+            self.childrenLayout = cmds.formLayout("tab_content",p=self.scrlLay, bgc=Publisher.Theme.SEC_BGC)
             it = 0
             
             prev = "FORM"
             for m, i, a in self.topTabs:
-                prev = self.attach(cmds.iconTextButton(image=i, p=self.layout, h=30, w=30, bgc=Publisher.THEME_BUTTON, c=self.switch(it), ann=a), top=prev, bottom=None, left="FORM", right=None, margin=(2,2,2,2))
+                prev = self.attach(cmds.iconTextButton(image=i, p=self.layout, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=self.switch(it), ann=a), top=prev, bottom=None, left="FORM", right=None, margin=(2,2,2,2))
                 self.tabsButtons.append(prev)
                 it += 1
                 if isinstance(m, Module):
@@ -711,7 +953,7 @@ class Publisher(Module):
             prev = "FORM"
             tmp = 20
             for m, i, a in self.botTabs:
-                prev = self.attach(cmds.iconTextButton(image=i, p=self.layout, h=30, w=30, bgc=Publisher.THEME_BUTTON, c=self.switch(it), ann=a), top=None, bottom=prev, left="FORM", right=None, margin=(2,tmp,2,2))
+                prev = self.attach(cmds.iconTextButton(image=i, p=self.layout, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=self.switch(it), ann=a), top=None, bottom=prev, left="FORM", right=None, margin=(2,tmp,2,2))
                 tmp = 2
                 self.tabsButtons.append(prev)
                 it += 1
@@ -726,31 +968,6 @@ class Publisher(Module):
             self.setActiveTab(self.activeTab)
 
     class MT_SyncCommon(Module):
-        """
-            <h2>Common Synchronisation</h2>
-            <p>This section is made to match everybody's needs in term of preparing, publishing and uploading your version</p>
-            <p>To publish your version, first of all, you should have a WIP file openned</p>
-            <p>and have this file in the current project</p>
-            <p>then you can press on <img src="{IMAGE_PUBLISH}" class="publish"/></p>
-            <p>That will :</p>
-            <ul>
-                <li>Copy your current wip to the root folder of the asset and rename it</li>
-                <li>Copy it to the "versions" folder in  the root of the asset and rename it</li>
-                <li>Create a tumbnail of the current version and save it at the root and the versions' folder</li>
-                <li>Clean the Student Licences pop-up</li>
-                <li>Revert back to your current WIP, if you stored it with a "prepare publish"</li>
-                <li>Save a new WIP and rename it to the next version</li>
-            </ul>
-            <p>If you want to clean your scene before publishing it,</p>
-            <p>but still want to work with messy stuff in the future</p>
-            <p>Use the "prepare publish" button</p>
-            <p><img src="{IMAGE_CLEAN}" class="button"/></p>
-            <p>It will save your current WIP to a new scene, and store it so you can rollback to it if you change your mind</p>
-            <p>or it'll rollback itself when you publish it</p>
-            <p></p>
-            <p>To rollback when you change your mind press <img src="{IMAGE_UNDO}" class="button"/></p>
-            <p>It will restore you're last wip</p>
-        """
         def lockPrepPublish(self, lock):
             cmds.control(self.btn_prep, e=True, en=not lock)
             cmds.control(self.btn_rollBack, e=True, en=lock)
@@ -765,38 +982,22 @@ class Publisher(Module):
             m = 2
             self.layout = cmds.formLayout(parent=self.parent)
 
-            self.btn_prep = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_CLEAN,      h=30, w=30, bgc=Publisher.THEME_BUTTON,     c=Callback(self.runEvent, "btn_prep"), ann="Prepare publish to be cleaned"), top="FORM", bottom=None, left="FORM", right=None, margin=(m,m,m,m))
-            self.btn_rollBack = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_UNDO,   h=30, w=30, bgc=Publisher.THEME_BUTTON,     c=Callback(self.runEvent, "btn_rollBack"), ann="Rollback to last WIP", en=False), top="FORM", bottom=None, left=self.btn_prep, right=None, margin=(m,m,m,m))
+            self.btn_prep = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.CLEAN,      h=30, w=30, bgc=Publisher.Theme.BUTTON,     c=Callback(self.runEvent, "btn_prep"), ann=Publisher.lg.Button.prepare), top="FORM", bottom=None, left="FORM", right=None, margin=(m,m,m,m))
+            self.btn_rollBack = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.UNDO,   h=30, w=30, bgc=Publisher.Theme.BUTTON,     c=Callback(self.runEvent, "btn_rollBack"), ann=Publisher.lg.Button.rollback, en=False), top="FORM", bottom=None, left=self.btn_prep, right=None, margin=(m,m,m,m))
 
-            self.btn_backup = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_SAVE,     h=30, w=30, bgc=Publisher.THEME_RELATIVE,   c=Callback(self.runEvent, "btn_backup"), ann="Backup current WIP to drives"), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
+            self.btn_backup = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.SAVE,     h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_backup"), ann=Publisher.lg.Button.backup), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
 
-            self.btn_test = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_CHECK,      h=30, w=30, bgc=Publisher.THEME_RELATIVE,   c=Callback(self.runEvent, "btn_test"), ann="Run tests (you might set it in settings pannel)", en=False), top=None, bottom="FORM", left="FORM", right=None, margin=(m,m,m,m))
-            self.btn_publish = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_PUBLISH, h=30, w=30, bgc=Publisher.THEME_LOCAL,      c=self.cb_publishEvent(), ann="Publish"), top=None, bottom="FORM", left=self.btn_test , right=None, margin=(m,m,m,m))
-            self.btn_upload = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.IMAGE_NETWORK,  h=30, w=30, bgc=Publisher.THEME_SAVE,       c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top=None, bottom="FORM", left=self.btn_publish, right=None, margin=(m,m,m,m))
+            self.btn_test = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.CHECK,      h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_test"), ann=Publisher.lg.Button.check, en=False), top=None, bottom="FORM", left="FORM", right=None, margin=(m,m,m,m))
+            self.btn_publish = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.PUBLISH, h=30, w=30, bgc=Publisher.Theme.LOCAL,      c=self.cb_publishEvent(), ann=Publisher.lg.Button.publish), top=None, bottom="FORM", left=self.btn_test , right=None, margin=(m,m,m,m))
+            self.btn_upload = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.NETWORK,  h=30, w=30, bgc=Publisher.Theme.SAVE,       c=Callback(self.runEvent, "btn_upload"), ann=Publisher.lg.Button.upload), top=None, bottom="FORM", left=self.btn_publish, right=None, margin=(m,m,m,m))
 
-            self.lab_comment = self.attach(cmds.text(p=self.layout, l="Commentaire : "), top=self.btn_prep, bottom=None, left="FORM", right=None, margin=(m,m,m,m))
+            self.lab_comment = self.attach(cmds.text(p=self.layout, l=Publisher.lg.Label.comment), top=self.btn_prep, bottom=None, left="FORM", right=None, margin=(m,m,m,m))
             self.lay_stf = self.attach(cmds.formLayout(p=self.layout, w=20, h=10), top=self.lab_comment, bottom=self.btn_test, left="FORM", right="FORM", margin=(m,m,m,m))
             self.lay_comment = self.attach(cmds.scrollField(p=self.lay_stf, editable=True, wordWrap=False, vis=True, fn="smallPlainLabelFont"), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
 
             self.applyAttach()
 
     class MT_SyncAnimation(Module):
-        """
-            <h2>Annimation Synchronisation</h2>
-            <p>Work in progress</p>
-            <p>This section is made for animator when they want to do a "confo"</p>
-            <p>When pressing the <img src="{IMAGE_PUBLISH}" class="publish" /> confo button</p>
-            <p>It will :</p>
-            <ul>
-                <li>copy</li>
-                <li>replace rig by surf</li>
-                <li>increment version</li>
-                <li>take a playblast</li>
-            </ul>
-            <p></p>
-            <p></p>
-            <p></p>
-        """
         def backupEvent(self, localpath, relativePath, drivesPaths):
             #TODO set the real state of sync by path
             info = [(p, bool(random.randint(0,1))) for p in drivesPaths]
@@ -817,24 +1018,61 @@ class Publisher(Module):
             m = 2
             self.layout = cmds.formLayout(parent=self.parent)
 
-            self.btn_backup   = self.attach(cmds.iconTextButton(image=Publisher.IMAGE_SAVE, h=30, w=30, bgc=Publisher.THEME_RELATIVE, c=Callback(self.runEvent, "btn_backup"), ann="Backup current WIP to drives"), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
+            self.btn_backup   = self.attach(cmds.iconTextButton(image=Publisher.Image.SAVE, h=30, w=30, bgc=Publisher.Theme.RELATIVE, c=Callback(self.runEvent, "btn_backup"), ann="Backup current WIP to drives"), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
 
-            self.btn_publish  = self.attach(cmds.iconTextButton(image=Publisher.IMAGE_PUBLISH, h=30, w=30, bgc=Publisher.THEME_LOCAL, c=self.cb_confoEvent(), ann="Confo"), top=None, bottom="FORM", left="FORM" , right=None, margin=(m,m,m,m))
-            self.btn_upload   = self.attach(cmds.iconTextButton(image=Publisher.IMAGE_NETWORK, h=30, w=30, bgc=Publisher.THEME_SAVE, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top=None, bottom="FORM", left=self.btn_publish, right=None, margin=(m,m,m,m))
+            self.btn_publish  = self.attach(cmds.iconTextButton(image=Publisher.Image.PUBLISH, h=30, w=30, bgc=Publisher.Theme.LOCAL, c=self.cb_confoEvent(), ann="Confo"), top=None, bottom="FORM", left="FORM" , right=None, margin=(m,m,m,m))
+            self.btn_upload   = self.attach(cmds.iconTextButton(image=Publisher.Image.NETWORK, h=30, w=30, bgc=Publisher.Theme.SAVE, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top=None, bottom="FORM", left=self.btn_publish, right=None, margin=(m,m,m,m))
 
             self.lab_comment  = self.attach(cmds.text(l="Commentaire : "), top="FORM", bottom=None, left="FORM", right=None, margin=(m,m,m,m))
             self.lay_comment = self.attach(cmds.scrollField(p=self.layout, editable=True, wordWrap=True, w=5), top=self.lab_comment, bottom=self.btn_publish, left="FORM", right="FORM", margin=(m,m,m,m))
 
             self.applyAttach()
 
+    class MC_SettingSection(Module):
+        def __init__(self, parent, name):
+            Module.__init__(self, parent)
+            self.name = name
+
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            self.title = self.attach(cmds.text(l=self.name), top="FORM", left="FORM")
+            self.separator = self.attach(cmds.separator( height=10, style='in' ), top="FORM", left=self.title, right="FORM", margin=(3,3,15,3))
+            self.childrenLayout = self.attach(cmds.formLayout(parent=self.layout, bgc=Publisher.Theme.MAIN_BGC, h=50), top=self.title, left="FORM", right="FORM", margin=(3,3,25,3))
+
+
+            self.applyAttach()
+
+    class MT_SettingLanguage(Module):
+        @callback
+        def cb_changeLanguage(self, lg):
+            print(lg)
+
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            self.btn_En = self.attach(cmds.button(p=self.layout, l="En", c=self.cb_changeLanguage("En")), top="FORM", left="FORM", margin=(3,3,3,3))
+            self.btn_Fr = self.attach(cmds.button(p=self.layout, l="Fr", c=self.cb_changeLanguage("Fr")), top="FORM", left=self.btn_En, margin=(3,3,3,3))
+            self.btn_folder = self.attach(cmds.iconTextButton(image=Publisher.Image.FOLDER, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top="FORM", right="FORM", margin=(3,3,3,3))
+            self.applyAttach()
+
     class MT_Settings(Module):
-        """
-            <h2>Settings</h2>
-            <p> Work in progress</p>
-        """
+        def __init__(self, parent):
+            Module.__init__(self, parent)
+            self.section = {}
+
+        @callback
+        def cb_switchToEnglish(self):
+            Publisher.lg = Publisher.Language.En if Publisher.lg == Publisher.Language.Fr else Publisher.Language.Fr
+            Publisher().reload()
+            Publisher.writePref("lg", Publisher.lg.__name__)
+
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
             self.tmp = self.attach(cmds.text(p=self.layout, l="WIP"), top="FORM", left="FORM")
+            self.btn = self.attach(cmds.button(p=self.layout, l="switch To English", c=self.cb_switchToEnglish()), top=self.tmp, left="FORM", margin=(3,3,3,3))
+            self.section["language"] = self.attach(Publisher.MC_SettingSection(self.layout, "Language").load(), top=self.btn, left="FORM", right="FORM", margin=(3,3,3,3))
+            self.section["nameDef"] = self.attach(Publisher.MC_SettingSection(self.layout, "Publish/Version name definition").load(), top=self.btn, left="FORM", right="FORM", margin=(3,3,3,3))
+            self.section["test"] = self.attach(Publisher.MC_SettingSection(self.layout, "Test Definition").load(), top=self.btn, left="FORM", right="FORM", margin=(3,3,3,3))
+            self.applyAttach()
 
     class MT_info(Module):
         style = """
@@ -864,15 +1102,15 @@ class Publisher(Module):
             self.childrenLayout = cmds.formLayout(parent=self.scrlLay)
             # self.childrenLayout = cmds.formLayout(parent=self.scrlLay)
             # for img in Publisher.__dir__
-            themes = {c:'#%02x%02x%02x' % (getattr(Publisher, c)[0] * 255, getattr(Publisher, c)[1] * 255, getattr(Publisher, c)[2] * 255) for c in dir(Publisher) if c.startswith("THEME_")}
+            themes = {"THEME_{}".format(c):'#%02x%02x%02x' % (getattr(Publisher.Theme, c)[0] * 255, getattr(Publisher.Theme, c)[1] * 255, getattr(Publisher.Theme, c)[2] * 255) for c in dir(Publisher.Theme) if c.isupper()}
             colors = {c:'#%02x%02x%02x' % (getattr(Publisher, c)[0] * 255, getattr(Publisher, c)[1] * 255, getattr(Publisher, c)[2] * 255) for c in dir(Publisher) if c.startswith("COLOR_")}
-            images = {i:getattr(Publisher, i) for i in dir(Publisher) if i.startswith("IMAGE_")}
+            images = {i:getattr(Publisher.Image, i) for i in dir(Publisher.Image) if i.isupper()}
             if not os.path.exists(self.__iconsPath):
                 os.makedirs(self.__iconsPath)
             for name, path in images.items():
                 if not os.path.exists(os.path.join(self.__iconsPath, path)):
                     cmds.resourceManager(s=(path, os.path.join(self.__iconsPath, path)))
-            images = {i:os.path.join(self.__iconsPath, getattr(Publisher, i)) for i in dir(Publisher) if i.startswith("IMAGE_")}
+            images = {"IMAGE_{}".format(i):os.path.join(self.__iconsPath, getattr(Publisher.Image, i)) for i in dir(Publisher.Image) if i.isupper()}
             info = {
                 "NAME": str(Publisher().__class__.__name__),
                 "AUTHOR": __author__,
@@ -884,13 +1122,22 @@ class Publisher(Module):
             context.update(colors)
             context.update(images)
             context.update(info)
-            modules = [Publisher(), Publisher.MT_Paths, Publisher.MT_SyncCommon, Publisher.MT_SyncAnimation, Publisher.MT_Settings]
-            txt = self.style + "".join([m.__doc__ for m in modules if m is not None and m.__doc__ is not None])
+            # modules = [Publisher.MT_Paths, Publisher.MT_SyncCommon, Publisher.MT_SyncAnimation, Publisher.MT_Settings]
+            # txt = self.style + Publisher.lg.About.Publisher + "".join([m.__doc__ for m in modules if m is not None and m.__doc__ is not None])
+            abouts_name = ["PUBLISHER", "PATHS", "SYNCCOMMON", "SYNCANIMATION", "SETTINGS"]
+            # abouts = [getattr(Publisher.lg.About, a) for a in dir(Publisher.lg.About) if a.isupper()]
+            abouts = [getattr(Publisher.lg.About, a) for a in abouts_name]
+            txt = self.style + "".join(abouts)
             txt = txt.format(**context)
+            # for t in txt.splitlines():
+            #     print(str(t))
+
+
+            # txt = bytes(str(t).encode("utf-8"))
             prev = "FORM"
             prev = self.attach(cmds.text(p=self.childrenLayout, l=txt), top=prev, bottom=None, left="FORM", right="FORM", margin=(1,1,1,1))
-            self.btn_ticket = self.attach(cmds.button(l="Open a ticket", c=self.openTicket()), top=prev, bottom=None, left="FORM", right=None, margin=(1,1,1,1))
-            with open(os.path.join(self.__iconsPath, "test.html"), "w+") as f:
+            self.btn_ticket = self.attach(cmds.button(l=Publisher.lg.Button.ticket, c=self.openTicket()), top=prev, bottom=None, left="FORM", right=None, margin=(1,1,1,1))
+            with io.open(os.path.join(self.__iconsPath, "test.html"), "w+", encoding="utf-8") as f:
                 f.write(txt)
             self.applyAttach()
 
@@ -932,7 +1179,11 @@ class Publisher(Module):
             infos = []
             print(drives)
             for drive in drives:
-                driveDir = os.path.dirname(os.path.join(drive, relativePath))
+                abs_path = os.path.join(drive, relativePath)
+                if abs_path == relativePath:
+                    infos.append((relativePath, False)) if (relativePath, False) not in infos else None
+                    continue
+                driveDir = os.path.dirname(abs_path)
                 print(driveDir)
                 if not os.path.exists(drive):
                     infos.append((drive, False))
@@ -1083,54 +1334,13 @@ class Publisher(Module):
                         i = max(int(j[0]), i)
             return i
 
-
-    __prefPath = os.path.expanduser('~/') + "maya/2020/prefs/cs"
-    __prefName = "Publisher"
-    @staticmethod
-    def writePref(name, value):
-        prefVars = {} 
-        fPath = os.path.join(Publisher.__prefPath, Publisher.__prefName + ".pref")
-        if not os.path.isdir(Publisher.__prefPath):
-            os.makedirs(Publisher.__prefPath)
-        if os.path.isfile(fPath):   
-            with open(fPath, "r") as f:
-                l = f.readline()
-                while l:
-                    try:
-                        res = eval(l)
-                        prefVars[res[0]] = res[1]
-                    except:
-                        pass
-                    l = f.readline()
-        prefVars[name] = value
-        with open(fPath, "w+") as f:
-            for key in prefVars:
-                f.writelines(str([key, prefVars[key]]) + "\n")
-
-    @staticmethod
-    def readPref(name):
-        fPath = os.path.join(Publisher.__prefPath, Publisher.__prefName + ".pref")
-        if not os.path.isdir(Publisher.__prefPath):
-            return None
-        if not os.path.isfile(fPath):
-            return None
-        prefVars = {}    
-        with open(fPath, "r") as f:
-            l = f.readline()
-            try:
-                while l:
-                    res = eval(l)
-                    prefVars[res[0]] = res[1]
-                    if res[0] == name:
-                        return(res[1])
-                    l = f.readline()
-            except:
-                pass
-        return None
-
     def __init__(self):
         Module.__init__(self, None)
         self.name = "{} V{}".format(str(self.__class__.__name__), __version__)
+        Publisher.lg = Publisher.Language.getLg(Publisher.readPref("lg"))
+        if self.lg is None:
+            Publisher.lg = Publisher.Language.Fr
+            Publisher.writePref("lg", Publisher.lg.__name__)
 
     def load(self):
         '''loading The window
@@ -1150,11 +1360,11 @@ class Publisher(Module):
 
         # Tabs definitions 
         #   Attach up
-        self.SyncCommon = self.tabs.addTopTabs(Publisher.MT_SyncCommon(self.tabs), Publisher.IMAGE_COMMON, "Common")
-        self.SyncAnimation = self.tabs.addTopTabs(Publisher.MT_SyncAnimation(self.tabs), Publisher.IMAGE_ANIMATION, "Animation")
+        self.SyncCommon = self.tabs.addTopTabs(Publisher.MT_SyncCommon(self.tabs), Publisher.Image.COMMON, Publisher.lg.Button.common)
+        self.SyncAnimation = self.tabs.addTopTabs(Publisher.MT_SyncAnimation(self.tabs), Publisher.Image.ANIMATION, Publisher.lg.Button.animation)
         #   Attach bot
-        self.tabs.addBoTTabs(Publisher.MT_info(self.tabs), Publisher.IMAGE_HELP, "About")
-        self.tabs.addBoTTabs(Publisher.MT_Settings(self.tabs), Publisher.IMAGE_SETTING, "Settings")
+        self.tabs.addBoTTabs(Publisher.MT_info(self.tabs), Publisher.Image.HELP, Publisher.lg.Button.about)
+        self.tabs.addBoTTabs(Publisher.MT_Settings(self.tabs), Publisher.Image.SETTING, Publisher.lg.Button.settings)
         # Loading tabs
         self.tabs.load()
 
@@ -1187,7 +1397,7 @@ class Publisher(Module):
         if cmds.workspaceControl(self.win, exists=1):
             cmds.deleteUI(self.win)
         return self
-    def unload(self):
+    def unloadEvent(self):
         self.writePref("currentTab", self.tabs.getActiveTab())
         return self
 
