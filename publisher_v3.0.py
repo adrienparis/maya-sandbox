@@ -431,6 +431,7 @@ class Publisher(Module):
         UNDO = "undo_s.png"
         UNKNOW = "UVTkBtnHead.png"
         UPLOAD = "SP_FileDialogToParent.png"
+        QUIT = "SP_TitleBarCloseButton.png"
 
     class Language():
         class En():
@@ -449,9 +450,17 @@ class Publisher(Module):
                 animation = "Animation"
                 about = "About"
                 settings = "Settings"
+                install = "Install"
+                uninstall = "Uninstall"
 
             class Label():
                 comment = "Comments : "
+                language = "Language"
+                nameConv = "Name convertion"
+                TestDef = "Test definition"
+                loadSavePref = "Load/Save Preferences"
+                plugin = "Install Plug-in"
+                colorTheme = "Color Theme"
 
             class About():
                 PUBLISHER = """
@@ -545,9 +554,17 @@ class Publisher(Module):
                 animation = u"Animation"
                 about = u"À propos"
                 settings = u"Paramètre"
+                install = u"Installer"
+                uninstall = u"Désinstaller"
 
             class Label():
                 comment = u"Commentaires : "
+                language = u"Langues"
+                nameConv = u"Convertion de nom"
+                TestDef = u"Définition des test"
+                loadSavePref = u"Charger/Sauvegarder les préférences"
+                plugin = u"Installer le Plug-in"
+                colorTheme = u"Thème de couleur"
 
             class About():
                 PUBLISHER = u"""
@@ -1029,34 +1046,35 @@ class Publisher(Module):
 
             self.applyAttach()
 
-    class MT_SettingLanguage(Module):
-        @callback
-        def cb_changeLanguage(self, lg):
-            print(lg)
-            # Publisher.lg = Publisher.Language.En if Publisher.lg == Publisher.Language.Fr else Publisher.Language.Fr
-            # Publisher().reload()
-            # Publisher.writePref("lg", Publisher.lg.__name__)
+    class MC_StrSplitter(Module):
+        def __init__(self, parent, name=None):
+            Module.__init__(self, parent, name=name)
 
         def load(self):
-            self.layout = cmds.formLayout(parent=self.parent)
-            self.btn_En = self.attach(cmds.button(p=self.layout, l="En", c=self.cb_changeLanguage("En"), ann="English", h=30, w=30, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", margin=(3,3,3,3))
-            self.btn_Fr = self.attach(cmds.button(p=self.layout, l="Fr", c=self.cb_changeLanguage("Fr"), ann=u"Français", h=30, w=30, bgc=Publisher.Theme.SELECTED), top="FORM", left=self.btn_En, margin=(3,3,3,3))
-            self.btn_Es = self.attach(cmds.button(p=self.layout, l="Es", c=self.cb_changeLanguage("Es"), ann=u"Español", h=30, w=30, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.btn_Fr, margin=(3,3,3,3))
-            self.btn_Pt = self.attach(cmds.button(p=self.layout, l="Pt", c=self.cb_changeLanguage("Pt"), ann=u"Português", h=30, w=30, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.btn_Es, margin=(3,3,3,3))
-            self.btn_folder = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top="FORM", right="FORM", margin=(3,3,3,3))
-            self.applyAttach()
+            self.layout = cmds.formLayout("label{}".format(self.name), parent=self.parent)
+            
+
+    class MC_VariableEditor(Module):
+        def load(self):
+            pass
 
     class MC_Label(Module):
-        def __init__(self, parent, name=None):
-            Module.__init__(parent, name=name)
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.QUIT, bgc=Publisher.Theme.BUTTON, h=18), top="FORM", right="FORM", margin=(1,1,1,1))
+            self.title = self.attach(cmds.button(l=self.name, bgc=Publisher.Theme.BUTTON, h=18), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
+            self.applyAttach()
+
+    class MC_LabelContainers(Module):
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.DELETE, bgc=Publisher.Theme.BUTTON), top="FORM", right="FORM", margin=(1,1,1,1))
+            self.title = self.attach(cmds.button(l=self.name, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
+            self.applyAttach()
 
     class MC_SettingSection(Module):
-        def __init__(self, parent, name):
-            Module.__init__(self, parent)
-            self.name = name
-
         def load(self):
-            self.layout = cmds.formLayout("SettingSection{}".format(self.name), parent=self.parent)
+            self.layout = cmds.formLayout(parent=self.parent)
             self.title = self.attach(cmds.text(l=self.name), top="FORM", left="FORM")
             self.separator = self.attach(cmds.separator(parent=self.layout, height=10, style='in' ), top="FORM", left=self.title, right="FORM", margin=(3,3,15,3))
             self.childrenLayout = self.attach(cmds.formLayout("childLay", parent=self.layout, h=50), top=self.title, left="FORM", right="FORM", margin=(3,3,25,3))
@@ -1067,21 +1085,68 @@ class Publisher(Module):
 
             self.applyAttach()
 
-    class MT_Settings(Module):
+    class MT_SettingLanguage(Module):
+        @callback
+        def cb_changeLanguage(self, lg):
+            new_lg = Publisher.Language.getLg(lg)
+            if new_lg is not None:
+                Publisher.lg = new_lg
+            else :
+                cmds.warning("This language, {}, is not define".format(lg))
+            Publisher.writePref("lg", Publisher.lg.__name__)
+            Publisher().reload()
+
+            # Publisher.lg = Publisher.Language.En if Publisher.lg == Publisher.Language.Fr else Publisher.Language.Fr
+
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            self.btns = {}
+            prev = "FORM"
+            for lg in ["En", "Fr", "Es", "Pt"]:
+                color = Publisher.Theme.SELECTED if Publisher.lg.__name__ == lg else Publisher.Theme.BUTTON
+                prev = self.attach(cmds.button(p=self.layout, l=lg, c=self.cb_changeLanguage(lg), ann="English", h=30, w=30, bgc=color), top="FORM", left=prev, margin=(3,3,3,3))
+                self.btns[lg] = prev
+            # self.btn_Fr = self.attach(cmds.button(p=self.layout, l="Fr", c=self.cb_changeLanguage("Fr"), ann=u"Français", h=30, w=30, bgc=Publisher.Theme.SELECTED), top="FORM", left=self.btn_En, margin=(3,3,3,3))
+            # self.btn_Es = self.attach(cmds.button(p=self.layout, l="Es", c=self.cb_changeLanguage("Es"), ann=u"Español", h=30, w=30, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.btn_Fr, margin=(3,3,3,3))
+            # self.btn_Pt = self.attach(cmds.button(p=self.layout, l="Pt", c=self.cb_changeLanguage("Pt"), ann=u"Português", h=30, w=30, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.btn_Es, margin=(3,3,3,3))
+            # self.btn_folder = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top="FORM", right="FORM", margin=(3,3,3,3))
+            self.applyAttach()
+
+    class MT_SettingsNameConvertion(Module):
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            prev = "FORM"
+            for e in ["project", "asset", "name", "state", "version", "extension", "_", "."]:
+                prev = self.attach(Publisher.MC_Label(self.layout, e).load(), top="FORM", left=prev, margin=(3,3,3,3))
+            prev = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.ADD, h=18, w=18, bgc=Publisher.Theme.BUTTON), top="FORM", left=prev, margin=(3,3,3,3))
+            self.applyAttach()
+
+    class MT_SettingsPlugin(Module):
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            self.attach(cmds.button(p=self.layout, l=Publisher.lg.Button.install, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", right=50, margin=(3,3,3,3))
+            self.attach(cmds.button(p=self.layout, l=Publisher.lg.Button.uninstall, bgc=Publisher.Theme.ERROR), top="FORM", right="FORM", left=50, margin=(3,3,3,3))
+
+            self.applyAttach()
+
+    class MGT_Settings(Module):
         def __init__(self, parent):
             Module.__init__(self, parent)
             self.section = {}
             self.defineSection()
 
         def defineSection(self):
-            self.section["language"] = Publisher.MC_SettingSection(self, "Language")
-            self.section["nameConv"] = Publisher.MC_SettingSection(self, "Name Convertion")
-            self.section["test"] = Publisher.MC_SettingSection(self, "Test Definition")
-            self.section["prefs"] = Publisher.MC_SettingSection(self, "Load/Save Prefs")
-            self.section["plugin"] = Publisher.MC_SettingSection(self, "Install Plug-in")
-            self.section["colorTheme"] = Publisher.MC_SettingSection(self, "Color Theme")
+            self.section["language"] = Publisher.MC_SettingSection(self, Publisher.lg.Label.language)
+            self.section["nameConv"] = Publisher.MC_SettingSection(self,Publisher.lg.Label.nameConv)
+            self.section["test"] = Publisher.MC_SettingSection(self,Publisher.lg.Label.TestDef)
+            self.section["prefs"] = Publisher.MC_SettingSection(self,Publisher.lg.Label.loadSavePref)
+            self.section["plugin"] = Publisher.MC_SettingSection(self,Publisher.lg.Label.plugin)
+            self.section["colorTheme"] = Publisher.MC_SettingSection(self,Publisher.lg.Label.colorTheme)
 
             Publisher.MT_SettingLanguage(self.section["language"])
+            Publisher.MT_SettingsNameConvertion(self.section["nameConv"])
+            Publisher.MT_SettingsPlugin(self.section["plugin"])
+            
 
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
@@ -1160,7 +1225,7 @@ class Publisher(Module):
             prev = self.attach(cmds.text(p=self.childrenLayout, l=txt), top=prev, bottom=None, left="FORM", right="FORM", margin=(1,1,1,1))
             self.btn_ticket = self.attach(cmds.button(l=Publisher.lg.Button.ticket, c=self.openTicket()), top=prev, bottom=None, left="FORM", right=None, margin=(1,1,1,1))
             with io.open(os.path.join(self.__iconsPath, "test.html"), "w+", encoding="utf-8") as f:
-                f.write(txt)
+                f.write(unicode(txt))
             self.applyAttach()
 
     class Sync():
@@ -1386,7 +1451,7 @@ class Publisher(Module):
         self.SyncAnimation = self.tabs.addTopTabs(Publisher.MT_SyncAnimation(self.tabs), Publisher.Image.ANIMATION, Publisher.lg.Button.animation)
         #   Attach bot
         self.tabs.addBoTTabs(Publisher.MT_info(self.tabs), Publisher.Image.HELP, Publisher.lg.Button.about)
-        self.tabs.addBoTTabs(Publisher.MT_Settings(self.tabs), Publisher.Image.SETTING, Publisher.lg.Button.settings)
+        self.tabs.addBoTTabs(Publisher.MGT_Settings(self.tabs), Publisher.Image.SETTING, Publisher.lg.Button.settings)
         # Loading tabs
         self.tabs.load()
 
@@ -1414,6 +1479,8 @@ class Publisher(Module):
         return self
 
     def _unload(self):
+        if "win" not in dir(self):
+            return self
         if self.win == None:
             return self
         if cmds.workspaceControl(self.win, exists=1):
