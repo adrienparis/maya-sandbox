@@ -21,6 +21,7 @@ import shutil
 import re
 import getpass
 import io
+import re
 from datetime import datetime
 
 try:
@@ -353,7 +354,7 @@ class Module(object):
             c[0](*a)
 
 def info(message):
-    mel.eval('trace -where ""; print "{}"; trace -where "";'.format(message))
+    mel.eval('trace -where ""; print "{}\\n"; trace -where "";'.format(message))
 
 # @singleton
 class Publisher(Module):
@@ -432,6 +433,8 @@ class Publisher(Module):
         UNKNOW = "UVTkBtnHead.png"
         UPLOAD = "SP_FileDialogToParent.png"
         QUIT = "SP_TitleBarCloseButton.png"
+        LEFTARROW = "tabs_scroll_left.png"
+        RIGHTARROW = "tabs_scroll_right.png"
 
     class Language():
         class En():
@@ -1047,29 +1050,104 @@ class Publisher(Module):
             self.applyAttach()
 
     class MC_StrSplitter(Module):
-        def __init__(self, parent, name=None):
+        def __init__(self, parent, operations, name=None):
             Module.__init__(self, parent, name=name)
+            self.operations = operations
+
+        @staticmethod
+        def getResult(operations, input_):
+            '''operation : (str: split type, str: split args, int: iterator)
+            input_ : str: fileName
+            '''
+            output = input_
+            for op in operations:
+                if op[0] == "str":
+                    arr = output.split(op[1])
+                elif op[0] == "alphaNum":
+                    arr = re.findall(r"[^\W\d_]+|\d+", output)
+                elif op[0] == "lowUpCase":
+                    arr = re.findall('[A-Z][^A-Z]*', output)
+                    arr = output.split(op[1])
+
+                output = arr[op[2]]
+            return output
+        
+        def setExample(self, name):
+            pass
 
         def load(self):
-            self.layout = cmds.formLayout("label{}".format(self.name), parent=self.parent)
-            
+            self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.SEC_BGC)
+            self.splitTypeLabel = self.attach(cmds.text(parent=self.layout, l="Split by : "), top="FORM", left="FORM", margin=(7,2,2,2))
+            it = ["str", "alphaNum", "lowUpCase"].index(self.operations[0]) + 1
+            self.splitOptions = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.splitTypeLabel, margin=(4,2,2,2))
+            cmds.menuItem(p=self.splitOptions, label='String')
+            cmds.menuItem(p=self.splitOptions, label='Alpha/Num')
+            cmds.menuItem(p=self.splitOptions, label='Lower/Upper')
+            cmds.optionMenu(self.splitOptions, e=True, sl=it)
+
+
+            self.removeBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.QUIT), top="FORM", right="FORM", margin=(5,5,5,5))
+            visField = self.operations[0] == "str"
+            self.strSplit = self.attach(cmds.textField(parent=self.layout, tx=self.operations[1], vis=visField), top="FORM", left=self.splitOptions, right=self.removeBtn, margin=(4,2,2,2))
+
+            sc, ec = (Publisher.Theme.SELECTED, Publisher.Theme.BUTTON) if self.operations[2] >= 0 else (Publisher.Theme.BUTTON, Publisher.Theme.SELECTED)
+            self.typeBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.RIGHTARROW, bgc=sc), top=self.splitTypeLabel, left="FORM", margin=(5,5,5,5))
+            self.typeBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.LEFTARROW, bgc=ec), top=self.splitTypeLabel, right="FORM", margin=(5,5,5,5))
+            self.attach(cmds.formLayout(parent=self.layout, h=10), bottom="FORM")
+            self.applyAttach()
 
     class MC_VariableEditor(Module):
-        def load(self):
+        name = "Variable getter"
+        def __init__(self, varName, operations):
+            name = self.name
+            Module.__init__(self, None)
+            self.name = name
+            self.varName = varName
+            self.operations = operations
+
+        def updateOperations(self):
             pass
+
+        def load(self):
+            if cmds.workspaceControl(self.name, exists=1):
+                cmds.deleteUI(self.name)
+            self.win = cmds.workspaceControl(self.name, ih=240, iw=320, retain=False, floating=True, h=100, w=500)
+            self.layout = cmds.formLayout(parent=self.win, bgc=Publisher.Theme.MAIN_BGC)
+            
+            self.typeBtn = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", margin=(2,2,2,2))
+            cmds.menuItem(p=self.typeBtn, label='String')
+            cmds.menuItem(p=self.typeBtn, label='Int')
+            cmds.menuItem(p=self.typeBtn, label='Const')
+
+            self.varNameLabel = self.attach(cmds.text(parent=self.layout, l="Variable Name"), top=self.typeBtn, left="FORM", margin=(5,2,2,2))
+            self.varName = self.attach(cmds.textField(parent=self.layout, tx=self.varName), top=self.typeBtn, left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
+            self.childrenLayout = self.attach(cmds.formLayout(parent=self.layout), top=self.varName, left="FORM", right="FORM", margin=(5,5,5,5))
+            prev = "FORM"
+            for op in self.operations:
+                print(op)
+                prev = self.attach(Publisher.MC_StrSplitter(self, op).load(), top=prev, left="FORM", right="FORM", margin=(5,5,0,0))
+                prev.eventHandler("update", self.updateOperations)
+            self.addBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.ADD, bgc=Publisher.Theme.BUTTON), top=self.childrenLayout, left="FORM", right="FORM", margin=(5,5,5,5))
+            self.saveBtn = self.attach(cmds.button(parent=self.layout, l="Save & exit", bgc=Publisher.Theme.BUTTON), bottom="FORM", left="FORM", right="FORM", margin=(5,5,5,5))
+            self.attach(cmds.formLayout(parent=self.layout, h=20), bottom=self.saveBtn)
+            self.applyAttach()
 
     class MC_Label(Module):
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
-            self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.QUIT, bgc=Publisher.Theme.BUTTON, h=18), top="FORM", right="FORM", margin=(1,1,1,1))
-            self.title = self.attach(cmds.button(l=self.name, bgc=Publisher.Theme.BUTTON, h=18), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
+            self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.QUIT, bgc=Publisher.Theme.BUTTON, h=18, c=Callback(self.runEvent, "remove", self.name)), top="FORM", right="FORM", margin=(1,1,1,1))
+            self.title = self.attach(cmds.button(l=self.name, bgc=Publisher.Theme.BUTTON, h=18, c=Callback(self.runEvent, "click", self.name)), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
             self.applyAttach()
 
-    class MC_LabelContainers(Module):
+    class MC_stackContainer(Module):
+        def __init__(self, parent, horizontal=True):
+            Module.__init__(self, parent)
+            self.list = []
+            self.horizontal = horizontal
+
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
-            self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.DELETE, bgc=Publisher.Theme.BUTTON), top="FORM", right="FORM", margin=(1,1,1,1))
-            self.title = self.attach(cmds.button(l=self.name, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
+
             self.applyAttach()
 
     class MC_SettingSection(Module):
@@ -1077,7 +1155,7 @@ class Publisher(Module):
             self.layout = cmds.formLayout(parent=self.parent)
             self.title = self.attach(cmds.text(l=self.name), top="FORM", left="FORM")
             self.separator = self.attach(cmds.separator(parent=self.layout, height=10, style='in' ), top="FORM", left=self.title, right="FORM", margin=(3,3,15,3))
-            self.childrenLayout = self.attach(cmds.formLayout("childLay", parent=self.layout, h=50), top=self.title, left="FORM", right="FORM", margin=(3,3,25,3))
+            self.childrenLayout = self.attach(cmds.formLayout("childLay", parent=self.layout), top=self.title, left="FORM", right="FORM", margin=(3,3,25,3))
 
             for c in self.childrens:
                 c.load()
@@ -1102,23 +1180,52 @@ class Publisher(Module):
             self.layout = cmds.formLayout(parent=self.parent)
             self.btns = {}
             prev = "FORM"
-            for lg in ["En", "Fr", "Es", "Pt"]:
+            for lg, lgName in [("En", "English"), ("Fr", u"Français"), ("Es", u"Español"), ("Pt", u"Português")]:
                 color = Publisher.Theme.SELECTED if Publisher.lg.__name__ == lg else Publisher.Theme.BUTTON
-                prev = self.attach(cmds.button(p=self.layout, l=lg, c=self.cb_changeLanguage(lg), ann="English", h=30, w=30, bgc=color), top="FORM", left=prev, margin=(3,3,3,3))
+                prev = self.attach(cmds.button(p=self.layout, l=lg, c=self.cb_changeLanguage(lg), ann=lgName, h=30, w=30, bgc=color), top="FORM", left=prev, margin=(3,3,3,3))
                 self.btns[lg] = prev
             # self.btn_Fr = self.attach(cmds.button(p=self.layout, l="Fr", c=self.cb_changeLanguage("Fr"), ann=u"Français", h=30, w=30, bgc=Publisher.Theme.SELECTED), top="FORM", left=self.btn_En, margin=(3,3,3,3))
             # self.btn_Es = self.attach(cmds.button(p=self.layout, l="Es", c=self.cb_changeLanguage("Es"), ann=u"Español", h=30, w=30, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.btn_Fr, margin=(3,3,3,3))
             # self.btn_Pt = self.attach(cmds.button(p=self.layout, l="Pt", c=self.cb_changeLanguage("Pt"), ann=u"Português", h=30, w=30, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.btn_Es, margin=(3,3,3,3))
-            # self.btn_folder = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top="FORM", right="FORM", margin=(3,3,3,3))
+            self.btn_folder = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top="FORM", right="FORM", margin=(3,3,3,3))
             self.applyAttach()
 
     class MT_SettingsNameConvertion(Module):
+        def __init__(self, parent):
+            Module.__init__(self, parent)
+            self.variables = {
+                    "project" : [("str", ".", 0), ("str", "_", 0)],
+                    # "asset" : [("str", ".", 0), ("str", "_", 0), ("alphaNum", None, -1)],
+                    "name" : [("str", ".", 0), ("str", "_", 1)],
+                    "state" : [("str", ".", 0), ("str", "_", 2)],
+                    "version" : [("str", ".", 0), ("str", "_", 3), ("alphaNum", None, -1)],
+                    "extension" : [("str", ".", -1)],
+                    "_" : [],
+                    "."  : [],
+                    "v"  : [],
+            }
+
+        @callback
+        def cb_editLabel(self, name=None):
+            print("edit {}".format(name))
+            Publisher.MC_VariableEditor(name, self.variables[name]).load()
+
+        @callback
+        def cb_deleteLabel(self, name=None):
+            print("delete {}".format(name))
+            self.variables.pop(name)
+
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
             prev = "FORM"
-            for e in ["project", "asset", "name", "state", "version", "extension", "_", "."]:
+            for e in self.variables:
                 prev = self.attach(Publisher.MC_Label(self.layout, e).load(), top="FORM", left=prev, margin=(3,3,3,3))
-            prev = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.ADD, h=18, w=18, bgc=Publisher.Theme.BUTTON), top="FORM", left=prev, margin=(3,3,3,3))
+                prev.eventHandler("click", self.cb_editLabel(e))
+                prev.eventHandler("remove", self.cb_deleteLabel(e))
+            topPrev = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.ADD, h=18, w=18, bgc=Publisher.Theme.BUTTON, c=self.cb_editLabel()), top="FORM", left=prev, margin=(3,3,3,3))
+            prev= "FORM"
+            for e in ["project", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]:
+                prev = self.attach(Publisher.MC_Label(self.layout, e).load(), top=topPrev, left=prev, margin=(35,3,3,3))
             self.applyAttach()
 
     class MT_SettingsPlugin(Module):
@@ -1487,6 +1594,10 @@ class Publisher(Module):
             cmds.deleteUI(self.win)
         return self
     def unloadEvent(self):
+        
+        if cmds.workspaceControl(Publisher.MC_VariableEditor.name, exists=1):
+            cmds.deleteUI(Publisher.MC_VariableEditor.name)
+
         self.writePref("currentTab", self.tabs.getActiveTab())
         return self
 
