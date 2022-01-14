@@ -1050,13 +1050,37 @@ class Publisher(Module):
             self.applyAttach()
 
     class MC_StrSplitter(Module):
+        splitFunc = {
+            "str" : ('Every string', lambda x, a: x.split(a)),
+            "alphaNum" : ('Alpha/Num', lambda x: re.findall(r"[^\W\d_]+|\d+", x)),
+            "lowUpCase" : ('Lower/Upper', lambda x: re.findall('[A-Z][^A-Z]*', x)),
+        }
+        
         def __init__(self, parent, operations, name=None):
             Module.__init__(self, parent, name=name)
             self.operations = operations
 
         @staticmethod
+        def solveOperation(word, extract=True, typeSplit="str", args=None, index=0):
+            if typeSplit == "str":
+                arr = word.split(args)
+            elif typeSplit == "alphaNum":
+                arr = re.findall(r"[^\W\d_]+|\d+", word)
+            elif typeSplit == "lowUpCase":
+                arr = re.findall('[A-Z][^A-Z]*', word)
+
+            if extract:
+                output = arr[index]
+            else :
+                output = arr[:index] + arr[:index] 
+                if typeSplit == "str":
+                    output = args.join(output)
+            
+            return output
+
+        @staticmethod
         def getResult(operations, input_):
-            '''operation : (str: split type, str: split args, int: iterator)
+            '''operation : (bool: extract/exclude, str: split type, str: split args, int: iterator)
             input_ : str: fileName
             '''
             output = input_
@@ -1077,7 +1101,14 @@ class Publisher(Module):
 
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.SEC_BGC)
-            self.splitTypeLabel = self.attach(cmds.text(parent=self.layout, l="Split by : "), top="FORM", left="FORM", margin=(7,2,2,2))
+            
+            it = ["str", "alphaNum", "lowUpCase"].index(self.operations[0]) + 1
+            self.exOption = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", margin=(4,2,2,2))
+            cmds.menuItem(p=self.exOption, label='Extract')
+            cmds.menuItem(p=self.exOption, label='Exclude')
+            cmds.optionMenu(self.exOption, e=True, sl=it)
+
+            self.splitTypeLabel = self.attach(cmds.text(parent=self.layout, l="Split by : "), top="FORM", left=self.exOption, margin=(7,2,2,2))
             it = ["str", "alphaNum", "lowUpCase"].index(self.operations[0]) + 1
             self.splitOptions = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.splitTypeLabel, margin=(4,2,2,2))
             cmds.menuItem(p=self.splitOptions, label='String')
