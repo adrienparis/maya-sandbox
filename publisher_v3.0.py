@@ -459,7 +459,7 @@ class Publisher(Module):
             class Label():
                 comment = "Comments : "
                 language = "Language"
-                nameConv = "Name convertion"
+                nameConv = "Paths definitions"
                 TestDef = "Test definition"
                 loadSavePref = "Load/Save Preferences"
                 plugin = "Install Plug-in"
@@ -563,7 +563,7 @@ class Publisher(Module):
             class Label():
                 comment = u"Commentaires : "
                 language = u"Langues"
-                nameConv = u"Convertion de nom"
+                nameConv = u"Définition des chemins"
                 TestDef = u"Définition des test"
                 loadSavePref = u"Charger/Sauvegarder les préférences"
                 plugin = u"Installer le Plug-in"
@@ -687,6 +687,9 @@ class Publisher(Module):
                     self._setButtonVis()
                 if name == "annotation":
                     cmds.iconTextButton(self.button, e=True, ann=self.annotation)
+
+        def getPath(self):
+            return self.path
 
         def _setButtonVis(self):
             btnVis = self.image is not None
@@ -1056,27 +1059,46 @@ class Publisher(Module):
             "lowUpCase" : ('Lower/Upper', lambda x: re.findall('[A-Z][^A-Z]*', x)),
         }
         
-        def __init__(self, parent, operations, name=None):
+        def __init__(self, parent, operations, name=None, input=lambda: "Example"):
             Module.__init__(self, parent, name=name)
             self.operations = operations
+            self.input = input
+        
+        def output(self):
+            op = self.operations
+            return Publisher.MC_StrSplitter.solveOperation(self.input(), op[0], op[1], op[2], op[3])
 
         @staticmethod
         def solveOperation(word, extract=True, typeSplit="str", args=None, index=0):
+            # if typeSplit == "str":
+            #     arr = word.split(args)
+            # elif typeSplit == "alphaNum":
+            #     arr = re.findall(r"[^\W\d_]+|\d+", word)
+            # elif typeSplit == "lowUpCase":
+            #     arr = re.findall('[A-Z][^A-Z]*', word)
+
+            arr = Publisher.MC_StrSplitter.splitWords(word, typeSplit, args)
+            if extract:
+                output = arr[index] if index < len(arr) else arr[-1]
+            else :
+                arr.pop(index)
+                output = arr
+                if typeSplit == "str":
+                    output = args.join(output)
+            
+            return output if index < len(arr) else arr[-1]
+
+        @staticmethod
+        def splitWords(word, typeSplit="str", args=None):
             if typeSplit == "str":
                 arr = word.split(args)
             elif typeSplit == "alphaNum":
                 arr = re.findall(r"[^\W\d_]+|\d+", word)
             elif typeSplit == "lowUpCase":
                 arr = re.findall('[A-Z][^A-Z]*', word)
-
-            if extract:
-                output = arr[index]
-            else :
-                output = arr[:index] + arr[:index] 
-                if typeSplit == "str":
-                    output = args.join(output)
-            
-            return output
+            else:
+                arr = []
+            return arr
 
         @staticmethod
         def getResult(operations, input_):
@@ -1085,15 +1107,16 @@ class Publisher(Module):
             '''
             output = input_
             for op in operations:
-                if op[0] == "str":
-                    arr = output.split(op[1])
-                elif op[0] == "alphaNum":
-                    arr = re.findall(r"[^\W\d_]+|\d+", output)
-                elif op[0] == "lowUpCase":
-                    arr = re.findall('[A-Z][^A-Z]*', output)
-                    arr = output.split(op[1])
+                output = Publisher.MC_StrSplitter.solveOperation(output, op[0], op[1], op[2], op[3])
+                # if op[0] == "str":
+                #     arr = output.split(op[1])
+                # elif op[0] == "alphaNum":
+                #     arr = re.findall(r"[^\W\d_]+|\d+", output)
+                # elif op[0] == "lowUpCase":
+                #     arr = re.findall('[A-Z][^A-Z]*', output)
+                #     arr = output.split(op[1])
+                # output = arr[op[2]] if op[2] < len(arr) else arr[-1]
 
-                output = arr[op[2]]
             return output
         
         def setExample(self, name):
@@ -1102,14 +1125,14 @@ class Publisher(Module):
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.SEC_BGC)
             
-            it = ["str", "alphaNum", "lowUpCase"].index(self.operations[0]) + 1
-            self.exOption = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", margin=(4,2,2,2))
+            it = int(not self.operations[0]) + 1
+            self.exOption = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", margin=(4,2,5,2))
             cmds.menuItem(p=self.exOption, label='Extract')
             cmds.menuItem(p=self.exOption, label='Exclude')
             cmds.optionMenu(self.exOption, e=True, sl=it)
 
             self.splitTypeLabel = self.attach(cmds.text(parent=self.layout, l="Split by : "), top="FORM", left=self.exOption, margin=(7,2,2,2))
-            it = ["str", "alphaNum", "lowUpCase"].index(self.operations[0]) + 1
+            it = ["str", "alphaNum", "lowUpCase"].index(self.operations[1]) + 1
             self.splitOptions = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.splitTypeLabel, margin=(4,2,2,2))
             cmds.menuItem(p=self.splitOptions, label='String')
             cmds.menuItem(p=self.splitOptions, label='Alpha/Num')
@@ -1118,23 +1141,34 @@ class Publisher(Module):
 
 
             self.removeBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.QUIT), top="FORM", right="FORM", margin=(5,5,5,5))
-            visField = self.operations[0] == "str"
-            self.strSplit = self.attach(cmds.textField(parent=self.layout, tx=self.operations[1], vis=visField), top="FORM", left=self.splitOptions, right=self.removeBtn, margin=(4,2,2,2))
+            visField = self.operations[1] == "str"
+            self.strSplit = self.attach(cmds.textField(parent=self.layout, tx=self.operations[2], vis=visField), top="FORM", left=self.splitOptions, right=self.removeBtn, margin=(4,2,2,2))
 
-            sc, ec = (Publisher.Theme.SELECTED, Publisher.Theme.BUTTON) if self.operations[2] >= 0 else (Publisher.Theme.BUTTON, Publisher.Theme.SELECTED)
-            self.typeBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.RIGHTARROW, bgc=sc), top=self.splitTypeLabel, left="FORM", margin=(5,5,5,5))
-            self.typeBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.LEFTARROW, bgc=ec), top=self.splitTypeLabel, right="FORM", margin=(5,5,5,5))
-            self.attach(cmds.formLayout(parent=self.layout, h=10), bottom="FORM")
+            sc, ec = (Publisher.Theme.SELECTED, Publisher.Theme.BUTTON) if self.operations[3] >= 0 else (Publisher.Theme.BUTTON, Publisher.Theme.SELECTED)
+            self.indexStardBtn = self.attach(cmds.iconTextButton(parent=self.layout, h=25, w=20, image=Publisher.Image.RIGHTARROW, bgc=sc), top=self.splitTypeLabel, left="FORM", margin=(8,5,5,5))
+            self.indexEndBtn = self.attach(cmds.iconTextButton(parent=self.layout, h=25, w=20, image=Publisher.Image.LEFTARROW, bgc=ec), top=self.splitTypeLabel, right="FORM", margin=(8,5,5,5))
+
+            prev = self.indexStardBtn
+            arr = Publisher.MC_StrSplitter.splitWords(self.input(), self.operations[1], self.operations[2])
+            for i, elem in enumerate(arr):
+                bgColor = Publisher.Theme.SELECTED if i == (self.operations[3] if self.operations[3] >= 0 else len(arr) + self.operations[3]) else Publisher.Theme.BUTTON
+                prev = self.attach(cmds.button(parent=self.layout, l=elem, bgc=bgColor), top=self.splitTypeLabel, left=prev, margin=(8,5,5,5))
+            
+            self.attach(cmds.formLayout(parent=self.layout, h=5), bottom="FORM")
             self.applyAttach()
 
     class MC_VariableEditor(Module):
         name = "Variable getter"
-        def __init__(self, varName, operations):
+        def __init__(self, varName, operations, example=""):
             name = self.name
             Module.__init__(self, None)
             self.name = name
+            self.example = example
             self.varName = varName
             self.operations = operations
+
+        def getExample(self):
+            return self.example
 
         def updateOperations(self):
             pass
@@ -1151,12 +1185,20 @@ class Publisher(Module):
             cmds.menuItem(p=self.typeBtn, label='Const')
 
             self.varNameLabel = self.attach(cmds.text(parent=self.layout, l="Variable Name"), top=self.typeBtn, left="FORM", margin=(5,2,2,2))
-            self.varName = self.attach(cmds.textField(parent=self.layout, tx=self.varName), top=self.typeBtn, left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
-            self.childrenLayout = self.attach(cmds.formLayout(parent=self.layout), top=self.varName, left="FORM", right="FORM", margin=(5,5,5,5))
+            self.varNameInput = self.attach(cmds.textField(parent=self.layout, tx=self.varName), top=self.typeBtn, left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
+
+            exOutput = Publisher.MC_StrSplitter.getResult(self.operations, self.example) if len(self.operations) != 0 else self.varName
+            self.exampleInputLabel = self.attach(cmds.text(parent=self.layout, l="Input : "), top=self.varNameInput, left="FORM", margin=(5,2,2,2))
+            self.exampleInput = self.attach(cmds.textField(parent=self.layout, tx=self.example, ed=True), top=self.varNameInput, left=self.exampleInputLabel, right="FORM", margin=(5,2,2,2))
+            self.exampleOutputLabel = self.attach(cmds.text(parent=self.layout, l="Output : "), top=self.exampleInput, left="FORM", margin=(5,2,2,2))
+            self.exampleOutput = self.attach(cmds.textField(parent=self.layout, tx=exOutput, ed=False), top=self.exampleInput, left=self.exampleOutputLabel, right="FORM", margin=(5,2,2,2))
+
+            self.childrenLayout = self.attach(cmds.formLayout(parent=self.layout), top=self.exampleOutput, left="FORM", right="FORM", margin=(5,5,5,5))
             prev = "FORM"
+            prevInput = self.getExample
             for op in self.operations:
-                print(op)
-                prev = self.attach(Publisher.MC_StrSplitter(self, op).load(), top=prev, left="FORM", right="FORM", margin=(5,5,0,0))
+                prev = self.attach(Publisher.MC_StrSplitter(self, op, input=prevInput).load(), top=prev, left="FORM", right="FORM", margin=(5,5,0,0))
+                prevInput = prev.output
                 prev.eventHandler("update", self.updateOperations)
             self.addBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.ADD, bgc=Publisher.Theme.BUTTON), top=self.childrenLayout, left="FORM", right="FORM", margin=(5,5,5,5))
             self.saveBtn = self.attach(cmds.button(parent=self.layout, l="Save & exit", bgc=Publisher.Theme.BUTTON), bottom="FORM", left="FORM", right="FORM", margin=(5,5,5,5))
@@ -1224,22 +1266,25 @@ class Publisher(Module):
     class MT_SettingsNameConvertion(Module):
         def __init__(self, parent):
             Module.__init__(self, parent)
+            self.example = lambda: "Y a rien"
             self.variables = {
-                    "project" : [("str", ".", 0), ("str", "_", 0)],
+                    "project" : [(True, "str", "\\", -1), (True, "str", ".", 0), (True, "str", "_", 0)],
+                    "path" : [(False, "str", "\\", -1)],
                     # "asset" : [("str", ".", 0), ("str", "_", 0), ("alphaNum", None, -1)],
-                    "name" : [("str", ".", 0), ("str", "_", 1)],
-                    "state" : [("str", ".", 0), ("str", "_", 2)],
-                    "version" : [("str", ".", 0), ("str", "_", 3), ("alphaNum", None, -1)],
-                    "extension" : [("str", ".", -1)],
+                    "name" : [(True, "str", "\\", -1), (True, "str", ".", 0), (True, "str", "_", 1)],
+                    "state" : [(True, "str", "\\", -1), (True, "str", ".", 0), (True, "str", "_", 2)],
+                    "version" : [(True, "str", "\\", -1), (True, "str", ".", 0), (True, "str", "_", 3), (True, "alphaNum", None, -1)],
+                    "extension" : [(True, "str", "\\", -1), (True, "str", ".", -1)],
                     "_" : [],
                     "."  : [],
                     "v"  : [],
+                    "\\"  : [],
             }
 
         @callback
         def cb_editLabel(self, name=None):
             print("edit {}".format(name))
-            Publisher.MC_VariableEditor(name, self.variables[name]).load()
+            Publisher.MC_VariableEditor(name, self.variables[name], self.example()).load()
 
         @callback
         def cb_deleteLabel(self, name=None):
@@ -1255,7 +1300,7 @@ class Publisher(Module):
                 prev.eventHandler("remove", self.cb_deleteLabel(e))
             topPrev = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.ADD, h=18, w=18, bgc=Publisher.Theme.BUTTON, c=self.cb_editLabel()), top="FORM", left=prev, margin=(3,3,3,3))
             prev= "FORM"
-            for e in ["project", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]:
+            for e in ["path", "\\", "project", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]:
                 prev = self.attach(Publisher.MC_Label(self.layout, e).load(), top=topPrev, left=prev, margin=(35,3,3,3))
             self.applyAttach()
 
@@ -1285,7 +1330,6 @@ class Publisher(Module):
             Publisher.MT_SettingsNameConvertion(self.section["nameConv"])
             Publisher.MT_SettingsPlugin(self.section["plugin"])
             
-
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
             # self.tmp = self.attach(cmds.text("plop", p=self.layout, l="WIP"), top="FORM", left="FORM")
@@ -1402,14 +1446,12 @@ class Publisher(Module):
             relativePath = self.pathsModule.getRelativePath()
             drives = self.pathsModule.getDrivesPath()
             infos = []
-            print(drives)
             for drive in drives:
                 abs_path = os.path.join(drive, relativePath)
                 if abs_path == relativePath:
                     infos.append((relativePath, False)) if (relativePath, False) not in infos else None
                     continue
                 driveDir = os.path.dirname(abs_path)
-                print(driveDir)
                 if not os.path.exists(drive):
                     infos.append((drive, False))
                     continue
@@ -1418,7 +1460,6 @@ class Publisher(Module):
                 state = None if os.path.exists(os.path.join(drive, relativePath)) else True
                 shutil.copy(os.path.join(localPath, relativePath), os.path.join(drive, relativePath))
                 infos.append((drive, state))
-            print(infos)
             self.pathsModule.infoColorPath(infos)
 
         def upload(self):
@@ -1503,7 +1544,6 @@ class Publisher(Module):
             node = cmds.createNode('partition', n='publisher_metadata')
 
             for k, v in self.datas.items():
-                print(k,v)
                 cmds.addAttr(node, longName=k, dataType="string")
                 cmds.setAttr("publisher_metadata.{}".format(k), str(v), type="string")
 
@@ -1589,7 +1629,8 @@ class Publisher(Module):
         self.SyncAnimation = self.tabs.addTopTabs(Publisher.MT_SyncAnimation(self.tabs), Publisher.Image.ANIMATION, Publisher.lg.Button.animation)
         #   Attach bot
         self.tabs.addBoTTabs(Publisher.MT_info(self.tabs), Publisher.Image.HELP, Publisher.lg.Button.about)
-        self.tabs.addBoTTabs(Publisher.MGT_Settings(self.tabs), Publisher.Image.SETTING, Publisher.lg.Button.settings)
+        settingsTab = self.tabs.addBoTTabs(Publisher.MGT_Settings(self.tabs), Publisher.Image.SETTING, Publisher.lg.Button.settings)
+        settingsTab.section["nameConv"].childrens[0].example = self.paths.relativePath.getPath
         # Loading tabs
         self.tabs.load()
 
