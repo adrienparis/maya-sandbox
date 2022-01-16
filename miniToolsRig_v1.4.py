@@ -2762,11 +2762,12 @@ class MiniToolRig(Module):
         ]
 
 
+        if not os.path.exists("Q:/"):
+            return self.sections_order[:]
+            
         if present < datetime.datetime(2022, 1, 31):
             return ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "nurbs", "arc", "blendshape"]
 
-        if not os.path.exists("Q:/"):
-            return self.sections_order[:]
 
         # if user in authorizedUser:
         #     return self.sections_order[:]
