@@ -1574,9 +1574,11 @@ class Publisher(Module):
             return (paths, names)
 
         def takeSnapshot(self, name="tmp", width=1920, height=1080):
+            os.makedirs("/".join([self.pathsModule.getLocalPath(), "images"]))
             imagePath = "/".join([self.pathsModule.getLocalPath(), "images", name + ".jpg"])
             frame = cmds.currentTime( query=True )
             cmds.playblast(fr=frame, v=False, fmt="image", c="jpg", orn=False, cf=imagePath, wh=[width,height], p=100)
+            print(imagePath)
             return imagePath
 
         @staticmethod
