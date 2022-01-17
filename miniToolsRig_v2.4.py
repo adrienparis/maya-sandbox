@@ -5,7 +5,7 @@
 
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
-__version__     = "1.4.8-BETA"
+__version__     = "2.4.8-BETA"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import ctypes
