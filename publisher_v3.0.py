@@ -1063,6 +1063,7 @@ class Publisher(Module):
             Module.__init__(self, parent, name=name)
             self.operations = operations
             self.input = input
+            self.start = self.operations[3] >= 0
         
         def output(self):
             op = self.operations
@@ -1119,8 +1120,32 @@ class Publisher(Module):
 
             return output
         
-        def setExample(self, name):
-            pass
+        @callback
+        def cb_changeIndex(self, i):
+            arr = Publisher.MC_StrSplitter.splitWords(self.input(), self.operations[1], self.operations[2])
+            if self.operations[3] >= 0:
+                last_index = self.operations[3]
+            else:
+                last_index = len(arr) + self.operations[3]
+                i = i - len(arr)
+            cmds.control(self.childrens[last_index], e=True, bgc=Publisher.Theme.BUTTON)
+            cmds.control(self.childrens[i], e=True, bgc=Publisher.Theme.SELECTED)
+            self.operations[3] = i
+            self.runEvent("update")
+
+
+        def update(self):
+            for c in self.childrens:
+                cmds.deleteUI(c)
+            self.childrens = []
+            prev = "FORM"
+            arr = Publisher.MC_StrSplitter.splitWords(self.input(), self.operations[1], self.operations[2])
+            for i, elem in enumerate(arr):
+                bgColor = Publisher.Theme.SELECTED if i == (self.operations[3] if self.operations[3] >= 0 else len(arr) + self.operations[3]) else Publisher.Theme.BUTTON
+                prev = self.attach(cmds.button(parent=self, l=elem, bgc=bgColor, c=self.cb_changeIndex(i)), top="FORM", left=prev, margin=(0,0,5,5))
+                self.childrens.append(prev)
+            self.applyAttach()
+            self.runEvent("update")
 
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.SEC_BGC)
@@ -1148,11 +1173,14 @@ class Publisher(Module):
             self.indexStardBtn = self.attach(cmds.iconTextButton(parent=self.layout, h=25, w=20, image=Publisher.Image.RIGHTARROW, bgc=sc), top=self.splitTypeLabel, left="FORM", margin=(8,5,5,5))
             self.indexEndBtn = self.attach(cmds.iconTextButton(parent=self.layout, h=25, w=20, image=Publisher.Image.LEFTARROW, bgc=ec), top=self.splitTypeLabel, right="FORM", margin=(8,5,5,5))
 
-            prev = self.indexStardBtn
-            arr = Publisher.MC_StrSplitter.splitWords(self.input(), self.operations[1], self.operations[2])
-            for i, elem in enumerate(arr):
-                bgColor = Publisher.Theme.SELECTED if i == (self.operations[3] if self.operations[3] >= 0 else len(arr) + self.operations[3]) else Publisher.Theme.BUTTON
-                prev = self.attach(cmds.button(parent=self.layout, l=elem, bgc=bgColor), top=self.splitTypeLabel, left=prev, margin=(8,5,5,5))
+            self.childrenLayout = self.attach(cmds.formLayout(parent=self.layout), top=self.splitTypeLabel, left=self.indexStardBtn, right=self.indexEndBtn, margin=(8,5,0,0))
+
+            self.update()
+            # prev = self.indexStardBtn
+            # arr = Publisher.MC_StrSplitter.splitWords(self.input(), self.operations[1], self.operations[2])
+            # for i, elem in enumerate(arr):
+            #     bgColor = Publisher.Theme.SELECTED if i == (self.operations[3] if self.operations[3] >= 0 else len(arr) + self.operations[3]) else Publisher.Theme.BUTTON
+            #     prev = self.attach(cmds.button(parent=self.layout, l=elem, bgc=bgColor), top=self.splitTypeLabel, left=prev, margin=(8,5,5,5))
             
             self.attach(cmds.formLayout(parent=self.layout, h=5), bottom="FORM")
             self.applyAttach()
@@ -1170,8 +1198,8 @@ class Publisher(Module):
         def getExample(self):
             return self.example
 
-        def updateOperations(self):
-            pass
+        def updateOutput(self, output):
+            cmds.textField(self.exampleOutput, e=True , tx=output())
 
         def load(self):
             if cmds.workspaceControl(self.name, exists=1):
@@ -1196,10 +1224,15 @@ class Publisher(Module):
             self.childrenLayout = self.attach(cmds.formLayout(parent=self.layout), top=self.exampleOutput, left="FORM", right="FORM", margin=(5,5,5,5))
             prev = "FORM"
             prevInput = self.getExample
+            self.splitSections = []
             for op in self.operations:
-                prev = self.attach(Publisher.MC_StrSplitter(self, op, input=prevInput).load(), top=prev, left="FORM", right="FORM", margin=(5,5,0,0))
-                prevInput = prev.output
-                prev.eventHandler("update", self.updateOperations)
+                current = self.attach(Publisher.MC_StrSplitter(self, op, input=prevInput).load(), top=prev, left="FORM", right="FORM", margin=(5,5,0,0))
+                self.splitSections.append(current)
+                if prev != "FORM":
+                    prev.eventHandler("update", current.update)
+                prev = current
+                prevInput = current.output
+            prev.eventHandler("update", self.updateOutput, prev.output)
             self.addBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.ADD, bgc=Publisher.Theme.BUTTON), top=self.childrenLayout, left="FORM", right="FORM", margin=(5,5,5,5))
             self.saveBtn = self.attach(cmds.button(parent=self.layout, l="Save & exit", bgc=Publisher.Theme.BUTTON), bottom="FORM", left="FORM", right="FORM", margin=(5,5,5,5))
             self.attach(cmds.formLayout(parent=self.layout, h=20), bottom=self.saveBtn)
@@ -1268,13 +1301,13 @@ class Publisher(Module):
             Module.__init__(self, parent)
             self.example = lambda: "Y a rien"
             self.variables = {
-                    "project" : [(True, "str", "\\", -1), (True, "str", ".", 0), (True, "str", "_", 0)],
-                    "path" : [(False, "str", "\\", -1)],
-                    # "asset" : [("str", ".", 0), ("str", "_", 0), ("alphaNum", None, -1)],
-                    "name" : [(True, "str", "\\", -1), (True, "str", ".", 0), (True, "str", "_", 1)],
-                    "state" : [(True, "str", "\\", -1), (True, "str", ".", 0), (True, "str", "_", 2)],
-                    "version" : [(True, "str", "\\", -1), (True, "str", ".", 0), (True, "str", "_", 3), (True, "alphaNum", None, -1)],
-                    "extension" : [(True, "str", "\\", -1), (True, "str", ".", -1)],
+                    "project" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 0]],
+                    "path" : [[False, "str", "\\", -1]],
+                    # "asset" : [("str", ".", 0], ("str", "_", 0], ("alphaNum", None, -1]],
+                    "name" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 1]],
+                    "state" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 2]],
+                    "version" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 3], [True, "alphaNum", None, -1]],
+                    "extension" : [[True, "str", "\\", -1], [True, "str", ".", -1]],
                     "_" : [],
                     "."  : [],
                     "v"  : [],
