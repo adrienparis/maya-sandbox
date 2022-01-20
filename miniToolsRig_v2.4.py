@@ -2610,10 +2610,13 @@ class MiniToolRig(Module):
                     self.greyedOut = self.wip or self.greyedOut
 
         def parentCollapseSwitch(self):
-            pass
+            self.runEvent("parentCollapseSwitch")
 
-        def collapseSwitch(self):
-            self.collapsed = not self.collapsed
+        def collapseSwitch(self, state=None):
+            if state is None:
+                self.collapsed = not self.collapsed
+            else :
+                self.collapsed = state
             cmds.layout(self.childrenLayout, e=True, vis=not self.collapsed)
 
         def hiddenSwitch(self):
@@ -2652,7 +2655,7 @@ class MiniToolRig(Module):
         def __init__(self, parent, name):
             Module.__init__(self, parent, name)
             self.childrens = []
-            self.nbColumn = 1
+            self.nbColumn = 2
 
         def refresh(self):
             self.reformatChildLay()
@@ -2677,9 +2680,6 @@ class MiniToolRig(Module):
             side_left = None
             col = 0
             side_right = gap * (col + 1) if self.nbColumn - 1 != col else None
-            print(self.name)
-            if self.name == "option":
-                print("option", side_right)
             for c in self.childrens:
                 total_h += c.height
                 if side_top == None:
@@ -2822,6 +2822,16 @@ class MiniToolRig(Module):
             if k not in unlockSection:
                 i.locked = True
 
+    def collapsAllSection(self):
+        state = 0
+        for name in self.sections_order:
+            if name in self.sections.keys():
+                state = max(int(self.sections[name].collapsed), state)
+
+        for name in self.sections_order:
+            if name in self.sections.keys():
+                self.sections[name].collapseSwitch(not bool(state))
+
     # Loading methods
     def load(self):
         '''loading The window
@@ -2851,6 +2861,7 @@ class MiniToolRig(Module):
             if name in self.sections.keys():
                 self.sections[name].setParent(self.pannel_rig)
                 self.sections[name].load()
+                self.sections[name].eventHandler("parentCollapseSwitch", self.collapsAllSection)
 
     def unload(self):
         if self.win == None:
