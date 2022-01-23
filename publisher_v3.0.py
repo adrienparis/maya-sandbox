@@ -52,12 +52,6 @@ class Callback():
         self.kwargs = kwargs
         self.repeatable_value = False
         self.getCommandArgument_value = False
-
-    def _addArgument(self, *args, **kwargs):
-        self.args = args
-        self.repeatArgs = args
-        self.kwargs = kwargs
-        return self
         
     def repeatable(self):
         ''' Call this methode to make the function repeatable with 'g'
@@ -169,6 +163,7 @@ class Module(object):
         self.af = []
         self.ac = []
         self.ap = []
+        self.an = []
 
     def __str__(self):
         return str(self.childrenLayout)
@@ -192,7 +187,7 @@ class Module(object):
         if isinstance(self.parent, Module):
             self.parent.childrens.append(self)
 
-    def attach(self, elem, top=None, bottom=None, left=None, right=None, margin=(0,0,0,0)):
+    def attach(self, elem, top=False, bottom=False, left=False, right=False, margin=(0,0,0,0)):
         '''For formLayout
             Register the attach information of your elem 
             attach "FORM": string
@@ -207,8 +202,12 @@ class Module(object):
         else:
             e = elem
         for s, n, m in [(top, "top", margin[0]), (bottom, "bottom", margin[1]), (left, "left", margin[2]), (right, "right", margin[3])]: 
-            if s == None:
+            if s is False:
                 continue
+            if s is None:
+                self.an.append((e, n))
+            if s is True:
+                self.af.append((e, n, m))
             if isinstance(s, (str, unicode)):
                 if s.upper() == "FORM":
                     self.af.append((e, n, m))
@@ -224,6 +223,7 @@ class Module(object):
         self.af = []
         self.ac = []
         self.ap = []
+        self.an = []
     
     @staticmethod
     def _getParentLayout(attachList):
@@ -246,23 +246,60 @@ class Module(object):
         parLayoutAf = Module._getParentLayout(self.af)
         parLayoutAc = Module._getParentLayout(self.ac)
         parLayoutAp = Module._getParentLayout(self.ap)
-        parentlayouts = parLayoutAf.keys() + parLayoutAc.keys() + parLayoutAp.keys()
+        parLayoutAn = Module._getParentLayout(self.an)
+        parentlayouts = parLayoutAf.keys() + parLayoutAc.keys() + parLayoutAp.keys() + parLayoutAn.keys()
         parentlayouts = list(dict.fromkeys(parentlayouts))
         for pl in parentlayouts:
             af = parLayoutAf[pl] if pl in parLayoutAf else []
             ac = parLayoutAc[pl] if pl in parLayoutAc else []
             ap = parLayoutAp[pl] if pl in parLayoutAp else []
+            an = parLayoutAn[pl] if pl in parLayoutAn else []
             try:
-                cmds.formLayout(pl, e=True, af=af, ac=ac, ap=ap)
+                cmds.formLayout(pl, e=True, af=af, ac=ac, ap=ap, an=an)
             except Exception as inst:
                 print(inst)
                 raise Exception("Can't attach {} {}".format(pl, inst))
 
     def _load(self):
+        # Create a workspaceControl if there is no parent
+        par = self.parent
+        if self.parent == None:
+            if cmds.workspaceControl(self.name, exists=1):
+                cmds.deleteUI(self.name)
+            self.win = cmds.workspaceControl(self.name, ih=100, iw=500, retain=False, floating=True, h=100, w=500)
+            par = self.win
+
+        # Create Default layout and ChildrenLayout
+        self.layout = cmds.formLayout(parent=par)
+        self.childrenLayout = cmds.formLayout(p=self.layout)
+        defaultLayout = self.layout
+        defaultChildrenLay = self.childrenLayout
+        
+        # Execute The function develope by the user
         object.__getattribute__(self, "load")()
-        cmds.scriptJob(ro=True, uid=[self.layout, Callback(self._killJobs)])
+
+        # Delete Default Layout & ChildrenLayout if not used
+        if self.childrenLayout != defaultChildrenLay:
+            if cmds.layout(defaultChildrenLay, q=True, ex=True):
+                cmds.deleteUI(defaultChildrenLay)
+        else:
+            self.attach(self.childrenLayout, top=True, bottom=True, left=True, right=True)
+
+        if self.layout != defaultLayout:
+            if cmds.layout(defaultLayout, q=True, ex=True):
+                cmds.deleteUI(defaultLayout)
+
+        # Apply Attach to the form Layout
+        self.applyAttach()
+        
+        # log UnloadEvent
         cmds.scriptJob(ro=True, uid=[self.layout, Callback(self.unloadEvent)])
+
+        # manage ScriptJob events
+        cmds.scriptJob(ro=True, uid=[self.layout, Callback(self._killJobs)])
         self._loadJobs()
+
+        # so the function load() can be callable
         return self
 
     def load(self):
