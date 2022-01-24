@@ -393,7 +393,7 @@ class Module(object):
 def info(message):
     mel.eval('trace -where ""; print "{}\\n"; trace -where "";'.format(message))
 
-# @singleton
+@singleton
 class Publisher(Module):
     __prefPath = os.path.expanduser('~/') + "maya/2020/prefs/cs"
     __prefName = "Publisher"
@@ -1756,10 +1756,48 @@ def onMayaDroppedPythonFile(*args):
     '''
     Publisher().load()
 
+PLUGIN_SHELF_NAME = "CreativeSeeds"
+PLUGIN_SHELF_BUTTON = "ButtonPublisher"
+
+def getLastCommonParent(top):
+    childrens = cmds.layout(top, q=True, ca=True)
+    if len(childrens) != 1:
+        return top, childrens
+    return getLastCommonParent("{}|{}".format(top, childrens[0]))
+
+def getPlugInShelf():
+    parent, childrens = getLastCommonParent("Shelf|MainShelfLayout")
+    n = [c for c in childrens if c.startswith("ShelfLayout")]
+    if len(n) != 1:
+        return None
+    n = n[0]
+    n = "{}|{}".format(parent, n)
+    lay, _ = getLastCommonParent(n)
+    return lay
+
+
 def initializePlugin(*args):
     '''To load the tool as a plugin
     '''
-    Publisher().load()
+    shelfLay = getPlugInShelf()
+    if shelfLay is not None:
+        plugInTab = "{}|{}".format(shelfLay, PLUGIN_SHELF_NAME)
+        if not cmds.layout(plugInTab, q=True, ex=True):
+            cmds.shelfLayout(PLUGIN_SHELF_NAME, p=shelfLay)
+        
+        if not cmds.control(button, q=True, ex=True):
+            cmds.shelfButton(PLUGIN_SHELF_BUTTON, e=True p=plugInTab, annotation='Publisher', image1='SP_FileDialogForward.png', command="Publisher().load()")
 
 def uninitializePlugin(*args):
     Publisher().unload()
+    shelfLay = getPlugInShelf()
+    plugInTab = "{}|{}".format(shelfLay, PLUGIN_SHELF_NAME)
+    button = "{}|{}".format(plugInTab, PLUGIN_SHELF_BUTTON)
+    if shelfLay is not None:
+        if cmds.control(button, q=True, ex=True):
+            cmds.deleteUI(button)
+            
+        if cmds.layout(plugInTab, q=True, ex=True):
+            if cmds.layout(plugInTab, q=True, ca=True) is None:
+                cmds.deleteUI(plugInTab)
+
