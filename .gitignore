@@ -2,3 +2,4 @@
 .vscode/*
 ./pull.bat
 ./push.bat
+./sandbox/tmp.py
