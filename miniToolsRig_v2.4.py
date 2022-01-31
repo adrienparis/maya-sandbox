@@ -2750,7 +2750,7 @@ class MiniToolRig(Module):
         tu le mérite amplement ;)
         Ajoute ton nom dans le authorizedUser
         '''
-        authorizedUser = ["a.paris", ]
+        authorizedUser = ["a.paris", "y.genty"]
         user = getpass.getuser()
         present = datetime.datetime.now()
         yearsPermission = [
@@ -2761,16 +2761,15 @@ class MiniToolRig(Module):
             ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "switch", "nurbs", "follow", "still", "arc", "blendshape"],
         ]
 
-
         if not os.path.exists("Q:/"):
             return self.sections_order[:]
             
         if present < datetime.datetime(2022, 1, 31):
-            return ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "nurbs", "arc", "blendshape"]
+            return self.sections_order[:]
 
 
-        # if user in authorizedUser:
-        #     return self.sections_order[:]
+        if user in authorizedUser:
+            return self.sections_order[:]
 
         for y in range(1, 6):
             if not os.path.exists("Q:/annee0{}/casiers".format(y)):
