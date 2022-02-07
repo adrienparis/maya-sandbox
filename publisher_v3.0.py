@@ -1165,9 +1165,11 @@ class Publisher(Module):
             else:
                 last_index = len(arr) + self.operations[3]
                 i = i - len(arr)
-            cmds.control(self.childrens[last_index], e=True, bgc=Publisher.Theme.BUTTON)
+            if last_index < len(self.childrens):
+                cmds.control(self.childrens[last_index], e=True, bgc=Publisher.Theme.BUTTON)
             cmds.control(self.childrens[i], e=True, bgc=Publisher.Theme.SELECTED)
             self.operations[3] = i
+            cmds.intField(self.iterSplit, e=True, v=self.operations[3])
             self.runEvent("update")
 
 
@@ -1204,7 +1206,8 @@ class Publisher(Module):
 
             self.removeBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.QUIT), top="FORM", right="FORM", margin=(5,5,5,5))
             visField = self.operations[1] == "str"
-            self.strSplit = self.attach(cmds.textField(parent=self.layout, tx=self.operations[2], vis=visField), top="FORM", left=self.splitOptions, right=self.removeBtn, margin=(4,2,2,2))
+            self.iterSplit = self.attach(cmds.intField(parent=self.layout, v=self.operations[3], vis=visField, w=50), top="FORM", right=self.removeBtn, margin=(4,2,2,2))
+            self.strSplit = self.attach(cmds.textField(parent=self.layout, tx=self.operations[2], vis=visField), top="FORM", left=self.splitOptions, right=self.iterSplit, margin=(4,2,2,2))
 
             sc, ec = (Publisher.Theme.SELECTED, Publisher.Theme.BUTTON) if self.operations[3] >= 0 else (Publisher.Theme.BUTTON, Publisher.Theme.SELECTED)
             self.indexStardBtn = self.attach(cmds.iconTextButton(parent=self.layout, h=25, w=20, image=Publisher.Image.RIGHTARROW, bgc=sc), top=self.splitTypeLabel, left="FORM", margin=(8,5,5,5))
