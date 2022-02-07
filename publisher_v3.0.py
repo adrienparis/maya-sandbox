@@ -1786,7 +1786,7 @@ def initializePlugin(*args):
             cmds.shelfLayout(PLUGIN_SHELF_NAME, p=shelfLay)
         
         if not cmds.control(button, q=True, ex=True):
-            cmds.shelfButton(PLUGIN_SHELF_BUTTON, e=True p=plugInTab, annotation='Publisher', image1='SP_FileDialogForward.png', command="Publisher().load()")
+            cmds.shelfButton(PLUGIN_SHELF_BUTTON, e=True, p=plugInTab, annotation='Publisher', image1='SP_FileDialogForward.png', command="Publisher().load()")
 
 def uninitializePlugin(*args):
     Publisher().unload()
