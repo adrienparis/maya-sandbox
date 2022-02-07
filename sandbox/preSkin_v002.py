@@ -9,7 +9,8 @@ class vertex():
     neighbor = []
     weight = {}
 
-    def __init__()
+    def __init__():
+        pass
 
     def weightBucket(self, joint, weightFilter=lambda x, y, z: 1):
         self.weight[joint] = weightFilter(self.x, self.y, self.z)

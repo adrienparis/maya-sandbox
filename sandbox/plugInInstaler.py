@@ -19,11 +19,11 @@ def initializePlugin(mobject):
     maya.cmds.setParent(maya.mel.eval("global string $gShelfTopLevel;$temp = $gShelfTopLevel"))
 
     if maya.cmds.layout("TestPluginShelf", exists=True) == False:
-    maya.cmds.shelfLayout("GreenButton", style="textOnly")
-    maya.cmds.shelfButton(image1="scriptIcon.png",
-                          label="script", annotation="externalScript",
-                          command="import ExternalScript reload(ExternalScript)", 
-                          sourceType="python")
+        maya.cmds.shelfLayout("GreenButton", style="textOnly")
+        maya.cmds.shelfButton(image1="scriptIcon.png",
+                            label="script", annotation="externalScript",
+                            command="import ExternalScript reload(ExternalScript)", 
+                            sourceType="python")
 
     # Add callback to clean up UI when Maya exits
     global fMayaExitingCB
@@ -40,5 +40,5 @@ def uninitializePlugin(mobject):
             maya.cmds.deleteUI("TestPluginShelf", layout=True)
     
     global fMayaExitingCB
-        if (fMayaExitingCB != None):		
+    if (fMayaExitingCB != None):		
         OpenMaya.MSceneMessage.removeCallback(fMayaExitingCB)

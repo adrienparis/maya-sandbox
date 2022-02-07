@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -- coding: utf-8 --
+#!/usr/bin/env python
 
 
 """publisher.py: A little tool to help syncronise maya file for a CreativeSeeds pipeline"""
@@ -452,13 +452,13 @@ class Publisher(Module):
         WARNING = Module.COLOR_YELLOW
 
     class Image():
-        ADD = "addClip.png"
+        ADD = "QR_add.png"
         ANIMATION = "animateSnapshot.png"
         DELETE = "deleteClip.png"
         CHECK = "SP_FileDialogContentsView.png"
         CLEAN = "brush.png"
         COMMON = "volumeCube.png"
-        FOLDER = "openLoadGeneric.png"
+        FOLDER = "openScript.png"
         HELP = "help.png"
         LINE = "UVEditorUAxisDisabled.png"
         NETWORK = "SP_DriveNetIcon.png"
@@ -585,7 +585,7 @@ class Publisher(Module):
                 backup = u"Sauvegarder votre TEC sur les périphérique de sauvegarde"
                 check = u"Lancer les tests (vous devrer les configurer dans Paramètre)"
                 publish = u"Publier"
-                upload = u"Télécharger votre publication ainsi que \nla dernière sauvegarde vers vos périphérique de sauvegarde"
+                upload = u"Télécharger votre publication ainsi que \nla dernière version vers vos périphérique de sauvegarde"
                 confo = u"Confo"
                 ticket = u"Ouvrir un ticket"
                 delete = u"Supprimer"
@@ -1375,10 +1375,42 @@ class Publisher(Module):
             self.applyAttach()
 
     class MT_SettingsPlugin(Module):
+        @callback
+        def cb_install(self):
+            self.cb_uninstall()()
+            PFolder = os.path.join(os.path.expanduser('~'),"maya", cmds.about(version=True), "plug-ins")
+            f = str(Publisher().__class__.__name__) + ".py"
+            try:
+                if not os.path.exists(PFolder):
+                    os.makedirs(PFolder)
+                shutil.copy(__file__, os.path.join(PFolder, f))
+                cmds.loadPlugin(f)
+            except:
+                cmds.warning("Can't install! Did you drag & drop the file into the viewport?")
+
+        @callback
+        def cb_uninstall(self):
+            PFolder = os.path.join(os.path.expanduser('~'),"maya", cmds.about(version=True), "plug-ins")
+            f = str(Publisher().__class__.__name__) + ".py"
+
+            if not os.path.exists(os.path.join(PFolder, f)):
+                cmds.warning("Publisher plug-in already uninstaled")
+                return
+
+            uninitializePlugin()
+            cmds.unloadPlugin(f)
+            os.remove(os.path.join(PFolder, f))
+            info("Uninstalled")
+
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
-            self.attach(cmds.button(p=self.layout, l=Publisher.lg.Button.install, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", right=50, margin=(3,3,3,3))
-            self.attach(cmds.button(p=self.layout, l=Publisher.lg.Button.uninstall, bgc=Publisher.Theme.ERROR), top="FORM", right="FORM", left=50, margin=(3,3,3,3))
+            prev = "FORM"
+            PFolder = os.path.join(os.path.expanduser('~'),"maya", cmds.about(version=True), "plug-ins")
+            f = str(Publisher().__class__.__name__) + ".py"
+            if not os.path.join(PFolder, f) == __name__:
+                self.attach(cmds.button(p=self.layout, l=Publisher.lg.Button.install, c=self.cb_install(), bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", right=50, margin=(3,3,3,3))
+                prev = 50
+            self.attach(cmds.button(p=self.layout, l=Publisher.lg.Button.uninstall, c=self.cb_uninstall(), bgc=Publisher.Theme.ERROR), top="FORM", right="FORM", left=prev, margin=(3,3,3,3))
 
             self.applyAttach()
 
@@ -1775,25 +1807,44 @@ def getPlugInShelf():
     lay, _ = getLastCommonParent(n)
     return lay
 
+def getShelfButton(tab, name):
+    array = cmds.layout(tab, q=True, ca=True)
+    if array == None:
+        return None
+    for sb in array:
+        if cmds.shelfButton(sb, q=True, annotation=True) == name:
+            return sb
+    return None
 
 def initializePlugin(*args):
     '''To load the tool as a plugin
     '''
     shelfLay = getPlugInShelf()
+    print(shelfLay)
     if shelfLay is not None:
         plugInTab = "{}|{}".format(shelfLay, PLUGIN_SHELF_NAME)
         if not cmds.layout(plugInTab, q=True, ex=True):
             cmds.shelfLayout(PLUGIN_SHELF_NAME, p=shelfLay)
-        
-        if not cmds.control(button, q=True, ex=True):
-            cmds.shelfButton(PLUGIN_SHELF_BUTTON, e=True, p=plugInTab, annotation='Publisher', image1='SP_FileDialogForward.png', command="Publisher().load()")
+        button = getShelfButton(plugInTab, 'Publisher')
+        PFolder = os.path.join(os.path.expanduser('~'),"maya", cmds.about(version=True), "plug-ins")
+        f = str(Publisher().__class__.__name__) + ".py"
+        cmd = "import sys;"
+        cmd += "sys.path.append(r'{}') if r'{}' not in sys.path else None;".format(PFolder, PFolder)
+        cmd += "from Publisher import Publisher;"
+        cmd += "Publisher().load();"
+        if button is None:
+            cmds.shelfButton(PLUGIN_SHELF_BUTTON, p=plugInTab, annotation='Publisher', image1='SP_FileDialogForward.png', command=cmd)
+        else:
+            cmds.shelfButton(button, e=True, p=plugInTab, annotation='Publisher', image1='SP_FileDialogForward.png', command=cmd)
 
 def uninitializePlugin(*args):
-    Publisher().unload()
     shelfLay = getPlugInShelf()
     plugInTab = "{}|{}".format(shelfLay, PLUGIN_SHELF_NAME)
-    button = "{}|{}".format(plugInTab, PLUGIN_SHELF_BUTTON)
     if shelfLay is not None:
+        if not cmds.layout(plugInTab, q=True, ex=True):
+            cmds.shelfLayout(PLUGIN_SHELF_NAME, p=shelfLay)
+        button = getShelfButton(plugInTab, 'Publisher')
+    if shelfLay is not None and button is not None:
         if cmds.control(button, q=True, ex=True):
             cmds.deleteUI(button)
             
