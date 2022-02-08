@@ -1409,9 +1409,10 @@ class Publisher(Module):
             prev = "FORM"
             PFolder = os.path.join(os.path.expanduser('~'),"maya", cmds.about(version=True), "plug-ins")
             f = str(Publisher().__class__.__name__) + ".py"
-            if not os.path.normpath(os.path.join(PFolder, f)) == os.path.normpath(__file__):
-                self.attach(cmds.button(p=self.layout, l=Publisher.lg.Button.install, c=self.cb_install(), bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", right=50, margin=(3,3,3,3))
-                prev = 50
+            if "__file__" in globals():
+                if not os.path.normpath(os.path.join(PFolder, f)) == os.path.normpath(__file__):
+                    self.attach(cmds.button(p=self.layout, l=Publisher.lg.Button.install, c=self.cb_install(), bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", right=50, margin=(3,3,3,3))
+                    prev = 50
             self.attach(cmds.button(p=self.layout, l=Publisher.lg.Button.uninstall, c=self.cb_uninstall(), bgc=Publisher.Theme.ERROR), top="FORM", right="FORM", left=prev, margin=(3,3,3,3))
 
             self.applyAttach()
