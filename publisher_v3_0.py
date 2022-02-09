@@ -139,7 +139,8 @@ class Module(object):
     COLOR_GREEN = [0.48, 0.67, 0.27]
     COLOR_RED = [0.85, 0.34, 0.34]
     COLOR_YELLOW = [0.86,0.81,0.53]
-
+    COLOR_LIGHTGREYGREEN = [0.42, 0.51, 0.49]
+    COLOR_LIGHTGREYRED = [0.51, 0.42, 0.42]
 
     increment = 0
     drag = None
@@ -1264,7 +1265,7 @@ class Publisher(Module):
             cmds.menuItem(p=self.typeBtn, label='Const')
 
             self.varNameLabel = self.attach(cmds.text(parent=self.layout, l="Variable Name"), top=self.typeBtn, left="FORM", margin=(5,2,2,2))
-            self.varNameInput = self.attach(cmds.textField(parent=self.layout, tx=self.varName), top=self.typeBtn, left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
+            self.varNameInput = self.attach(cmds.textField(parent=self.layout, tx=self.varName, ), top=self.typeBtn, left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
 
             exOutput = Publisher.MC_StrSplitter.getResult(self.operations, self.example) if len(self.operations) != 0 else self.varName
             self.exampleInputLabel = self.attach(cmds.text(parent=self.layout, l="Input : "), top=self.varNameInput, left="FORM", margin=(5,2,2,2))
@@ -1290,17 +1291,18 @@ class Publisher(Module):
             self.applyAttach()
 
     class MC_Label(Module):
-        def __init__(self, parent, name, button=False):
+        def __init__(self, parent, name, button=False, bgc=Publisher.Theme.BUTTON):
             Module.__init__(self, parent, name)
             self.button = button
+            self.bgc = bgc
 
         def load(self):
             self.layout = cmds.formLayout("label_{}_{}".format(self.increment, self.name), parent=self.parent)
-            self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.QUIT, bgc=Publisher.Theme.BUTTON, h=18, c=Callback(self.runEvent, "remove", self.name)), top="FORM", right="FORM", margin=(1,1,1,1))
+            self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.QUIT, bgc=self.bgc, h=18, c=Callback(self.runEvent, "remove", self.name)), top="FORM", right="FORM", margin=(1,1,1,1))
             if self.button:
-                self.title = self.attach(cmds.button(l=self.name, bgc=Publisher.Theme.BUTTON, h=18, c=Callback(self.runEvent, "click", self.name)), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
+                self.title = self.attach(cmds.button(l=self.name, bgc=self.bgc, h=18, c=Callback(self.runEvent, "click", self.name)), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
             else:
-                self.title = self.attach(cmds.text(l="  {}  ".format(self.name), bgc=Publisher.Theme.BUTTON, h=18), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
+                self.title = self.attach(cmds.text(l="  {}  ".format(self.name), bgc=self.bgc, h=18), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
             self.applyAttach()
 
     class MC_stackContainer(Module):
@@ -1395,7 +1397,7 @@ class Publisher(Module):
             self.title = self.attach(cmds.text(p=self.layout, l="{} : ".format(self.name.capitalize())), top="FORM", left="FORM", margin=(3,3,5,3))
             self.containerVar = Publisher.MC_stackContainer(self.layout)
             for e in self.list:
-                label = Publisher.MC_Label(self.containerVar, e)
+                label = Publisher.MC_Label(self.containerVar, str(e[0]), bgc=e[1])
             self.containerVar.load()
             self.attach(self.containerVar, top=self.title, left="FORM", right="FORM", margin=(3,3,15,3))
 
@@ -1406,7 +1408,7 @@ class Publisher(Module):
             self.example = lambda: "Y a rien"
             self.variables = {
                     "project" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 0]],
-                    "path" : [[False, "str", "\\", -1]],
+                    "path" : [[False, "str", "\\", -1], [False, "str", "\\", -1]],
                     # "asset" : [("str", ".", 0], ("str", "_", 0], ("alphaNum", None, -1]],
                     "name" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 1]],
                     "state" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 2]],
@@ -1434,7 +1436,9 @@ class Publisher(Module):
             self.titleDefineVar = self.attach(cmds.text(p=self.layout, l="Define Variables"), top="FORM", left="FORM", margin=(3,3,0,3))
             self.containerAllVar = Publisher.MC_stackContainer(self.layout)
             for e in self.variables:
-                label = Publisher.MC_Label(self.containerAllVar, e, button=True)
+                print(e, self.variables[e])
+                bgc = Publisher.Theme.BUTTON if len(self.variables[e]) > 0 else Module.COLOR_LIGHTGREYGREEN
+                label = Publisher.MC_Label(self.containerAllVar, e, button=True, bgc=bgc)
                 label.eventHandler("click", self.cb_editLabel(e))
                 label.eventHandler("remove", self.cb_deleteLabel(e))
             self.containerAllVar.load()
@@ -1452,7 +1456,8 @@ class Publisher(Module):
             ]
             prev = self.titleDefineNames
             for n in names:
-                prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], n[1]).load(), top=prev, left="FORM", right="FORM")
+                buttons = [(x, Module.COLOR_LIGHTGREYRED if not x in self.variables else Module.COLOR_LIGHTGREYGREEN if len(self.variables[x]) == 0 else Publisher.Theme.BUTTON) for x in n[1]]
+                prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], buttons).load(), top=prev, left="FORM", right="FORM")
 
 
     class MT_SettingsPlugin(Module):
