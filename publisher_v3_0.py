@@ -146,9 +146,10 @@ class Module(object):
 
     def __init__(self, parent, name=None):
         
+        Module.increment += 1
+        self.increment = Module.increment
         if name is None:
             name = self.__class__.__name__ + str(Module.increment)
-            Module.increment += 1
         self.name = name
         self.childrens = []
         self.command = {}
@@ -174,9 +175,15 @@ class Module(object):
         if name == 'unload':
             return object.__getattribute__(self, "_unload")
         if name == "height":
-            return cmds.layout(self.layout, q=True, h=True)
+            if self.layout is not None:
+                return cmds.layout(self.layout, q=True, h=True)
+            else:
+                 return 0
         if name == "width":
-            return cmds.layout(self.layout, q=True, w=True)
+            if self.layout is not None:
+                return cmds.layout(self.layout, q=True, w=True)
+            else:
+                 return 0
         return object.__getattribute__(self, name)
 
     def setParent(self, parent):
@@ -232,6 +239,8 @@ class Module(object):
             e = af[0]
             if isinstance(e, Module):
                 parLayout[e.parent] = [af] if e.parent not in parLayout else parLayout[e.parent] + [af]
+            elif e is None:
+                continue
             else:
                 if cmds.layout(e, exists=True):
                     parent = cmds.layout(e, q=True, p=True)
@@ -393,7 +402,7 @@ class Module(object):
 def info(message):
     mel.eval('trace -where ""; print "{}\\n"; trace -where "";'.format(message))
 
-@singleton
+# @singleton
 class Publisher(Module):
     __prefPath = os.path.expanduser('~/') + "maya/2020/prefs/cs"
     __prefName = "Publisher"
@@ -492,6 +501,7 @@ class Publisher(Module):
                 settings = "Settings"
                 install = "Install"
                 uninstall = "Uninstall"
+                loadLanguage = "Install a language"
 
             class Label():
                 comment = "Comments : "
@@ -596,6 +606,7 @@ class Publisher(Module):
                 settings = u"Paramètre"
                 install = u"Installer"
                 uninstall = u"Désinstaller"
+                loadLanguage = "Installer une langue"
 
             class Label():
                 comment = u"Commentaires : "
@@ -1279,22 +1290,62 @@ class Publisher(Module):
             self.applyAttach()
 
     class MC_Label(Module):
+        def __init__(self, parent, name, button=False):
+            Module.__init__(self, parent, name)
+            self.button = button
+
         def load(self):
-            self.layout = cmds.formLayout(parent=self.parent)
+            self.layout = cmds.formLayout("label_{}_{}".format(self.increment, self.name), parent=self.parent)
             self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.QUIT, bgc=Publisher.Theme.BUTTON, h=18, c=Callback(self.runEvent, "remove", self.name)), top="FORM", right="FORM", margin=(1,1,1,1))
-            self.title = self.attach(cmds.button(l=self.name, bgc=Publisher.Theme.BUTTON, h=18, c=Callback(self.runEvent, "click", self.name)), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
+            if self.button:
+                self.title = self.attach(cmds.button(l=self.name, bgc=Publisher.Theme.BUTTON, h=18, c=Callback(self.runEvent, "click", self.name)), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
+            else:
+                self.title = self.attach(cmds.text(l="  {}  ".format(self.name), bgc=Publisher.Theme.BUTTON, h=18), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
             self.applyAttach()
 
     class MC_stackContainer(Module):
-        def __init__(self, parent, horizontal=True):
+        def __init__(self, parent):
             Module.__init__(self, parent)
-            self.list = []
-            self.horizontal = horizontal
+
+        @callback
+        def resize(self):
+            self.clearAttach()
+            self.attach(self.scrlLay, top="FORM", left="FORM", right="FORM", bottom="FORM")
+
+            if self.layout is None:
+                return
+            width = 0
+            height = 1
+            curHeight = 0
+            prevHrztl = "FORM"
+            prevVrtcl = "FORM"
+            margin = (3,3,3,3)
+            for child in self.childrens:
+                if width + child.width < self.width:
+                    self.attach(child, top=prevVrtcl, left=prevHrztl, margin=margin)
+                    width += child.width
+                    prevHrztl = child
+                    curHeight = max(curHeight, child.height + 10)
+                else:
+                    prevVrtcl = prevHrztl
+                    self.attach(child, top=prevVrtcl, left="FORM", margin=margin)
+                    prevHrztl = child
+                    width = 0
+                    height += curHeight
+                    curHeight = 0
+            height += max(curHeight, child.height + 10)
+            cmds.layout(self.layout, e=True, h=height)
+            self.applyAttach()
 
         def load(self):
-            self.layout = cmds.formLayout(parent=self.parent)
+            self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.MAIN_BGC, h=10)
+            self.scrlLay = self.attach(cmds.scrollLayout(parent=self.layout, w=1, cr=True, rc=self.resize()), top="FORM", left="FORM", right="FORM", bottom="FORM")
+            self.childrenLayout = cmds.formLayout("StackContChildLay", parent=self.scrlLay)
 
-            self.applyAttach()
+            for child in self.childrens:
+                child.load()
+            self.resize()()
+
 
     class MC_SettingSection(Module):
         def load(self):
@@ -1319,7 +1370,6 @@ class Publisher(Module):
                 cmds.warning("This language, {}, is not define".format(lg))
             Publisher.writePref("lg", Publisher.lg.__name__)
             Publisher().reload()
-
             # Publisher.lg = Publisher.Language.En if Publisher.lg == Publisher.Language.Fr else Publisher.Language.Fr
 
         def load(self):
@@ -1330,11 +1380,25 @@ class Publisher(Module):
                 color = Publisher.Theme.SELECTED if Publisher.lg.__name__ == lg else Publisher.Theme.BUTTON
                 prev = self.attach(cmds.button(p=self.layout, l=lg, c=self.cb_changeLanguage(lg), ann=lgName, h=30, w=30, bgc=color), top="FORM", left=prev, margin=(3,3,3,3))
                 self.btns[lg] = prev
-            # self.btn_Fr = self.attach(cmds.button(p=self.layout, l="Fr", c=self.cb_changeLanguage("Fr"), ann=u"Français", h=30, w=30, bgc=Publisher.Theme.SELECTED), top="FORM", left=self.btn_En, margin=(3,3,3,3))
-            # self.btn_Es = self.attach(cmds.button(p=self.layout, l="Es", c=self.cb_changeLanguage("Es"), ann=u"Español", h=30, w=30, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.btn_Fr, margin=(3,3,3,3))
-            # self.btn_Pt = self.attach(cmds.button(p=self.layout, l="Pt", c=self.cb_changeLanguage("Pt"), ann=u"Português", h=30, w=30, bgc=Publisher.Theme.BUTTON), top="FORM", left=self.btn_Es, margin=(3,3,3,3))
-            self.btn_folder = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top="FORM", right="FORM", margin=(3,3,3,3))
+
+            self.btn_folder = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=Callback(self.runEvent, "btn_upload"), ann=Publisher.lg.Button.loadLanguage), top="FORM", right="FORM", margin=(3,3,3,3))
             self.applyAttach()
+
+    class MC_NameDefinition(Module):
+        def __init__(self, parent, name, lst):
+            Module.__init__(self, parent, name)
+            self.list = lst
+        
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+
+            self.title = self.attach(cmds.text(p=self.layout, l="{} : ".format(self.name.capitalize())), top="FORM", left="FORM", margin=(3,3,5,3))
+            self.containerVar = Publisher.MC_stackContainer(self.layout)
+            for e in self.list:
+                label = Publisher.MC_Label(self.containerVar, e)
+            self.containerVar.load()
+            self.attach(self.containerVar, top=self.title, left="FORM", right="FORM", margin=(3,3,15,3))
+
 
     class MT_SettingsNameConvertion(Module):
         def __init__(self, parent):
@@ -1366,16 +1430,30 @@ class Publisher(Module):
 
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
-            prev = "FORM"
+
+            self.titleDefineVar = self.attach(cmds.text(p=self.layout, l="Define Variables"), top="FORM", left="FORM", margin=(3,3,0,3))
+            self.containerAllVar = Publisher.MC_stackContainer(self.layout)
             for e in self.variables:
-                prev = self.attach(Publisher.MC_Label(self.layout, e).load(), top="FORM", left=prev, margin=(3,3,3,3))
-                prev.eventHandler("click", self.cb_editLabel(e))
-                prev.eventHandler("remove", self.cb_deleteLabel(e))
-            topPrev = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.ADD, h=18, w=18, bgc=Publisher.Theme.BUTTON, c=self.cb_editLabel()), top="FORM", left=prev, margin=(3,3,3,3))
-            prev= "FORM"
-            for e in ["path", "\\", "project", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]:
-                prev = self.attach(Publisher.MC_Label(self.layout, e).load(), top=topPrev, left=prev, margin=(35,3,3,3))
-            self.applyAttach()
+                label = Publisher.MC_Label(self.containerAllVar, e, button=True)
+                label.eventHandler("click", self.cb_editLabel(e))
+                label.eventHandler("remove", self.cb_deleteLabel(e))
+            self.containerAllVar.load()
+            # cmds.iconTextButton(p=self.containerAllVar, image=Publisher.Image.ADD, h=18, w=18, bgc=Publisher.Theme.BUTTON, c=self.cb_editLabel())
+            self.attach(self.containerAllVar, top=self.titleDefineVar, left="FORM", right="FORM", margin=(15,3,3,3))
+
+            self.titleDefineNames = self.attach(cmds.text(p=self.layout, l="Define names"), top=self.containerAllVar, left="FORM", margin=(3,3,0,3))
+            names = [
+                ("Publish", ["path", "\\", "project", "_", "name", "_", "state", ".", "extension"]),
+                ("Publish Image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"]),
+                ("Version", ["path", "\\", "versionPath", "\\", "project", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]),
+                ("Version Image", ["path", "\\", "versionPath", "\\", "project", "_", "name", "_", "state", "_", "v", "version", "_", "thumbnail", ".", "jpg"]),
+                ("Confo", ["path", "\\", "project", "_", "name", "_", "state", "_", ".", "extension"]),
+                ("Confo image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"])
+            ]
+            prev = self.titleDefineNames
+            for n in names:
+                prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], n[1]).load(), top=prev, left="FORM", right="FORM")
+
 
     class MT_SettingsPlugin(Module):
         @callback
