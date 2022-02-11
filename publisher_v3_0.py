@@ -1186,6 +1186,7 @@ class Publisher(Module):
 
 
         def update(self):
+            print(self.input())
             for c in self.childrens:
                 cmds.deleteUI(c)
             self.childrens = []
@@ -1248,10 +1249,17 @@ class Publisher(Module):
             self.operations = operations
 
         def getExample(self):
+            return cmds.textField(self.exampleInput, q=True, tx=True)
+
             return self.example
 
         def updateOutput(self, output):
             cmds.textField(self.exampleOutput, e=True , tx=output())
+
+        @callback
+        def cb_updateInputTF(self, *args):
+            print("test {}".format(args))
+            self.runEvent(*args)
 
         def load(self):
             if cmds.workspaceControl(self.name, exists=1):
@@ -1265,11 +1273,11 @@ class Publisher(Module):
             cmds.menuItem(p=self.typeBtn, label='Const')
 
             self.varNameLabel = self.attach(cmds.text(parent=self.layout, l="Variable Name"), top=self.typeBtn, left="FORM", margin=(5,2,2,2))
-            self.varNameInput = self.attach(cmds.textField(parent=self.layout, tx=self.varName, ), top=self.typeBtn, left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
+            self.varNameInput = self.attach(cmds.textField(parent=self.layout, tx=self.varName), top=self.typeBtn, left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
 
             exOutput = Publisher.MC_StrSplitter.getResult(self.operations, self.example) if len(self.operations) != 0 else self.varName
             self.exampleInputLabel = self.attach(cmds.text(parent=self.layout, l="Input : "), top=self.varNameInput, left="FORM", margin=(5,2,2,2))
-            self.exampleInput = self.attach(cmds.textField(parent=self.layout, tx=self.example, ed=True), top=self.varNameInput, left=self.exampleInputLabel, right="FORM", margin=(5,2,2,2))
+            self.exampleInput = self.attach(cmds.textField(parent=self.layout, tx=self.example, ed=True, ec=Callback(self.runEvent, "updateInputTF"), alwaysInvokeEnterCommandOnReturn=True), top=self.varNameInput, left=self.exampleInputLabel, right="FORM", margin=(5,2,2,2))
             self.exampleOutputLabel = self.attach(cmds.text(parent=self.layout, l="Output : "), top=self.exampleInput, left="FORM", margin=(5,2,2,2))
             self.exampleOutput = self.attach(cmds.textField(parent=self.layout, tx=exOutput, ed=False), top=self.exampleInput, left=self.exampleOutputLabel, right="FORM", margin=(5,2,2,2))
 
@@ -1282,6 +1290,9 @@ class Publisher(Module):
                 self.splitSections.append(current)
                 if prev != "FORM":
                     prev.eventHandler("update", current.update)
+                else:
+                    print("eventhandler", op)
+                    self.eventHandler("updateInputTF", current.update)
                 prev = current
                 prevInput = current.output
             prev.eventHandler("update", self.updateOutput, prev.output)
@@ -1408,7 +1419,7 @@ class Publisher(Module):
             self.example = lambda: "Y a rien"
             self.variables = {
                     "project" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 0]],
-                    "path" : [[False, "str", "\\", -1], [False, "str", "\\", -1]],
+                    "path" : [[False, "str", "\\wip", -1]],
                     # "asset" : [("str", ".", 0], ("str", "_", 0], ("alphaNum", None, -1]],
                     "name" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 1]],
                     "state" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 2]],
