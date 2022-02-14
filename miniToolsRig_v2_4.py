@@ -5,7 +5,7 @@
 
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
-__version__     = "2.4.8-BETA"
+__version__     = "2.4.9-BETA"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import ctypes
@@ -16,6 +16,7 @@ from math import *
 import webbrowser
 import inspect
 import datetime
+import urllib
 
 try:
     import maya.cmds as cmds
@@ -2742,6 +2743,13 @@ class MiniToolRig(Module):
     def openDoc(self):
         webbrowser.open("https://mirror-flyaway-413.notion.site/MiniToolRig-Doc-314f657689aa4e54a47428c093e0a3cd")
 
+    def sendTicket(self):
+        subject = "[Ticket] // MiniTool-Rig v{}// [...]".format(__version__)
+        subject = urllib.quote_plus(subject)
+        body = r"Your message here%0D%0AChange the [...] in the subject to the name of the issue%0D%0ABe precise, short and nice"
+        # body = "%0D%0A".join(body.splitlines())
+        webbrowser.open("mailto:{}?subject={}&body={}".format(__email__, subject, body))
+
     def cs_defineLockState(self):
         '''Function to limit Creative seeds' student
         
@@ -2845,8 +2853,10 @@ class MiniToolRig(Module):
         self._loadJobs()
 
         self.layout = cmds.formLayout(p=self.win)
-        self.optionButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, image1="advancedSettings.png", c=Callback(self.displayOption)), bottom="FORM", right="FORM")
-        self.helpButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, image1="SP_FileIcon.png", c=Callback(self.openDoc)), bottom="FORM", right=self.optionButton)
+        self.optionButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, ann="Options", image1="advancedSettings.png", c=Callback(self.displayOption)), bottom="FORM", right="FORM")
+        
+        self.helpButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, ann="About", image1="help.png", c=Callback(self.openDoc)), bottom="FORM", right=self.optionButton)
+        self.ticketButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, ann="Send ticket", image1="SP_FileIcon.png", c=Callback(self.sendTicket)), bottom="FORM", right=self.helpButton)
         self.childrenLayout = self.attach(cmds.tabLayout(innerMarginWidth=5, innerMarginHeight=5), top="FORM", left="FORM", right="FORM", bottom=self.optionButton)
         self.optLayout = self.attach(MiniToolRig.Tabs(self.layout, "Option").load(), top=50, left="FORM", right="FORM", bottom=self.optionButton)
         self.optionModule = MiniToolRig.MT_options(self.optLayout, self.sections).load()
