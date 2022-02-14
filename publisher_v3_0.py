@@ -359,6 +359,7 @@ class Module(object):
     def _loadJobs(self):
         '''Load all jobs
         '''
+        pass
         # Example : 
         # self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", Callback(self.methode)]))
         # raise Exception('_loadJobs function not implemented')
@@ -1302,10 +1303,10 @@ class Publisher(Module):
             self.applyAttach()
 
     class MC_Label(Module):
-        def __init__(self, parent, name, button=False, bgc=Publisher.Theme.BUTTON):
+        def __init__(self, parent, name, button=False, bgc=None):
             Module.__init__(self, parent, name)
             self.button = button
-            self.bgc = bgc
+            self.bgc = bgc if not bgc is not None else Publisher.Theme.BUTTON
 
         def load(self):
             self.layout = cmds.formLayout("label_{}_{}".format(self.increment, self.name), parent=self.parent)
