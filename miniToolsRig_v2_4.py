@@ -282,6 +282,27 @@ class Module(object):
             a = c[1] + args
             c[0](*a)
 
+
+def singleton(class_):
+    class class_w(class_):
+        __doc__ = class_.__doc__
+        _instance = None
+        def __new__(class_, *args, **kwargs):
+            if class_w._instance is None:
+                class_w._instance = super(class_w,
+                                    class_).__new__(class_,
+                                                    *args,
+                                                    **kwargs)
+                class_w._instance._sealed = False
+            return class_w._instance
+        def __init__(self, *args, **kwargs):
+            if self._sealed:
+                return
+            super(class_w, self).__init__(*args, **kwargs)
+            self._sealed = True
+    class_w.__name__ = class_.__name__
+    return class_w
+
 def info(message):
     print(" ")
     mel.eval('trace -where ""; print "{}"; trace -where "";'.format(message))
@@ -330,6 +351,7 @@ class Vector:
         projection = [x + t * y for x, y in zip(self.A, self.direction)]
         return Vector.distance(M, projection)
 
+@singleton
 class MiniToolRig(Module):
     Singleton = None
 
@@ -2723,12 +2745,7 @@ class MiniToolRig(Module):
     sections_order = ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "switch", "nurbs", "follow", "still", "arc", "blendshape"]
 
     def __init__(self):
-        Module.__init__(self, None)
-
-        if MiniToolRig.Singleton != None:
-            return MiniToolRig.Singleton
-        else:
-            MiniToolRig.Singleton = self
+        Module.__init__(self, None) 
 
         self.name = "{} V{}".format(str(self.__class__.__name__), __version__)
         self._scriptJobIndex = []
