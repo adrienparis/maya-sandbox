@@ -133,6 +133,7 @@ class Module(object):
     COLOR_TURQUOISE = [0.28, 0.66, 0.70]
     COLOR_EUCALYPTUS = [0.37,0.68,0.53]
     COLOR_ORANGE = [0.86, 0.58, 0.34]
+    COLOR_DARKESTGREY = [0.16, 0.16, 0.16]
     COLOR_DARKGREY = [0.21, 0.21, 0.21]
     COLOR_GREY = [0.26, 0.26, 0.26]
     COLOR_LIGHTGREY = [0.36, 0.36, 0.36]
@@ -455,8 +456,9 @@ class Publisher(Module):
         SELECTED = Module.COLOR_BLUE
         LOCAL = Module.COLOR_TURQUOISE
         RELATIVE = Module.COLOR_ORANGE
-        SEC_BGC = Module.COLOR_DARKGREY
         MAIN_BGC = Module.COLOR_GREY
+        SEC_BGC = Module.COLOR_DARKGREY
+        THD_BGC = Module.COLOR_DARKESTGREY
         BUTTON = Module.COLOR_LIGHTGREY
         VALIDATION = Module.COLOR_GREEN
         ERROR = Module.COLOR_RED
@@ -739,6 +741,7 @@ class Publisher(Module):
                     cmds.iconTextButton(self.button, e=True, ann=self.annotation)
 
         def getPath(self):
+            print("path line", self.path)
             return self.path
 
         def _setButtonVis(self):
@@ -902,8 +905,8 @@ class Publisher(Module):
             if self.lockColor:
                 return
             self.lockColor = True
-            fps = 20
-            duration = 0.25
+            fps = 18
+            duration = 0.3
             gap = int(fps * duration)
 
             colorsList = []
@@ -913,12 +916,19 @@ class Publisher(Module):
             colorsList.append([(e-s) / gap for s,e in zip(self.relativePath.color[:], Publisher.Theme.RELATIVE)])
 
             time.sleep(0.5)
-
-            for i in range(0, gap):
-                time.sleep(1.0 / fps)
-                for fp, colorGap in zip(allpaths, colorsList):
-                    fp.color = [n + g for n, g in zip(fp.color, colorGap)]
-            self.lockColor = False
+            try:
+                for i in range(0, gap):
+                    time.sleep(1.0 / fps)
+                    for fp, colorGap in zip(allpaths, colorsList):
+                        fp.color = [n + g for n, g in zip(fp.color, colorGap)]
+                for fp in self.pathsLays:
+                    fp.color = Publisher.Theme.SAVE
+                self.relativePath.color = Publisher.Theme.RELATIVE
+            except:
+                print("error avoided")
+                pass
+            finally:
+                self.lockColor = False
 
         def _loadJobs(self):
             self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", self.cb_refreshUI()]))
@@ -1262,19 +1272,24 @@ class Publisher(Module):
             print("test {}".format(args))
             self.runEvent(*args)
 
+        @callback
+        def cb_upadteName(self):
+            name = cmds.textField(self.varNameInput, q=True, tx=True)
+            self.runEvent("updateNameTF", lambda: name)
+
         def load(self):
             if cmds.workspaceControl(self.name, exists=1):
                 cmds.deleteUI(self.name)
             self.win = cmds.workspaceControl(self.name, ih=240, iw=320, retain=False, floating=True, h=100, w=500)
             self.layout = cmds.formLayout(parent=self.win, bgc=Publisher.Theme.MAIN_BGC)
             
-            self.typeBtn = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", margin=(2,2,2,2))
-            cmds.menuItem(p=self.typeBtn, label='String')
-            cmds.menuItem(p=self.typeBtn, label='Int')
-            cmds.menuItem(p=self.typeBtn, label='Const')
+            # self.typeBtn = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", margin=(2,2,2,2))
+            # cmds.menuItem(p=self.typeBtn, label='String')
+            # cmds.menuItem(p=self.typeBtn, label='Int')
+            # cmds.menuItem(p=self.typeBtn, label='Const')
 
-            self.varNameLabel = self.attach(cmds.text(parent=self.layout, l="Variable Name"), top=self.typeBtn, left="FORM", margin=(5,2,2,2))
-            self.varNameInput = self.attach(cmds.textField(parent=self.layout, tx=self.varName), top=self.typeBtn, left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
+            self.varNameLabel = self.attach(cmds.text(parent=self.layout, l="Variable Name"), top="FORM", left="FORM", margin=(5,2,2,2))
+            self.varNameInput = self.attach(cmds.textField(parent=self.layout, tx=self.varName, ed=True, ec=self.cb_upadteName(), alwaysInvokeEnterCommandOnReturn=True), top="FORM", left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
 
             exOutput = Publisher.MC_StrSplitter.getResult(self.operations, self.example) if len(self.operations) != 0 else self.varName
             self.exampleInputLabel = self.attach(cmds.text(parent=self.layout, l="Input : "), top=self.varNameInput, left="FORM", margin=(5,2,2,2))
@@ -1296,7 +1311,11 @@ class Publisher(Module):
                     self.eventHandler("updateInputTF", current.update)
                 prev = current
                 prevInput = current.output
-            prev.eventHandler("update", self.updateOutput, prev.output)
+            if isinstance(prev, Module):
+                prev.eventHandler("update", self.updateOutput, prev.output)
+            else:
+                self.eventHandler("updateNameTF", self.updateOutput)
+
             self.addBtn = self.attach(cmds.iconTextButton(parent=self.layout, image=Publisher.Image.ADD, bgc=Publisher.Theme.BUTTON), top=self.childrenLayout, left="FORM", right="FORM", margin=(5,5,5,5))
             self.saveBtn = self.attach(cmds.button(parent=self.layout, l="Save & exit", bgc=Publisher.Theme.BUTTON), bottom="FORM", left="FORM", right="FORM", margin=(5,5,5,5))
             self.attach(cmds.formLayout(parent=self.layout, h=20), bottom=self.saveBtn)
@@ -1306,16 +1325,40 @@ class Publisher(Module):
         def __init__(self, parent, name, button=False, bgc=None):
             Module.__init__(self, parent, name)
             self.button = button
-            self.bgc = bgc if not bgc is not None else Publisher.Theme.BUTTON
+            self.bgc = bgc if bgc is not None else Publisher.Theme.BUTTON
 
         def load(self):
             self.layout = cmds.formLayout("label_{}_{}".format(self.increment, self.name), parent=self.parent)
-            self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.QUIT, bgc=self.bgc, h=18, c=Callback(self.runEvent, "remove", self.name)), top="FORM", right="FORM", margin=(1,1,1,1))
+            
+            
+            # self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.QUIT, bgc=self.bgc, h=18, c=Callback(self.runEvent, "remove", self.name)), top="FORM", right="FORM", margin=(1,1,1,1))
+            self.del_btn = "FORM"
             if self.button:
                 self.title = self.attach(cmds.button(l=self.name, bgc=self.bgc, h=18, c=Callback(self.runEvent, "click", self.name)), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
             else:
                 self.title = self.attach(cmds.text(l="  {}  ".format(self.name), bgc=self.bgc, h=18), top="FORM", left="FORM", right=self.del_btn, margin=(1,1,1,1))
+            self.gmc = cmds.popupMenu("gmc  " + self.title, parent=self.title, button=3, pmc=Callback(self.runEvent, "remove", self.name))
             self.applyAttach()
+
+    class MC_AddOption(Module):
+        def __init__(self, parent, name=None, bgc=None, options=[]):
+            Module.__init__(self, parent, name)
+            self.bgc = bgc if bgc is not None else Publisher.Theme.BUTTON
+            self.options = ["project", "path", "name", "state", "version", "extension", "_", ".", "v", "\\"]
+            self.options = options
+
+        def load(self):
+            self.layout = cmds.formLayout("label_{}_{}".format(self.increment, self.name), parent=self.parent)
+            
+            if len(self.options) > 0:
+                self.del_btn = self.attach(cmds.image(p=self.layout, image=Publisher.Image.ADD, bgc=self.bgc, h=18, w=18), top="FORM", right="FORM", bottom="FORM", left="FORM", margin=(1,1,1,1))
+                self.gmc = cmds.popupMenu("gmc  " + self.del_btn, parent=self.del_btn, button=1, pmc=Callback(self.runEvent, "option", self.name))
+                for opt in self.options:
+                    cmds.menuItem(p=self.gmc, label=opt)
+            else:
+                self.del_btn = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.ADD, bgc=self.bgc, h=18, w=18, c=Callback(self.runEvent, "option", self.name)), top="FORM", right="FORM", bottom="FORM", left="FORM", margin=(1,1,1,1))
+            self.applyAttach()
+
 
     class MC_stackContainer(Module):
         def __init__(self, parent):
@@ -1403,15 +1446,22 @@ class Publisher(Module):
             Module.__init__(self, parent, name)
             self.list = lst
         
+        @callback
+        def cb_remove(self, elem):
+            print("removing {}".format(elem))
+
         def load(self):
-            self.layout = cmds.formLayout(parent=self.parent)
+            self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.THD_BGC)
 
             self.title = self.attach(cmds.text(p=self.layout, l="{} : ".format(self.name.capitalize())), top="FORM", left="FORM", margin=(3,3,5,3))
             self.containerVar = Publisher.MC_stackContainer(self.layout)
             for e in self.list:
                 label = Publisher.MC_Label(self.containerVar, str(e[0]), bgc=e[1])
+                label.eventHandler("remove", self.cb_remove(str(e[0])))
+            Publisher.MC_AddOption(self.containerVar, options=["project", "path", "name", "state", "version", "extension", "_", ".", "v", "\\"])
             self.containerVar.load()
-            self.attach(self.containerVar, top=self.title, left="FORM", right="FORM", margin=(3,3,15,3))
+            self.attach(self.containerVar, top=self.title, left="FORM", right="FORM", margin=(3,3,15,5))
+            self.attach(cmds.formLayout(p=self.layout, h=5), top=self.containerVar, left="FORM", right="FORM")
 
 
     class MT_SettingsNameConvertion(Module):
@@ -1421,26 +1471,30 @@ class Publisher(Module):
             self.variables = {
                     "project" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 0]],
                     "path" : [[False, "str", "\\wip", -1]],
-                    # "asset" : [("str", ".", 0], ("str", "_", 0], ("alphaNum", None, -1]],
                     "name" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 1]],
                     "state" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 2]],
                     "version" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 3], [True, "alphaNum", None, -1]],
                     "extension" : [[True, "str", "\\", -1], [True, "str", ".", -1]],
                     "_" : [],
-                    "."  : [],
-                    "v"  : [],
-                    "\\"  : [],
+                    "." : [],
+                    "v" : [],
+                    "\\" : [],
             }
 
         @callback
         def cb_editLabel(self, name=None):
             print("edit {}".format(name))
-            Publisher.MC_VariableEditor(name, self.variables[name], self.example()).load()
+            if name is None:
+                Publisher.MC_VariableEditor("", [], self.example()).load()
+            else:
+                Publisher.MC_VariableEditor(name, self.variables[name], self.example()).load()
 
         @callback
         def cb_deleteLabel(self, name=None):
             print("delete {}".format(name))
-            self.variables.pop(name)
+            if name in self.variables:
+                pass
+                # self.variables.pop(name)
 
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
@@ -1453,7 +1507,9 @@ class Publisher(Module):
                 label = Publisher.MC_Label(self.containerAllVar, e, button=True, bgc=bgc)
                 label.eventHandler("click", self.cb_editLabel(e))
                 label.eventHandler("remove", self.cb_deleteLabel(e))
+            Publisher.MC_AddOption(self.containerAllVar)
             self.containerAllVar.load()
+            # self.attach(cmds.iconTextButton(i=Publisher.Image.ADD, c=self.cb_editLabel(), p=self.containerAllVar))
             # cmds.iconTextButton(p=self.containerAllVar, image=Publisher.Image.ADD, h=18, w=18, bgc=Publisher.Theme.BUTTON, c=self.cb_editLabel())
             self.attach(self.containerAllVar, top=self.titleDefineVar, left="FORM", right="FORM", margin=(15,3,3,3))
 
@@ -1469,7 +1525,7 @@ class Publisher(Module):
             prev = self.titleDefineNames
             for n in names:
                 buttons = [(x, Module.COLOR_LIGHTGREYRED if not x in self.variables else Module.COLOR_LIGHTGREYGREEN if len(self.variables[x]) == 0 else Publisher.Theme.BUTTON) for x in n[1]]
-                prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], buttons).load(), top=prev, left="FORM", right="FORM")
+                prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], buttons).load(), top=prev, left="FORM", right="FORM", margin=(8,8,8,8))
 
 
     class MT_SettingsPlugin(Module):
@@ -1639,14 +1695,20 @@ class Publisher(Module):
                 a = c[1] + args
                 c[0](*a)
 
+        @thread
         def backup(self):
             print("backup")
             
             localPath = self.pathsModule.getLocalPath()
+            print("local paths getted")
             relativePath = self.pathsModule.getRelativePath()
+            print("relative paths getted")
             drives = self.pathsModule.getDrivesPath()
+            print("drive getted")
             infos = []
             for drive in drives:
+                print("copy", drive)
+
                 abs_path = os.path.join(drive, relativePath)
                 if abs_path == relativePath:
                     infos.append((relativePath, False)) if (relativePath, False) not in infos else None
@@ -1658,7 +1720,11 @@ class Publisher(Module):
                 if not os.path.exists(driveDir):
                     os.makedirs(driveDir)
                 state = None if os.path.exists(os.path.join(drive, relativePath)) else True
-                shutil.copy(os.path.join(localPath, relativePath), os.path.join(drive, relativePath))
+                if state is True:
+                    try:
+                        shutil.copy(os.path.join(localPath, relativePath), os.path.join(drive, relativePath))
+                    except:
+                        state = False
                 infos.append((drive, state))
             self.pathsModule.infoColorPath(infos)
 
