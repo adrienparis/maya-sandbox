@@ -471,7 +471,7 @@ class Publisher(Module):
         CHECK = "SP_FileDialogContentsView.png"
         CLEAN = "brush.png"
         COMMON = "volumeCube.png"
-        FOLDER = "openScript.png"
+        FOLDER = "fileOpen.png"
         HELP = "help.png"
         LINE = "UVEditorUAxisDisabled.png"
         NETWORK = "SP_DriveNetIcon.png"
@@ -819,6 +819,10 @@ class Publisher(Module):
             to the value of the absolute filepath minus the local path
             '''
             localPath = self.localPath.path
+            
+            import maya.api.OpenMaya as om
+            print(om.MFileObject.expandedPath())
+
             filepath = os.path.abspath(cmds.file(q=True, sn=True))
             relativePath = filepath.replace(localPath, "")
             if len(relativePath) > 0:
@@ -1500,6 +1504,17 @@ class Publisher(Module):
             self.layout = cmds.formLayout(parent=self.parent)
 
             self.titleDefineVar = self.attach(cmds.text(p=self.layout, l="Define Variables"), top="FORM", left="FORM", margin=(3,3,0,3))
+            self.presetDropMenu = self.attach(cmds.optionMenu(p=self.layout, l="Presets : ", bgc=Publisher.Theme.BUTTON), top=self.titleDefineVar, left="FORM", margin=(3,3,0,3))
+            cmds.menuItem(p=self.presetDropMenu, label='-')
+            cmds.menuItem(p=self.presetDropMenu, label='Custom')
+            cmds.menuItem(p=self.presetDropMenu, label='CS')
+            self.loadPresetBtn = self.attach(cmds.iconTextButton(p=self.layout, i=Publisher.Image.FOLDER, bgc=Publisher.Theme.BUTTON), top=self.titleDefineVar, right="FORM", margin=(3,3,3,3))
+            self.savePresetBtn = self.attach(cmds.iconTextButton(p=self.layout, i=Publisher.Image.SAVE, bgc=Publisher.Theme.BUTTON), top=self.titleDefineVar, right=self.loadPresetBtn, margin=(3,3,3,3))
+            self.versionLabel = self.attach(cmds.text(p=self.layout, l=u"N° de version"), top=self.presetDropMenu, left="FORM", margin=(8,3,3,3))
+            self.versiondefineBtn = self.attach(cmds.button(p=self.layout, l=u"Définir", bgc=Publisher.Theme.BUTTON, c=self.cb_editLabel("version")), top=self.presetDropMenu, left=self.versionLabel, margin=(3,3,3,3))
+            self.nbDigits = self.attach(cmds.intField(p=self.layout, v=3), top=self.presetDropMenu, left=self.versiondefineBtn, margin=(3,3,3,3))
+
+
             self.containerAllVar = Publisher.MC_stackContainer(self.layout)
             for e in self.variables:
                 print(e, self.variables[e])
@@ -1511,7 +1526,7 @@ class Publisher(Module):
             self.containerAllVar.load()
             # self.attach(cmds.iconTextButton(i=Publisher.Image.ADD, c=self.cb_editLabel(), p=self.containerAllVar))
             # cmds.iconTextButton(p=self.containerAllVar, image=Publisher.Image.ADD, h=18, w=18, bgc=Publisher.Theme.BUTTON, c=self.cb_editLabel())
-            self.attach(self.containerAllVar, top=self.titleDefineVar, left="FORM", right="FORM", margin=(15,3,3,3))
+            self.attach(self.containerAllVar, top=self.nbDigits, left="FORM", right="FORM", margin=(15,3,3,3))
 
             self.titleDefineNames = self.attach(cmds.text(p=self.layout, l="Define names"), top=self.containerAllVar, left="FORM", margin=(3,3,0,3))
             names = [
