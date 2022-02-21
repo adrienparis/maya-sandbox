@@ -33,7 +33,7 @@ class SmoothSkin(object):
         if (cmds.contextInfo(self.draggerContextName, exists = True)):
             cmds.deleteUI(self.draggerContextName, toolContext = True )
         cmds.draggerContext(self.draggerContextName, pressCommand=self.dragger_onPress, releaseCommand=self.dragger_onRelease, dragCommand=self.dragger_onDrag,
-                            cursor = "crossHair", space="world", i1="skin.png", undoMode="step")
+                            cursor = "crossHair", space="world", i1="skin.png", undoMode="step", snp=True)
 
     class GrpVTX(object):
         def __init__(self):
@@ -117,11 +117,22 @@ class SmoothSkin(object):
         jnts = sorted(jnts, key=lambda j: distanceBetween(j[1], pos))
         return jnts[0]
 
+    @staticmethod
+    def moveLoc(name, pos):
+        if cmds.objExists(name):
+            cmds.setAttr("{}.tx".format(name), pos[0])
+            cmds.setAttr("{}.ty".format(name), pos[1])
+            cmds.setAttr("{}.tz".format(name), pos[2])
+            # cmds.setAttr("{}.tz".format(name), pos[2])
+        else:
+            cmds.spaceLocator(n=name, p=pos)
+
     def dragger_onPress(self):
         print(u"#"*10)
         print(cmds.ls(sl=True))
         pos = cmds.draggerContext(SmoothSkin.draggerContextName, query = True, anchorPoint = True)
         print(pos)
+        SmoothSkin.moveLoc("Start", pos)
         if cmds.draggerContext(SmoothSkin.draggerContextName, query = True, button=True) != 1:
             return
         mdf = cmds.draggerContext(SmoothSkin.draggerContextName, query = True, modifier=True)
@@ -164,6 +175,8 @@ class SmoothSkin(object):
         if btnMouse != 1:
             return
         pos = cmds.draggerContext(SmoothSkin.draggerContextName, query = True, dragPoint = True)
+        SmoothSkin.moveLoc("End", pos)
+    
         if mdf == "none":
             pass
         elif mdf == "shift":
