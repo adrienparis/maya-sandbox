@@ -1,21 +1,19 @@
 from genericpath import exists
 import os
 import time
+import io
 
-print(os.listdir("Q:"))
 rootdir = "S:\\"
 
 def isCorrupt(path):
     corruptNode = 'createNode script -n "vaccine_gene";'
-    with open(path) as f:
-        if corruptNode in f.read():
+    with io.open(path, "rb") as f:
+        if bytes(corruptNode, 'utf-8') in f.read():
             return True
     return False
 
 
-topFolders = os.listdir(rootdir)
-topFolders = ['#backUp', '#recycle', 'annee01', 'annee02', 'annee03', 'annee04', 'annee05', 'bank']
-topFolders = ['annee03', 'annee04', 'annee05', 'bank']
+topFolders = [x for x in os.listdir(rootdir)]
 
 for topFolder in topFolders:
     print(topFolder)
@@ -55,6 +53,10 @@ for topFolder in topFolders:
             t = time.ctime(os.path.getmtime(mf_path))
             # print(t)
             lines.append("{} - {}\n".format(t, mf_path))
+
+    print(lines)
+    with open("report_{}.txt".format(topFolder), "w+") as report:
+        report.writelines(lines)
 
 
     # i = 0.0

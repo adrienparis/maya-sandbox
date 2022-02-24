@@ -1,8 +1,8 @@
 *.pyc
 .vscode/*
-./pull.bat
-./push.bat
-./sandbox/tmp.py
-./dist/*
-./build/*
+pull.bat
+push.bat
+sandbox/tmp.py
+dist/*
+build/*
 *.spec
