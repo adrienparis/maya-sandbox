@@ -6,3 +6,4 @@ sandbox/tmp.py
 dist/*
 build/*
 *.spec
+report_*.txt

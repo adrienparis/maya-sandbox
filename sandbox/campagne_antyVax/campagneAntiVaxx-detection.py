@@ -2,8 +2,9 @@ from genericpath import exists
 import os
 import time
 import io
+import tkinter as tk
 
-rootdir = "S:\\"
+from tkinter import filedialog
 
 def isCorrupt(path):
     corruptNode = 'createNode script -n "vaccine_gene";'
@@ -13,10 +14,25 @@ def isCorrupt(path):
     return False
 
 
-topFolders = [x for x in os.listdir(rootdir)]
+root = tk.Tk()
+
+root.withdraw()
+
+
+directory_path = filedialog.askdirectory(title="Sélectionnez un dossier à analyser")
+
+if directory_path == "":
+    quit()
+rootdir = "S:\\"
+
+
+
+
+topFolders = [directory_path]
 
 for topFolder in topFolders:
     print(topFolder)
+    topFolderName = topFolder.replace("/", "_").replace(":", "")
     p = os.path.join(rootdir, topFolder)
     print(p)
     lenghtFiles = 0
@@ -31,10 +47,12 @@ for topFolder in topFolders:
     oldPercent = 0
     oldFolder = None
     for i, mf_path in enumerate(mayaFilesList):
+        mf_path = os.path.normpath(mf_path)
+        print(mf_path)
         if mf_path.split("\\")[3] != oldFolder:
             if oldFolder is not None:
                 try:
-                    with open("reports/report_{}_{}.txt".format(topFolder, oldFolder), "w+") as report:
+                    with open("reports/report_{}_{}.txt".format(topFolderName, oldFolder), "w+") as report:
                         report.writelines(lines)
                     lines = []
                 except:
@@ -55,7 +73,7 @@ for topFolder in topFolders:
             lines.append("{} - {}\n".format(t, mf_path))
 
     print(lines)
-    with open("report_{}.txt".format(topFolder), "w+") as report:
+    with open("report_{}.txt".format(topFolderName), "w+") as report:
         report.writelines(lines)
 
 
