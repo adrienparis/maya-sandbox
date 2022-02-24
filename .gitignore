@@ -3,3 +3,6 @@
 ./pull.bat
 ./push.bat
 ./sandbox/tmp.py
+./dist/*
+./build/*
+*.spec
