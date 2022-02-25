@@ -14,8 +14,15 @@ def isCorrupt(path):
             return True
     return False
 
-def progress():
-    print("{} % -> {}".format(percent, mf_path), end = "\r")
+def progress(i, total, f):
+    i += 1
+    percent = int((i * 100.0)/total)
+    size = 0.5
+    p = int(percent * size)
+    maxSize = int(100 * size)
+    progressBar = "█" * p + " " * (maxSize - p)
+    line = "  {:02d} % |{}| \t{}/{}\t| ->\t{} ".format(percent, progressBar,i, total, f)
+    print(line, end = "\r")
 
 
 def getMayaFiles(directory):
@@ -38,10 +45,12 @@ def searching():
     for i, mf_path in enumerate(mayaFilesList):
         mf_path = os.path.normpath(mf_path)
 
-        percent = int((i * 100.0)/nbFiles)
-        if percent != oldPercent:
-            oldPercent = percent
-            print("{} % -> {}".format(percent, mf_path), end = "\r")
+        progress(i, nbFiles, mf_path)
+        # percent = int((i * 100.0)/nbFiles)
+        
+        # if percent != oldPercent:
+        #     oldPercent = percent
+        #     print("{} % -> {}".format(percent, mf_path), end = "\r")
             
             # satusStr.set("{} %".format(percent))
             # progressWin.update_idletasks()
@@ -49,6 +58,7 @@ def searching():
         if isCorrupt(mf_path):
             t = time.ctime(os.path.getmtime(mf_path))
             lines.append("{} - {}\n".format(t, mf_path))
+    print("\nDone !")
     return lines
 
 
