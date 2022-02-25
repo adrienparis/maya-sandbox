@@ -4,6 +4,7 @@ import time
 import io
 import tkinter as tk
 
+
 from tkinter import filedialog
 
 def isCorrupt(path):
@@ -13,78 +14,54 @@ def isCorrupt(path):
             return True
     return False
 
-
-root = tk.Tk()
-
-root.withdraw()
+def progress():
+    print("{} % -> {}".format(percent, mf_path), end = "\r")
 
 
-directory_path = filedialog.askdirectory(title="Sélectionnez un dossier à analyser")
-
-if directory_path == "":
-    quit()
-rootdir = "S:\\"
-
-
-
-
-topFolders = [directory_path]
-
-for topFolder in topFolders:
-    print(topFolder)
-    topFolderName = topFolder.replace("/", "_").replace(":", "")
-    p = os.path.join(rootdir, topFolder)
-    print(p)
-    lenghtFiles = 0
+def getMayaFiles(directory):
     mayaFilesList = []
-    for root, subdirs, files in os.walk(p):
+    for root, subdirs, files in os.walk(directory):
         mayaFiles = [os.path.join(root, x) for x in files if x.endswith(".ma")]
-        lenghtFiles += len(mayaFiles)
         mayaFilesList += mayaFiles
-    print(lenghtFiles)
 
-    lines = []
+        # satusStr.set(root)
+        # progressBarCounting['value'] += 1
+        # progressWin.update_idletasks()
+    return mayaFilesList
+
+def searching():
+    print("Starting")
+    mayaFilesList = getMayaFiles(directory_path)
+    nbFiles = len(mayaFilesList)
     oldPercent = 0
-    oldFolder = None
+    lines = []
     for i, mf_path in enumerate(mayaFilesList):
         mf_path = os.path.normpath(mf_path)
-        print(mf_path)
-        if mf_path.split("\\")[3] != oldFolder:
-            if oldFolder is not None:
-                try:
-                    with open("reports/report_{}_{}.txt".format(topFolderName, oldFolder), "w+") as report:
-                        report.writelines(lines)
-                    lines = []
-                except:
-                    pass
-            oldFolder = mf_path.split("\\")[3]
-            print(oldFolder)
 
-        percent = int((i * 100.0)/lenghtFiles)
+        percent = int((i * 100.0)/nbFiles)
         if percent != oldPercent:
             oldPercent = percent
-            print("{} % -> {}".format(percent, mf_path))
-        # if percent > 10:
-            # break
+            print("{} % -> {}".format(percent, mf_path), end = "\r")
+            
+            # satusStr.set("{} %".format(percent))
+            # progressWin.update_idletasks()
+            # progressBarSearching['value'] = percent
         if isCorrupt(mf_path):
-            # print(mf_path)
             t = time.ctime(os.path.getmtime(mf_path))
-            # print(t)
             lines.append("{} - {}\n".format(t, mf_path))
-
-    print(lines)
-    with open("report_{}.txt".format(topFolderName), "w+") as report:
-        report.writelines(lines)
+    return lines
 
 
-    # i = 0.0
-    # for root, subdirs, files in os.walk(p):
-    #     mayaFiles = [x for x in files if x.endswith(".ma")]
-    #     if len(mayaFiles) > 0:
-    #         i += 1
-    #         for mf in mayaFiles:
-    #             mf_path = os.path.join(root, mf)
-    #             if isCorrupt(mf_path):
-    #                 # print(mf_path)
-    #                 lines.append(mf_path)
-        
+
+root = tk.Tk()
+root.withdraw()
+directory_path = filedialog.askdirectory(title="Sélectionnez un dossier à analyser")
+if directory_path == "":
+    quit()
+FolderName = directory_path.replace("/", "_").replace(":", "")
+
+
+lines = searching()
+print(lines)
+with open("report_{}.txt".format(FolderName), "w+") as report:
+    report.writelines(lines)
