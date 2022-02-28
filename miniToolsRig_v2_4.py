@@ -2678,7 +2678,7 @@ class MiniToolRig(Module):
         def __init__(self, parent, name):
             Module.__init__(self, parent, name)
             self.childrens = []
-            self.nbColumn = 2
+            self.nbColumn = -1
 
         def refresh(self):
             self.reformatChildLay()
