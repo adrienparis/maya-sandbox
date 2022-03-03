@@ -39,6 +39,7 @@ def setInfluentJoints(skCls, vtx, joints):
     for k, v in joints.items():
         w.append((str(k), v))
         cmds.setAttr(k + ".liw",  0)
+    print(w)
     cmds.skinPercent( skCls, vtx, transformValue=w)
 
 def ignoreSmallValues(infs):
@@ -72,9 +73,12 @@ for vtx in vertex:
     skCls = getSkinCluster(vtx)
     if len(neigbor) == nbNeigh:
         continue
+    currentInfJnt = getInfluentJoints(vtx, skCls)
     for n in neigbor:
         infs = getInfluentJoints(n, skCls)
         for k in infs.keys():
+            if k not in currentInfJnt.keys():
+                continue
             # print(k, infs[k])
             if k in neigInf.keys():
                 neigInf[k] += infs[k]

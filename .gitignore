@@ -1,5 +1,11 @@
 *.pyc
 .vscode/*
-./pull.bat
-./push.bat
-./sandbox/tmp.py
+pull.bat
+push.bat
+sandbox/tmp.py
+*/tmp.py
+*tmp.py
+dist/*
+build/*
+*.spec
+report_*.txt
