@@ -44,7 +44,7 @@ class Callback():
     __email__ = "a.paris.cs@gmail.com"
     __version__     = "3.1.0"
     __copyright__   = "Copyright 2021, Creative Seeds"
-    
+
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -52,7 +52,7 @@ class Callback():
         self.kwargs = kwargs
         self.repeatable_value = False
         self.getCommandArgument_value = False
-        
+
     def repeatable(self):
         ''' Call this methode to make the function repeatable with 'g'
         '''
@@ -64,7 +64,7 @@ class Callback():
         '''
         self.getCommandArgument_value = True
         return self
-        
+
     def _repeatCall(self):
         return self.func(*self.repeatArgs, **self.kwargs)
 
@@ -116,9 +116,9 @@ class Module(object):
 
     When converting this object to str, it print the layout to store his childrens
     like that, even if whe call it has a parent, it still return a maya's layout
-    
+
     You must create a load function.
-    
+
     Name your class starting by
     M_  if it's a simple module
     MG_ if it's a group of module
@@ -141,13 +141,14 @@ class Module(object):
     COLOR_RED = [0.85, 0.34, 0.34]
     COLOR_YELLOW = [0.86,0.81,0.53]
     COLOR_LIGHTGREYGREEN = [0.42, 0.51, 0.49]
+    COLOR_LIGHTGREYBLUE = [0.39, 0.47, 0.54]
     COLOR_LIGHTGREYRED = [0.51, 0.42, 0.42]
 
     increment = 0
     drag = None
 
     def __init__(self, parent, name=None):
-        
+
         Module.increment += 1
         self.increment = Module.increment
         if name is None:
@@ -198,7 +199,7 @@ class Module(object):
 
     def attach(self, elem, top=False, bottom=False, left=False, right=False, margin=(0,0,0,0)):
         '''For formLayout
-            Register the attach information of your elem 
+            Register the attach information of your elem
             attach "FORM": string
                     elem : layout/control
                     pos : float
@@ -210,7 +211,7 @@ class Module(object):
             e = elem.layout
         else:
             e = elem
-        for s, n, m in [(top, "top", margin[0]), (bottom, "bottom", margin[1]), (left, "left", margin[2]), (right, "right", margin[3])]: 
+        for s, n, m in [(top, "top", margin[0]), (bottom, "bottom", margin[1]), (left, "left", margin[2]), (right, "right", margin[3])]:
             if s is False:
                 continue
             if s is None:
@@ -233,7 +234,7 @@ class Module(object):
         self.ac = []
         self.ap = []
         self.an = []
-    
+
     @staticmethod
     def _getParentLayout(attachList):
         parLayout = {}
@@ -250,7 +251,7 @@ class Module(object):
                     parent = cmds.control(e, q=True, p=True)
                 else:
                     continue
-                parLayout[parent] = [af] if parent not in parLayout else parLayout[parent] + [af] 
+                parLayout[parent] = [af] if parent not in parLayout else parLayout[parent] + [af]
         return parLayout
 
     def applyAttach(self):
@@ -285,7 +286,7 @@ class Module(object):
         self.childrenLayout = cmds.formLayout(p=self.layout)
         defaultLayout = self.layout
         defaultChildrenLay = self.childrenLayout
-        
+
         # Execute The function develope by the user
         object.__getattribute__(self, "load")()
 
@@ -302,7 +303,7 @@ class Module(object):
 
         # Apply Attach to the form Layout
         self.applyAttach()
-        
+
         # log UnloadEvent
         cmds.scriptJob(ro=True, uid=[self.layout, Callback(self.unloadEvent)])
 
@@ -335,7 +336,7 @@ class Module(object):
 
     def unload(self):
         pass
-    
+
     def unloadEvent(self):
         pass
 
@@ -361,7 +362,7 @@ class Module(object):
         '''Load all jobs
         '''
         pass
-        # Example : 
+        # Example :
         # self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", Callback(self.methode)]))
         # raise Exception('_loadJobs function not implemented')
     def _killJobs(self):
@@ -374,7 +375,7 @@ class Module(object):
     # drag&Drop
     def _dragCb(self, dragControl, x, y, modifiers):
         Module.drag = self
-        
+
         if not self.dragged:
             self.bgc = cmds.layout(self.layout, q=True, bgc=True)
             self.ebg = cmds.layout(self.layout, q=True, ebg=True)
@@ -411,11 +412,11 @@ class Publisher(Module):
     __prefName = "Publisher"
     @staticmethod
     def writePref(name, value):
-        prefVars = {} 
+        prefVars = {}
         fPath = os.path.join(Publisher.__prefPath, Publisher.__prefName + ".pref")
         if not os.path.isdir(Publisher.__prefPath):
             os.makedirs(Publisher.__prefPath)
-        if os.path.isfile(fPath):   
+        if os.path.isfile(fPath):
             with open(fPath, "r") as f:
                 l = f.readline()
                 while l:
@@ -437,7 +438,7 @@ class Publisher(Module):
             return None
         if not os.path.isfile(fPath):
             return None
-        prefVars = {}    
+        prefVars = {}
         with open(fPath, "r") as f:
             l = f.readline()
             try:
@@ -510,7 +511,7 @@ class Publisher(Module):
             class Label():
                 comment = "Comments : "
                 language = "Language"
-                nameConv = "Paths definitions"
+                nameConv = "Publication's paths definitions"
                 TestDef = "Test definition"
                 loadSavePref = "Load/Save Preferences"
                 plugin = "Install Plug-in"
@@ -520,16 +521,16 @@ class Publisher(Module):
                 PUBLISHER = """
                         <h1 style="background-color:{THEME_MAIN_BGC}; color:{THEME_SAVE};text-align: left;">{NAME} </h1>
                         <p>The {NAME} is a tool to help publish and sync maya files in a pipeline like Creative Seeds' one.</p>
-                        <h4>Author :</h4> 
+                        <h4>Author :</h4>
                         <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{AUTHOR}</p>
-                        <h4>Contact :</h4> 
+                        <h4>Contact :</h4>
                         <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{EMAIL}</p>
-                        <h4>Version :</h4> 
+                        <h4>Version :</h4>
                         <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{VERSION}</p>
-                        <h4>Copyright :</h4> 
+                        <h4>Copyright :</h4>
                         <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{COPYRIGHT}</p>
                     """
-                PATHS = """        
+                PATHS = """
                         <h2>The Header of the application</h2>
                         <p>The top part of the application is to define the location of differents path</p>
                         <p>The <span class="publish">top line</span> indicate your "set project"</p>
@@ -591,7 +592,7 @@ class Publisher(Module):
                         <h2>Settings</h2>
                         <p> Work in progress</p>
                     """
-        
+
         class Fr():
             class Button():
                 prepare = u"Préparer votre version avant de la publier"
@@ -615,7 +616,7 @@ class Publisher(Module):
             class Label():
                 comment = u"Commentaires : "
                 language = u"Langues"
-                nameConv = u"Définition des chemins"
+                nameConv = u"Définition des chemins de publication"
                 TestDef = u"Définition des test"
                 loadSavePref = u"Charger/Sauvegarder les préférences"
                 plugin = u"Installer le Plug-in"
@@ -625,16 +626,16 @@ class Publisher(Module):
                 PUBLISHER = u"""
                         <h1 style="background-color:{THEME_MAIN_BGC}; color:{THEME_SAVE};text-align: left;">{NAME} </h1>
                         <p>Le {NAME} est un outils pour publier et syncronisser des scènes maya dans un pipeline semblable à celui de Creative Seeds.</p>
-                        <h4>Auteur :</h4> 
+                        <h4>Auteur :</h4>
                         <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{AUTHOR}</p>
-                        <h4>Contact :</h4> 
+                        <h4>Contact :</h4>
                         <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{EMAIL}</p>
-                        <h4>Version :</h4> 
+                        <h4>Version :</h4>
                         <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{VERSION}</p>
-                        <h4>Droits d'auteur :</h4> 
+                        <h4>Droits d'auteur :</h4>
                         <p style="margin-left&#58; 30px; background-color:{COLOR_BLACK};color:{COLOR_WHITE};">{COPYRIGHT}</p>
                     """
-                PATHS = u"""        
+                PATHS = u"""
                         <h2>Définition des chemins</h2>
                         <p>La partie haute de l'application est pour définir les différents chemins du projets</p>
                         <p>La <span class="publish">ligne du haut</span> indique le chemin du projet que vous avez initialisé avec "set project"</p>
@@ -697,7 +698,7 @@ class Publisher(Module):
                         <h2>Paramètres</h2>
                         <p> En cours de création</p>
                     """
-        
+
         @staticmethod
         def getLg(name):
             if name is None:
@@ -720,7 +721,7 @@ class Publisher(Module):
             self.func = None
             self.image = image
             self.annotation = annotation
-        
+
         def __setattr__(self, name, value):
             self.__dict__[name] = value
             if "field" in self.__dict__:
@@ -819,9 +820,9 @@ class Publisher(Module):
             to the value of the absolute filepath minus the local path
             '''
             localPath = self.localPath.path
-            
-            import maya.api.OpenMaya as om
-            print(om.MFileObject.expandedPath())
+
+            # import maya.api.OpenMaya as om
+            # print(om.MFileObject.expandedPath())
 
             filepath = os.path.abspath(cmds.file(q=True, sn=True))
             relativePath = filepath.replace(localPath, "")
@@ -864,7 +865,7 @@ class Publisher(Module):
 
         @callback
         def cb_reloadPathEvent(self, *args):
-            
+
             for pl in self.pathsLays:
                 cmds.deleteUI(pl.layout)
             self.pathsLays = []
@@ -881,12 +882,12 @@ class Publisher(Module):
             self.cb_reloadPathEvent()()
 
         def changeColor(self, path, color):
-            allpaths = self.pathsLays + [self.relativePath] 
+            allpaths = self.pathsLays + [self.relativePath]
             for fp in allpaths:
                 if fp.path == path:
                     fp.color = color
                     break
-        
+
         def getLocalPath(self):
             return self.localPath.path
         def getRelativePath(self):
@@ -916,7 +917,7 @@ class Publisher(Module):
             colorsList = []
             for fp in self.pathsLays:
                 colorsList.append([(e-s) / gap for s,e in zip(fp.color[:], Publisher.Theme.SAVE)])
-            allpaths = self.pathsLays + [self.relativePath] 
+            allpaths = self.pathsLays + [self.relativePath]
             colorsList.append([(e-s) / gap for s,e in zip(self.relativePath.color[:], Publisher.Theme.RELATIVE)])
 
             time.sleep(0.5)
@@ -941,7 +942,7 @@ class Publisher(Module):
 
         def load(self):
             self.layout = cmds.formLayout("Paths_lay", parent=self.parent, bgc=Publisher.Theme.SEC_BGC)
- 
+
             # Path layout
             #   local path layout
             self.localPath = Publisher.MC_PathLine(self.layout, color=Publisher.Theme.LOCAL).load()
@@ -956,7 +957,7 @@ class Publisher(Module):
             self.addPath = Publisher.MC_PathLine(self.layout, color=Publisher.Theme.SAVE, image=Publisher.Image.ADD, annotation=Publisher.lg.Button.add).load()
             self.addPath.pathVisibility = False
             self.addPath.func = self.cb_addPathEvent()
-            
+
             #   relative path layout
             self.relativePath = Publisher.MC_PathLine(self.layout, color=Publisher.Theme.RELATIVE).load()
             self.relativePath.func = self.cb_getRelativePathEvent()
@@ -976,11 +977,11 @@ class Publisher(Module):
             self.activeTab = startIndex
             self.currentTabLay = None
             self.tabDimensions = []
-        
+
         def addTopTabs(self, mod, image, ann=""):
             self.topTabs.append((mod, image, ann))
             return mod
-        
+
         def addBoTTabs(self, mod, image, ann=""):
             self.botTabs.append((mod, image, ann))
             return mod
@@ -1025,7 +1026,7 @@ class Publisher(Module):
             self.scrlLay = self.attach(cmds.scrollLayout("scrlLay", parent=self.layout, rc=self.cb_resize()), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,2,30,2))
             self.childrenLayout = cmds.formLayout("tab_content",p=self.scrlLay, bgc=Publisher.Theme.SEC_BGC)
             it = 0
-            
+
             prev = "FORM"
             for m, i, a in self.topTabs:
                 prev = self.attach(cmds.iconTextButton(image=i, p=self.layout, h=30, w=30, bgc=Publisher.Theme.BUTTON, c=self.switch(it), ann=a), top=prev, bottom=None, left="FORM", right=None, margin=(2,2,2,2))
@@ -1122,13 +1123,13 @@ class Publisher(Module):
             "alphaNum" : ('Alpha/Num', lambda x: re.findall(r"[^\W\d_]+|\d+", x)),
             "lowUpCase" : ('Lower/Upper', lambda x: re.findall('[A-Z][^A-Z]*', x)),
         }
-        
+
         def __init__(self, parent, operations, name=None, input=lambda: "Example"):
             Module.__init__(self, parent, name=name)
             self.operations = operations
             self.input = input
             self.start = self.operations[3] >= 0
-        
+
         def output(self):
             op = self.operations
             return Publisher.MC_StrSplitter.solveOperation(self.input(), op[0], op[1], op[2], op[3])
@@ -1150,7 +1151,7 @@ class Publisher(Module):
                 output = arr
                 if typeSplit == "str":
                     output = args.join(output)
-            
+
             return output if index < len(arr) else arr[-1]
 
         @staticmethod
@@ -1183,7 +1184,7 @@ class Publisher(Module):
                 # output = arr[op[2]] if op[2] < len(arr) else arr[-1]
 
             return output
-        
+
         @callback
         def cb_changeIndex(self, i):
             arr = Publisher.MC_StrSplitter.splitWords(self.input(), self.operations[1], self.operations[2])
@@ -1216,7 +1217,7 @@ class Publisher(Module):
 
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.SEC_BGC)
-            
+
             it = int(not self.operations[0]) + 1
             self.exOption = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", margin=(4,2,5,2))
             cmds.menuItem(p=self.exOption, label='Extract')
@@ -1249,7 +1250,7 @@ class Publisher(Module):
             # for i, elem in enumerate(arr):
             #     bgColor = Publisher.Theme.SELECTED if i == (self.operations[3] if self.operations[3] >= 0 else len(arr) + self.operations[3]) else Publisher.Theme.BUTTON
             #     prev = self.attach(cmds.button(parent=self.layout, l=elem, bgc=bgColor), top=self.splitTypeLabel, left=prev, margin=(8,5,5,5))
-            
+
             self.attach(cmds.formLayout(parent=self.layout, h=5), bottom="FORM")
             self.applyAttach()
 
@@ -1286,7 +1287,7 @@ class Publisher(Module):
                 cmds.deleteUI(self.name)
             self.win = cmds.workspaceControl(self.name, ih=240, iw=320, retain=False, floating=True, h=100, w=500)
             self.layout = cmds.formLayout(parent=self.win, bgc=Publisher.Theme.MAIN_BGC)
-            
+
             # self.typeBtn = self.attach(cmds.optionMenu(parent=self.layout, bgc=Publisher.Theme.BUTTON), top="FORM", left="FORM", margin=(2,2,2,2))
             # cmds.menuItem(p=self.typeBtn, label='String')
             # cmds.menuItem(p=self.typeBtn, label='Int')
@@ -1333,8 +1334,8 @@ class Publisher(Module):
 
         def load(self):
             self.layout = cmds.formLayout("label_{}_{}".format(self.increment, self.name), parent=self.parent)
-            
-            
+
+
             # self.del_btn = self.attach(cmds.iconTextButton(image=Publisher.Image.QUIT, bgc=self.bgc, h=18, c=Callback(self.runEvent, "remove", self.name)), top="FORM", right="FORM", margin=(1,1,1,1))
             self.del_btn = "FORM"
             if self.button:
@@ -1353,7 +1354,7 @@ class Publisher(Module):
 
         def load(self):
             self.layout = cmds.formLayout("label_{}_{}".format(self.increment, self.name), parent=self.parent)
-            
+
             if len(self.options) > 0:
                 self.del_btn = self.attach(cmds.image(p=self.layout, image=Publisher.Image.ADD, bgc=self.bgc, h=18, w=18), top="FORM", right="FORM", bottom="FORM", left="FORM", margin=(1,1,1,1))
                 self.gmc = cmds.popupMenu("gmc  " + self.del_btn, parent=self.del_btn, button=1, pmc=Callback(self.runEvent, "option", self.name))
@@ -1449,7 +1450,7 @@ class Publisher(Module):
         def __init__(self, parent, name, lst):
             Module.__init__(self, parent, name)
             self.list = lst
-        
+
         @callback
         def cb_remove(self, elem):
             print("removing {}".format(elem))
@@ -1518,7 +1519,7 @@ class Publisher(Module):
             self.containerAllVar = Publisher.MC_stackContainer(self.layout)
             for e in self.variables:
                 print(e, self.variables[e])
-                bgc = Publisher.Theme.BUTTON if len(self.variables[e]) > 0 else Module.COLOR_LIGHTGREYGREEN
+                bgc = Publisher.Theme.BUTTON if len(self.variables[e]) > 0 else Module.COLOR_LIGHTGREYBLUE
                 label = Publisher.MC_Label(self.containerAllVar, e, button=True, bgc=bgc)
                 label.eventHandler("click", self.cb_editLabel(e))
                 label.eventHandler("remove", self.cb_deleteLabel(e))
@@ -1528,7 +1529,12 @@ class Publisher(Module):
             # cmds.iconTextButton(p=self.containerAllVar, image=Publisher.Image.ADD, h=18, w=18, bgc=Publisher.Theme.BUTTON, c=self.cb_editLabel())
             self.attach(self.containerAllVar, top=self.nbDigits, left="FORM", right="FORM", margin=(15,3,3,3))
 
+
             self.titleDefineNames = self.attach(cmds.text(p=self.layout, l="Define names"), top=self.containerAllVar, left="FORM", margin=(3,3,0,3))
+            self.presetDefineNamesDropMenu = self.attach(cmds.optionMenu(p=self.layout, l="Presets : ", bgc=Publisher.Theme.BUTTON), top=self.titleDefineNames, left="FORM", margin=(3,3,0,3))
+            cmds.menuItem(p=self.presetDefineNamesDropMenu, label='-')
+            cmds.menuItem(p=self.presetDefineNamesDropMenu, label='Custom')
+            cmds.menuItem(p=self.presetDefineNamesDropMenu, label='CS')
             names = [
                 ("Publish", ["path", "\\", "project", "_", "name", "_", "state", ".", "extension"]),
                 ("Publish Image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"]),
@@ -1537,9 +1543,9 @@ class Publisher(Module):
                 ("Confo", ["path", "\\", "project", "_", "name", "_", "state", "_", ".", "extension"]),
                 ("Confo image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"])
             ]
-            prev = self.titleDefineNames
+            prev = self.presetDefineNamesDropMenu
             for n in names:
-                buttons = [(x, Module.COLOR_LIGHTGREYRED if not x in self.variables else Module.COLOR_LIGHTGREYGREEN if len(self.variables[x]) == 0 else Publisher.Theme.BUTTON) for x in n[1]]
+                buttons = [(x, Module.COLOR_LIGHTGREYRED if not x in self.variables else Module.COLOR_LIGHTGREYBLUE if len(self.variables[x]) == 0 else Publisher.Theme.BUTTON) for x in n[1]]
                 prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], buttons).load(), top=prev, left="FORM", right="FORM", margin=(8,8,8,8))
 
 
@@ -1600,14 +1606,14 @@ class Publisher(Module):
             Publisher.MT_SettingLanguage(self.section["language"])
             Publisher.MT_SettingsNameConvertion(self.section["nameConv"])
             Publisher.MT_SettingsPlugin(self.section["plugin"])
-            
+
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
             # self.tmp = self.attach(cmds.text("plop", p=self.layout, l="WIP"), top="FORM", left="FORM")
             self.tmp = "FORM"
             self.scrlLay = self.attach(cmds.scrollLayout("scrlLay", parent=self.layout, cr=True), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
             self.childrenLayout = cmds.formLayout(parent=self.scrlLay)
-                
+
             prev = "FORM"
             for c in self.childrens:
                 c.load()
@@ -1713,7 +1719,7 @@ class Publisher(Module):
         @thread
         def backup(self):
             print("backup")
-            
+
             localPath = self.pathsModule.getLocalPath()
             print("local paths getted")
             relativePath = self.pathsModule.getRelativePath()
@@ -1748,11 +1754,11 @@ class Publisher(Module):
             self.pathsModule.infoColorPath(info)
 
         def publish(self, comment):
-            
+
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
             paths, names = self.getPathsAndNames()
-            
+
             # Prepare meta-data
             self.datas["Comment"] = comment
             self.setDatas()
@@ -1784,7 +1790,7 @@ class Publisher(Module):
             # Rollback wip and increment its version
             if self.wipRollback is not None:
                 cmds.file(self.wipRollback, o=True, f=True)
-            self.wipRollback = None 
+            self.wipRollback = None
             cmds.file(rename="/".join([localPath, paths["wip"], names["incWip"]]))
             cmds.file(save=True, type='mayaAscii' )
             self.runEvent("lockPrepPublish", False)
@@ -1798,7 +1804,7 @@ class Publisher(Module):
         def prepPublish(self):
             # increment and save
             mel.eval("incrementAndSaveScene 1;")
-            
+
             # store current file
             self.wipRollback = os.path.abspath(cmds.file(q=True, sn=True))
             self.pubPath = self.wipRollback[:-3] + ".pub" + self.wipRollback[-3:]
@@ -1844,7 +1850,7 @@ class Publisher(Module):
             nVersion = Publisher.Sync.getVersionFromName(names["wip"])
 
             self.datas["Version"] = nVersion
-            
+
             fileName = "_".join(names["wip"].split(".")[0].split("_")[:-1])
             names["publish"] = fileName + "." + names["wip"].split(".")[-1]
             names["version"] = fileName + "_v{0:0>3d}.".format(nVersion) + names["wip"].split(".")[-1]
@@ -1901,12 +1907,12 @@ class Publisher(Module):
         self.childrenLayout = self.attach(cmds.formLayout("Publisher_childLay", parent=self.layout), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
 
         # Main Pannels
-        self.paths = self.attach(Publisher.MT_Paths(self).load(), top="FORM", bottom=None, left="FORM", right="FORM", margin=(2,2,2,2))        
+        self.paths = self.attach(Publisher.MT_Paths(self).load(), top="FORM", bottom=None, left="FORM", right="FORM", margin=(2,2,2,2))
         #   Active Tab
         ct = self.readPref("currentTab")
         self.tabs = Publisher.MC_Tab(self, startIndex=ct if type(ct) is int else 0)
 
-        # Tabs definitions 
+        # Tabs definitions
         #   Attach up
         self.SyncCommon = self.tabs.addTopTabs(Publisher.MT_SyncCommon(self.tabs), Publisher.Image.COMMON, Publisher.lg.Button.common)
         self.SyncAnimation = self.tabs.addTopTabs(Publisher.MT_SyncAnimation(self.tabs), Publisher.Image.ANIMATION, Publisher.lg.Button.animation)
@@ -1921,7 +1927,7 @@ class Publisher(Module):
         # Events
         #   Sync
         self.syncEvent.eventHandler("lockPrepPublish", self.SyncCommon.lockPrepPublish)
-        #   Common sync 
+        #   Common sync
         self.SyncCommon.eventHandler("btn_prep", self.syncEvent.prepPublish)
         self.SyncCommon.eventHandler("btn_rollBack", self.syncEvent.rollBack)
         self.SyncCommon.eventHandler("btn_backup", self.syncEvent.backup)
@@ -1949,7 +1955,7 @@ class Publisher(Module):
             cmds.deleteUI(self.win)
         return self
     def unloadEvent(self):
-        
+
         if cmds.workspaceControl(Publisher.MC_VariableEditor.name, exists=1):
             cmds.deleteUI(Publisher.MC_VariableEditor.name)
 
@@ -2026,7 +2032,7 @@ def uninitializePlugin(*args):
     if shelfLay is not None and button is not None:
         if cmds.control(button, q=True, ex=True):
             cmds.deleteUI(button)
-            
+
         if cmds.layout(plugInTab, q=True, ex=True):
             if cmds.layout(plugInTab, q=True, ca=True) is None:
                 cmds.deleteUI(plugInTab)
