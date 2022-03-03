@@ -2,8 +2,17 @@
 # -- coding: utf-8 --
 
 import os
+import io
 import shlex
 from datetime import datetime
+from datetime import timedelta
+
+def getDeltaFromStr(timecode):
+    # old = datetime.strptime(timecode, '%H:%M:%S:%f') - datetime(1900, 1, 1, 1, 0)
+    times = timecode.split(":")
+    times = [int(t) for t in times]
+    td = timedelta(hours=times[0] - 1, minutes=times[1], seconds=times[2], milliseconds= (times[3] / 24) * 1000)
+    return td
 
 class Tag():
     def __init__(self, content):
@@ -30,7 +39,7 @@ class Tag():
     @staticmethod
     def read(path):
         tags = []
-        with open(path, "r+") as f:
+        with io.open(path, "r+", encoding="utf-8") as f:
             lines = f.readlines()
             for cursorLine, l in enumerate(lines):
                 while ">" in l:
@@ -74,7 +83,7 @@ class Balise():
 
     @staticmethod
     def getStrFromFileByIndex(filePath, indexLine, start, end):
-        with open(filePath, "r+") as f:
+        with open(filePath, "r+", encoding="utf-8") as f:
             for i, line in enumerate(f.readlines()):
                 if i == indexLine:
                     return line[start + 1:start + end]
@@ -99,7 +108,7 @@ class Balise():
                 gap -= 1
 
         return currentParent
-    
+
     def __iter__(self):
         self._it = 0
         return self
@@ -138,10 +147,23 @@ class Role():
                 txt = txt.split()
                 if len(txt) != 0:
                     if time is None:
-                        time = datetime.strptime(t[1], '%H:%M:%S:%f') - datetime.strptime(t[0], '%H:%M:%S:%f')
+                        time = t[1] - t[0]
                     else:
-                        time += datetime.strptime(t[1], '%H:%M:%S:%f') - datetime.strptime(t[0], '%H:%M:%S:%f')
+                        time += t[1] - t[0]
         return time
+
+    def isSpeaking(self, currentTime, margin=0):
+        for l in self.lines:
+            if l.timecodeStart <= currentTime + timedelta(seconds=margin) and currentTime - timedelta(seconds=margin) < l.timecodeEnd:
+                return True
+            # for t in l.text:
+            #     txt = t[2]
+            #     txt = txt.split()
+            #     if len(txt) != 0:
+            #         if t[0] <= currentTime and currentTime < t[1]:
+            #             return True
+        return False
+
     @staticmethod
     def getRoles(balises):
         if balises.type != "roles":
@@ -155,15 +177,15 @@ class Role():
     def __repr__(self):
         return "{} - {}".format(self.name, self.color)
 
-
 class Line():
     def __init__(self, role):
         self.role = role
-        self.timecode = 0
+        self.timecodeStart = 0
+        self.timecodeEnd = 0
         self.track = 0
         self.text = []
         #[timecodeStart, timecodeEnd, type, text]
-    
+
     @staticmethod
     def getTexts(balise):
         if balise.type != "line":
@@ -174,9 +196,10 @@ class Line():
         for b in balise:
             if b.type == "lipsync":
                 oldT = t
-                t = [b.arguments['timecode'], None, "", b.arguments['type']]
+                timecode = getDeltaFromStr(b.arguments['timecode'])
+                t = [timecode, None, "", b.arguments['type']]
                 if oldT is not None:
-                    oldT[1] = b.arguments['timecode']
+                    oldT[1] = timecode
                     texts.append(oldT)
             if b.type == "text":
                 t[2] = t[2] + b.content
@@ -192,36 +215,46 @@ class Line():
                 r = b.arguments['role']
                 l = Line(roles[r])
                 roles[r].lines.append(l)
-                l.track = b.arguments['track']
+                l.track = int(b.arguments['track'])
                 l.text = Line.getTexts(b)
-                l.timecode = l.text[0][0]
+                l.timecodeStart = l.text[0][0]
+                l.timecodeEnd = l.text[-1][1]
 
-# filePath = r".\ToolBox\sandbox\bandeRythmo\template\Le roi lion - Scar et les hyènes.detx"
-# filePath = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\banderythmo\Robots.meet_the_rusties.detx"
-# balises = Balise.read(filePath)
-# balises.printChildrens()
-# roles = Role.getRoles(balises[0][1])
-# print(">", roles)
-# Line.getLines(balises[0][2], roles)
-# for _, r in roles.items():
-#     print(">>", r, r.countParolTime())
 
-from tkinter import Tk
-from tkinter.filedialog import askdirectory
-folder = askdirectory(title='Select Folder') # shows dialog box and return the path
-# folder = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\banderythmo"
-print(folder)
-with open("./temps_de_Parol.txt", "w+") as log:
-    for files in os.listdir(folder):
-        if not files.endswith(".detx"):
-            continue
-        print(files)
-        log.write("{}\n".format(files))
-        balises = Balise.read(os.path.join(folder, files))
-        roles = Role.getRoles(balises[0][1])
-        Line.getLines(balises[0][2], roles)
-        for _, r in roles.items():
-            print(">> {} {}".format(r.name.ljust(20), r.countParolTime()))
-            log.write("  >> {} {}\n".format(r.name.ljust(20), r.countParolTime()))
-        log.write("\n ")
-    
+getShots = lambda balise : [getDeltaFromStr(b.arguments['timecode'])  for b in balise[0][2].childrens if b.type == "shot"]
+
+def countTimeParol():
+    from tkinter import Tk
+    from tkinter.filedialog import askdirectory
+    folder = askdirectory(title='Select Folder') # shows dialog box and return the path
+    # folder = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\banderythmo"
+    print(folder)
+    with open("./temps_de_Parol.txt", "w+") as log:
+        for files in os.listdir(folder):
+            if not files.endswith(".detx"):
+                continue
+            print(files)
+            log.write("{}\n".format(files))
+            balises = Balise.read(os.path.join(folder, files))
+            roles = Role.getRoles(balises[0][1])
+            Line.getLines(balises[0][2], roles)
+            for _, r in roles.items():
+                print(">> {} {}".format(r.name.ljust(20), r.countParolTime()))
+                log.write("  >> {} {}\n".format(r.name.ljust(20), r.countParolTime()))
+            log.write("\n ")
+
+def isPersonSpeaking():
+    filePath = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\banderythmo\Robots.meet_the_rusties.detx"
+    balises = Balise.read(filePath)
+    balises.printChildrens()
+    roles = Role.getRoles(balises[0][1])
+    Line.getLines(balises[0][2], roles)
+    print(roles)
+
+
+
+if __name__ == "__main__":
+    # countTimeParol()
+    # isPersonSpeaking()
+    # print(getShots())
+    pass
