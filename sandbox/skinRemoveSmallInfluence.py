@@ -41,19 +41,6 @@ def setInfluentJoints(skCls, vtx, joints):
         cmds.setAttr(k + ".liw",  0)
     cmds.skinPercent( skCls, vtx, transformValue=w)
 
-def ignoreSmallValues(infs):
-    infsL = [{'name' : k, 'value': v} for k, v in infs.items()]
-    newlist = sorted(infsL, key=lambda d: d['value'], reverse=True)
-    for i, e in enumerate(newlist):
-        if e['value'] < 0.1:
-            break
-    i = min(i + 1, 5)
-    tokeep = newlist[:i]
-    smallValueSum = sum([x['value'] for x in newlist[i:]])
-    tokeep[0]['value'] += smallValueSum
-    newInfs = {x['name']: x['value'] for x in tokeep}
-    return newInfs
-
 toVertex = lambda x: convertToList(cmds.polyListComponentConversion(x, tv=True))
 toEdges = lambda x: convertToList(cmds.polyListComponentConversion(x, te=True, internal=True))
 expandedSelVtx = lambda x: toVertex(cmds.polyListComponentConversion(x, te=True))
@@ -63,17 +50,32 @@ sel = cmds.ls(sl=True)
 vertex = toVertex(sel)
 vertex = convertToList(vertex)
 for vtx in vertex:
-    # neigbor = cmds.polyListComponentConversion(vtx, te=True)
-    # neigbor = convertToList(cmds.polyListComponentConversion(neigbor, tv=True))
+    skCls = getSkinCluster(vtx)
+    infs = getInfluentJoints(vtx, skCls)
+    print(" -" * 15)
+    print(infs)
+    infsL = [{'name' : k, 'value': v[0]} for k, v in infs.items()]
+    newlist = sorted(infsL, key=lambda d: d['value'], reverse=True)
+    for i, e in enumerate(newlist):
+        if e['value'] < 0.1:
+            break
+    print(i)
+    i = min(i + 1, 5)
+    tokeep = newlist[:i]
+    smallValueSum = sum([x['value'] for x in newlist[i:]])
+    tokeep[0]['value'] += smallValueSum
+    newInfs = {x['name']: x['value'] for x in tokeep}
+    print(newInfs)
+    setInfluentJoints(skCls, vtx, newInfs)
+
+    continue
     neigbor = expandedSelVtx(vtx)
     nbNeigh = len(neigbor)
     neigbor = [x for x in neigbor if x not in vertex]
     neigInf = {}
-    skCls = getSkinCluster(vtx)
     if len(neigbor) == nbNeigh:
         continue
     for n in neigbor:
-        infs = getInfluentJoints(n, skCls)
         for k in infs.keys():
             # print(k, infs[k])
             if k in neigInf.keys():
@@ -82,9 +84,8 @@ for vtx in vertex:
                 neigInf[k] = infs[k]
     for k, v in neigInf.items():
         neigInf[k] = sum(v) / len(neigbor)
-    neigInf = ignoreSmallValues(neigInf)
-    print(neigInf)
     setInfluentJoints(skCls, vtx, neigInf)
+    # print(neigInf)
     # print("voisin: ", neigbor)
 
 
