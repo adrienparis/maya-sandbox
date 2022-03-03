@@ -34,7 +34,7 @@ def bleach():
     if cmds.objExists("breed_gene"):
         cmds.delete("breed_gene")
 
-    for f in ["userSetup.py", "userSetup.mel", "vaccine.py"]:
+    for f in ["userSetup.py", "userSetup.mel", "vaccine.py", "vaccine.pyc"]:
         p = os.path.join(scriptsPath, f)
         print(p)
         if os.path.exists(p):
