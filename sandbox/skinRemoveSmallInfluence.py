@@ -52,41 +52,24 @@ vertex = convertToList(vertex)
 for vtx in vertex:
     skCls = getSkinCluster(vtx)
     infs = getInfluentJoints(vtx, skCls)
-    print(" -" * 15)
-    print(infs)
     infsL = [{'name' : k, 'value': v[0]} for k, v in infs.items()]
     newlist = sorted(infsL, key=lambda d: d['value'], reverse=True)
+    if len(newlist) <= 1:
+        continue
     for i, e in enumerate(newlist):
         if e['value'] < 0.1:
             break
-    print(i)
-    i = min(i + 1, 5)
+    i = min(i, 4)
+    print(newlist)
     tokeep = newlist[:i]
     smallValueSum = sum([x['value'] for x in newlist[i:]])
+    print(tokeep)
+    smallValueSum = 1.0 - sum([x['value'] for x in tokeep[1:i]]) - tokeep[0]['value']
     tokeep[0]['value'] += smallValueSum
     newInfs = {x['name']: x['value'] for x in tokeep}
     print(newInfs)
     setInfluentJoints(skCls, vtx, newInfs)
 
-    continue
-    neigbor = expandedSelVtx(vtx)
-    nbNeigh = len(neigbor)
-    neigbor = [x for x in neigbor if x not in vertex]
-    neigInf = {}
-    if len(neigbor) == nbNeigh:
-        continue
-    for n in neigbor:
-        for k in infs.keys():
-            # print(k, infs[k])
-            if k in neigInf.keys():
-                neigInf[k] += infs[k]
-            else:
-                neigInf[k] = infs[k]
-    for k, v in neigInf.items():
-        neigInf[k] = sum(v) / len(neigbor)
-    setInfluentJoints(skCls, vtx, neigInf)
-    # print(neigInf)
-    # print("voisin: ", neigbor)
 
 
 
