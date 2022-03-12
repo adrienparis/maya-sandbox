@@ -7,5 +7,7 @@ sandbox/tmp.py
 *tmp.py
 dist/*
 build/*
+*/dist/*
+*/build/*
 *.spec
 report_*.txt
