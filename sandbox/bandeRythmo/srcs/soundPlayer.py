@@ -69,15 +69,20 @@ noVoicesSndFlPth = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\m
 video_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\capture\robots\hitfilm_mp4\robots.un_ticket_pour_robotville.mp4"
 transcript_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\banderythmo\Robots.Un_ticket_pour_robotville.detx"
 
-originalSndFlPth = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\montage\robot\meet the rusties\robots.meet_the_rusties.original.mp3"
-noVoicesSndFlPth = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\montage\robot\meet the rusties\robots.meet_the_rusties.novoices.mp3"
-video_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\capture\robots\hitfilm_mp4\robots.meet_the_rusties.mp4"
-transcript_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\banderythmo\Robots.meet_the_rusties.detx"
+# originalSndFlPth = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\montage\robot\meet the rusties\robots.meet_the_rusties.original.mp3"
+# noVoicesSndFlPth = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\montage\robot\meet the rusties\robots.meet_the_rusties.novoices.mp3"
+# video_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\capture\robots\hitfilm_mp4\robots.meet_the_rusties.mp4"
+# transcript_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\banderythmo\Robots.meet_the_rusties.detx"
 
-originalSndFlPth = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\capture\eldorado\Untitled_1_.mp3"
-noVoicesSndFlPth = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\capture\eldorado\el-dorado.mp3"
-video_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\capture\eldorado\netflix-mozilla-firefox-2021-12-12-22-43-04_cZiEHbbh.mp4"
-transcript_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\banderythmo\el-dorado.duel.detx"
+# originalSndFlPth = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\capture\eldorado\Untitled_1_.mp3"
+# noVoicesSndFlPth = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\capture\eldorado\el-dorado.mp3"
+# video_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\capture\eldorado\netflix-mozilla-firefox-2021-12-12-22-43-04_cZiEHbbh.mp4"
+# transcript_path = r"C:\Users\paris_a\Documents\Creative Seeds\Random\doublage\banderythmo\el-dorado.duel.detx"
+
+originalSndFlPth = r"S:\a.paris\Download\robots.meet_the_rusties.lowdef.mp3"
+noVoicesSndFlPth = r"S:\a.paris\Download\robots.meet_the_rusties.lowdef.mp3_music.mp3"
+video_path = r"D:\a.paris\Random\doublage\bandeRythmo\01_extrait\robots\hitfilm_mp4\robots.meet_the_rusties.mp4"
+transcript_path = r"D:\a.paris\Random\doublage\bandeRythmo\02_cappella_files\Robots.meet_the_rusties.detx"
 
 balises = readDetx.Balise.read(transcript_path)
 roles = readDetx.Role.getRoles(balises[0][1])
@@ -120,12 +125,16 @@ window = pygame.display.set_mode(imageTXT_WIDTH)
 mus_org.play(0)
 mus_nVc.play(0)
 
-fontPath = r".\ToolBox\sandbox\bandeRythmo\fonts\Chateau des Oliviers.ttf"
-fontPath = r".\ToolBox\sandbox\bandeRythmo\fonts\Cornelia.ttf"
-fontPath = r".\ToolBox\sandbox\bandeRythmo\fonts\Homeday.otf"
-fontPath = r".\ToolBox\sandbox\bandeRythmo\fonts\SleeptightDisplayRegular.ttf"
-fontPath = r".\ToolBox\sandbox\bandeRythmo\fonts\Gendis Script Test.ttf"
-fontPath = r".\ToolBox\sandbox\bandeRythmo\fonts\KGRedHands.ttf"
+fonFolder = r".\ToolBox\sandbox\bandeRythmo\fonts/" 
+fonFolder = r".\sandbox\bandeRythmo\fonts/"
+
+fontPath = fonFolder + r"Chateau des Oliviers.ttf"
+fontPath = fonFolder + r"Cornelia.ttf"
+fontPath = fonFolder + r"Homeday.otf"
+fontPath = fonFolder + r"Gendis Script Test.ttf"
+fontPath = fonFolder + r"KGRedHands.ttf"
+fontPath = fonFolder + r"SleeptightDisplayRegular.ttf"
+
 font = pygame.font.Font(fontPath, 128, italic=True)
 font_fps = pygame.font.SysFont("comic", 32)
 # font.italic()
@@ -201,11 +210,15 @@ while playing:
     if success:
         video_surf = pygame.image.frombuffer(
             video_image.tobytes(), video_image.shape[1::-1], "BGR")
-        video_surf = pygame.transform.scale(video_surf, imageTXT_WIDTH)
+        # video_surf = pygame.transform.scale(video_surf, imageTXT_WIDTH)
+        video_surf = pygame.transform.scale(video_surf, (960, 520))
+        
     else:
         playing = False
 
     # Loading Lines
+    window.blit(pygame.Surface(imageTXT_WIDTH, 32), (0, 0))
+
     for il in imgLines:
         if il.timeStart - GAP <= currentTime and currentTime <= il.timeStart:
             il.load()

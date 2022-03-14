@@ -1,3 +1,5 @@
+from maya import cmds
+
 
 class FootAttr():
     def __init__(self, ctrl, attr, keys):
