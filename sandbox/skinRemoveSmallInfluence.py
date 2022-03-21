@@ -55,15 +55,12 @@ for vtx in vertex:
     infsL = [{'name' : k, 'value': v[0]} for k, v in infs.items()]
     newlist = sorted(infsL, key=lambda d: d['value'], reverse=True)
     if len(newlist) <= 1:
-        print(newlist)
         continue
-    print(newlist)
     for i, e in enumerate(newlist):
         print(e, i)
         if e['value'] < 0.05:
             break
     i = min(i, 4)
-    print(i)
     print(newlist)
     tokeep = newlist[:i]
     smallValueSum = sum([x['value'] for x in newlist[i:]])

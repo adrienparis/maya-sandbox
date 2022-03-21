@@ -1468,12 +1468,10 @@ class Publisher(Module):
             self.attach(self.containerVar, top=self.title, left="FORM", right="FORM", margin=(3,3,15,5))
             self.attach(cmds.formLayout(p=self.layout, h=5), top=self.containerVar, left="FORM", right="FORM")
 
-
     class MT_SettingsNameConvertion(Module):
-        def __init__(self, parent):
-            Module.__init__(self, parent)
-            self.example = lambda: "Y a rien"
-            self.variables = {
+
+        NAME_DEFAULT_EMPTY = {}
+        VAR_DEFAULT_CS = {
                     "project" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 0]],
                     "path" : [[False, "str", "\\wip", -1]],
                     "name" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 1]],
@@ -1485,6 +1483,49 @@ class Publisher(Module):
                     "v" : [],
                     "\\" : [],
             }
+        VAR_DEFAULT_CUSTOM = {
+                    "project" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 0]],
+                    "path" : [[False, "str", "\\wip", -1]],
+                    "name" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 1]],
+                    "state" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 3]],
+                    "version" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 3], [True, "alphaNum", None, -1]],
+                    "extension" : [[True, "str", "\\", -1], [True, "str", ".", -1]],
+                    "type" : [[True, "str", "wip", -1], [True, "str", ".", 0], [True, "str", "_", 2]],
+                    "_" : [],
+                    "." : [],
+                    "v" : [],
+                    "\\" : [],
+            }
+
+        NAME_DEFAULT_EMPTY = [
+                ("Publish", []),
+                ("Publish Image", []),
+                ("Version", []),
+                ("Version Image", []),
+                ("Confo", []),
+                ("Confo image", [])
+        ]
+        NAME_DEFAULT_CS = [
+                ("Publish", ["path", "\\", "project", "_", "name", "_", "state", ".", "extension"]),
+                ("Publish Image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"]),
+                ("Version", ["path", "\\", "versionPath", "\\", "project", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]),
+                ("Version Image", ["path", "\\", "versionPath", "\\", "project", "_", "name", "_", "state", "_", "v", "version", "_", "thumbnail", ".", "jpg"]),
+                ("Confo", ["path", "\\", "project", "_", "name", "_", "state", "_", ".", "extension"]),
+                ("Confo image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"])
+            ]
+        NAME_DEFAULT_CUSTOM = [
+                ("Publish", ["path", "\\", "project", "_", "type", "_", "name", "_", "state", ".", "extension"]),
+                ("Publish Image", ["path", "\\", "project", "_", "type", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"]),
+                ("Version", ["path", "\\", "versionPath", "\\", "project", "_", "type", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]),
+                ("Version Image", ["path", "\\", "versionPath", "\\", "project", "_", "type", "_", "name", "_", "state", "_", "v", "version", "_", "thumbnail", ".", "jpg"]),
+                ("Confo", ["path", "\\", "project", "_", "type", "_", "name", "_", "state", "_", ".", "extension"]),
+                ("Confo image", ["path", "\\", "project", "_", "type", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"])
+            ]
+
+        def __init__(self, parent):
+            Module.__init__(self, parent)
+            self.example = lambda: "Y a rien"
+            self.variables = Publisher.MT_SettingsNameConvertion.VAR_DEFAULT_CS
 
         @callback
         def cb_editLabel(self, name=None):
@@ -1500,6 +1541,28 @@ class Publisher(Module):
             if name in self.variables:
                 pass
                 # self.variables.pop(name)
+
+
+
+        ## TODO Not a good solution
+        ## ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+        @callback
+        def cb_switchNamesDefs(self, name):
+            if name == "-":
+                self.loadNameDefinitions(Publisher.MT_SettingsNameConvertion.NAME_DEFAULT_EMPTY)
+            elif name == "Custom":
+                self.loadNameDefinitions(Publisher.MT_SettingsNameConvertion.NAME_DEFAULT_CUSTOM)
+            elif name == "CS":
+                self.loadNameDefinitions(Publisher.MT_SettingsNameConvertion.NAME_DEFAULT_CS)
+
+
+        def loadNameDefinitions(self, names):
+            prev = self.presetDefineNamesDropMenu
+            for n in names:
+                buttons = [(x, Module.COLOR_LIGHTGREYRED if not x in self.variables else Module.COLOR_LIGHTGREYBLUE if len(self.variables[x]) == 0 else Publisher.Theme.BUTTON) for x in n[1]]
+                prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], buttons).load(), top=prev, left="FORM", right="FORM", margin=(8,8,8,8))
+
+        ## ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
@@ -1535,19 +1598,8 @@ class Publisher(Module):
             cmds.menuItem(p=self.presetDefineNamesDropMenu, label='-')
             cmds.menuItem(p=self.presetDefineNamesDropMenu, label='Custom')
             cmds.menuItem(p=self.presetDefineNamesDropMenu, label='CS')
-            names = [
-                ("Publish", ["path", "\\", "project", "_", "name", "_", "state", ".", "extension"]),
-                ("Publish Image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"]),
-                ("Version", ["path", "\\", "versionPath", "\\", "project", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]),
-                ("Version Image", ["path", "\\", "versionPath", "\\", "project", "_", "name", "_", "state", "_", "v", "version", "_", "thumbnail", ".", "jpg"]),
-                ("Confo", ["path", "\\", "project", "_", "name", "_", "state", "_", ".", "extension"]),
-                ("Confo image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"])
-            ]
-            prev = self.presetDefineNamesDropMenu
-            for n in names:
-                buttons = [(x, Module.COLOR_LIGHTGREYRED if not x in self.variables else Module.COLOR_LIGHTGREYBLUE if len(self.variables[x]) == 0 else Publisher.Theme.BUTTON) for x in n[1]]
-                prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], buttons).load(), top=prev, left="FORM", right="FORM", margin=(8,8,8,8))
 
+            self.loadNameDefinitions(Publisher.MT_SettingsNameConvertion.NAME_DEFAULT_CS)
 
     class MT_SettingsPlugin(Module):
         @callback
