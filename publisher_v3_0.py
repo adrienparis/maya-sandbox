@@ -885,6 +885,7 @@ class Publisher(Module):
             allpaths = self.pathsLays + [self.relativePath]
             for fp in allpaths:
                 if fp.path == path:
+                    print(path, color)
                     fp.color = color
                     break
 
@@ -898,6 +899,7 @@ class Publisher(Module):
             return []
 
         def infoColorPath(self, paths):
+            print("plop", paths)
             if self.lockColor:
                 return
             for path, state in paths:
@@ -907,6 +909,7 @@ class Publisher(Module):
 
         @thread
         def t_resetColor(self):
+            time.sleep(0.5)
             if self.lockColor:
                 return
             self.lockColor = True
@@ -1768,7 +1771,7 @@ class Publisher(Module):
                 a = c[1] + args
                 c[0](*a)
 
-        @thread
+        # @thread
         def backup(self):
             print("backup")
 
@@ -1831,6 +1834,9 @@ class Publisher(Module):
             image = self.takeSnapshot()
             shutil.copy(image, os.path.join(localPath, paths["publish"], names["imgPublish"]))
             shutil.copy(image, os.path.join(localPath, paths["version"], names["imgVersion"]))
+            
+            # optionall file info
+            self.optionalInfoFile()
 
             # Publish
             print(os.path.join(localPath, relativePath))
@@ -1846,9 +1852,23 @@ class Publisher(Module):
             cmds.file(rename="/".join([localPath, paths["wip"], names["incWip"]]))
             cmds.file(save=True, type='mayaAscii' )
             self.runEvent("lockPrepPublish", False)
+            self.pathsModule.infoColorPath([(relativePath, True)])
             info("{} -> Published !".format(names["publish"]))
             print("Publish", comment)
 
+        def optionalInfoFile(self):
+            '''Mainly for Pilou's asset manager
+            '''
+            localPath = self.pathsModule.getLocalPath()
+            paths, names = self.getPathsAndNames()
+            now = datetime.now() # current date and time
+            date_time = now.strftime(" %d/%m %H:%M:%S")
+            user = getpass.getuser()
+            line = 'string $user = "{}"; string $date = "{}";'.format(user, date_time)
+            infoPath = os.path.join(localPath, paths["publish"], names["infoFile"])
+            with open(infoPath, "w+") as f:
+                f.write(line)
+        
         def confo(self, comment):
             self.datas["Comment"] = comment
             print("confo", comment)
@@ -1906,14 +1926,18 @@ class Publisher(Module):
             fileName = "_".join(names["wip"].split(".")[0].split("_")[:-1])
             names["publish"] = fileName + "." + names["wip"].split(".")[-1]
             names["version"] = fileName + "_v{0:0>3d}.".format(nVersion) + names["wip"].split(".")[-1]
+            names["infoFile"] = "info.cst"
             names["incWip"] = fileName + "_v{0:0>3d}.0001.ma".format(nVersion + 1)
-            names["imgPublish"] = "thumbnail.jpg"
+            # names["imgPublish"] = "thumbnail.jpg"
+            # names["imgVersion"] = "thumbnail_v{0:0>3d}.jpg".format(nVersion)
+            names["imgPublish"] = "{}_Preview.0001.jpg".format(fileName)
             names["imgVersion"] = "thumbnail_v{0:0>3d}.jpg".format(nVersion)
 
             return (paths, names)
 
-        def takeSnapshot(self, name="tmp", width=1920, height=1080):
-            os.makedirs("/".join([self.pathsModule.getLocalPath(), "images"]))
+        def takeSnapshot(self, name="tmp", width=1024, height=1024):
+            if not os.path.exists("/".join([self.pathsModule.getLocalPath(), "images"])):
+                os.makedirs("/".join([self.pathsModule.getLocalPath(), "images"]))
             imagePath = "/".join([self.pathsModule.getLocalPath(), "images", name + ".jpg"])
             frame = cmds.currentTime( query=True )
             cmds.playblast(fr=frame, v=False, fmt="image", c="jpg", orn=False, cf=imagePath, wh=[width,height], p=100)
