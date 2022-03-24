@@ -1817,7 +1817,8 @@ class Publisher(Module):
             # Prepare meta-data
             self.datas["Comment"] = comment
             self.setDatas()
-            self.prepPublish()
+            if self.wipRollback is None:
+                self.prepPublish()
             self.writeMetadata()
             cmds.file( save=True, type='mayaAscii' )
 
