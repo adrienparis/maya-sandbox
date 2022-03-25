@@ -885,7 +885,6 @@ class Publisher(Module):
             allpaths = self.pathsLays + [self.relativePath]
             for fp in allpaths:
                 if fp.path == path:
-                    print(path, color)
                     fp.color = color
                     break
 
@@ -899,7 +898,6 @@ class Publisher(Module):
             return []
 
         def infoColorPath(self, paths):
-            print("plop", paths)
             if self.lockColor:
                 return
             for path, state in paths:
@@ -909,6 +907,7 @@ class Publisher(Module):
 
         @thread
         def t_resetColor(self):
+            cmds.warning("test")
             time.sleep(0.5)
             if self.lockColor:
                 return
@@ -929,14 +928,22 @@ class Publisher(Module):
                     time.sleep(1.0 / fps)
                     for fp, colorGap in zip(allpaths, colorsList):
                         fp.color = [n + g for n, g in zip(fp.color, colorGap)]
-                for fp in self.pathsLays:
-                    fp.color = Publisher.Theme.SAVE
-                self.relativePath.color = Publisher.Theme.RELATIVE
             except:
                 print("error avoided")
+                cmds.warning("error avoided - color change")
                 pass
             finally:
-                self.lockColor = False
+                try:
+                    for fp in self.pathsLays:
+                        fp.color = Publisher.Theme.SAVE
+                    self.relativePath.color = Publisher.Theme.RELATIVE
+                except:
+                    print("error avoided")
+                    cmds.warning("error avoided - reset")
+                    pass
+                finally:
+                    cmds.warning("unlock color")
+                    self.lockColor = False
 
         def _loadJobs(self):
             self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", self.cb_refreshUI()]))
@@ -1701,8 +1708,6 @@ class Publisher(Module):
             self.layout = cmds.formLayout(parent=self.parent)
             self.scrlLay = self.attach(cmds.scrollLayout("scrlLay", parent=self.layout, cr=True), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
             self.childrenLayout = cmds.formLayout(parent=self.scrlLay)
-            # self.childrenLayout = cmds.formLayout(parent=self.scrlLay)
-            # for img in Publisher.__dir__
             themes = {"THEME_{}".format(c):'#%02x%02x%02x' % (getattr(Publisher.Theme, c)[0] * 255, getattr(Publisher.Theme, c)[1] * 255, getattr(Publisher.Theme, c)[2] * 255) for c in dir(Publisher.Theme) if c.isupper()}
             colors = {c:'#%02x%02x%02x' % (getattr(Publisher, c)[0] * 255, getattr(Publisher, c)[1] * 255, getattr(Publisher, c)[2] * 255) for c in dir(Publisher) if c.startswith("COLOR_")}
             images = {i:getattr(Publisher.Image, i) for i in dir(Publisher.Image) if i.isupper()}
@@ -1723,18 +1728,12 @@ class Publisher(Module):
             context.update(colors)
             context.update(images)
             context.update(info)
-            # modules = [Publisher.MT_Paths, Publisher.MT_SyncCommon, Publisher.MT_SyncAnimation, Publisher.MT_Settings]
-            # txt = self.style + Publisher.lg.About.Publisher + "".join([m.__doc__ for m in modules if m is not None and m.__doc__ is not None])
             abouts_name = ["PUBLISHER", "PATHS", "SYNCCOMMON", "SYNCANIMATION", "SETTINGS"]
-            # abouts = [getattr(Publisher.lg.About, a) for a in dir(Publisher.lg.About) if a.isupper()]
             abouts = [getattr(Publisher.lg.About, a) for a in abouts_name]
             txt = self.style + "".join(abouts)
             txt = txt.format(**context)
-            # for t in txt.splitlines():
-            #     print(str(t))
 
 
-            # txt = bytes(str(t).encode("utf-8"))
             prev = "FORM"
             prev = self.attach(cmds.text(p=self.childrenLayout, l=txt), top=prev, bottom=None, left="FORM", right="FORM", margin=(1,1,1,1))
             self.btn_ticket = self.attach(cmds.button(l=Publisher.lg.Button.ticket, c=self.openTicket()), top=prev, bottom=None, left="FORM", right=None, margin=(1,1,1,1))
@@ -1773,17 +1772,12 @@ class Publisher(Module):
 
         # @thread
         def backup(self):
-            print("backup")
 
             localPath = self.pathsModule.getLocalPath()
-            print("local paths getted")
             relativePath = self.pathsModule.getRelativePath()
-            print("relative paths getted")
             drives = self.pathsModule.getDrivesPath()
-            print("drive getted")
             infos = []
             for drive in drives:
-                print("copy", drive)
 
                 abs_path = os.path.join(drive, relativePath)
                 if abs_path == relativePath:
@@ -1805,6 +1799,40 @@ class Publisher(Module):
             self.pathsModule.infoColorPath(infos)
 
         def upload(self):
+            localPath = self.pathsModule.getLocalPath()
+            relativePath = self.pathsModule.getRelativePath()
+            drives = self.pathsModule.getDrivesPath()
+            paths, names = self.getPathsAndNames()
+
+
+            # Check if it's a wip
+            if os.path.normpath(relativePath).split(os.sep)[-2] != "wip":
+                cmds.warning("The current file is not a WIP")
+                return
+            print("localPath      : " +  str(localPath))
+            print("relativePath   : " +  str(relativePath))
+            print("drives         : " +  str(drives))
+            print("paths          : " +  str(paths))
+            print("names          : " +  str(names))
+
+            copyFiles = []
+            copyFiles.append(os.path.join(paths["publish"], names["publish"]))
+            copyFiles.append(os.path.join(paths["publish"], names["imgPublish"]))
+            copyFiles.append(os.path.join(paths["publish"], names["infoFile"]))
+            copyFiles.append(os.path.join(paths["version"], names["version"]))
+            copyFiles.append(os.path.join(paths["version"], names["imgVersion"]))
+
+            for d in drives:
+                print(d)
+                if not os.path.exists(d):
+                    print("skipped")
+                    continue
+                copyFiles = [(os.path.join(localPath, x), os.path.join(d, x)) for x in copyFiles]
+                for x in copyFiles:
+                    print(x[0])
+                    print(x[1])
+                    print("")
+
             info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
             self.pathsModule.infoColorPath(info)
 
