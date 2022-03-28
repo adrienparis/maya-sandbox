@@ -2605,6 +2605,11 @@ class MiniToolRig(Module):
             self.transfertBsButton = self.attach(cmds.iconTextButton(p=self.layout, i="out_transform.png", c=Callback(self.transfertBlendshape)), top="FORM", left="FORM")
             self.applyAttach()
 
+    class MTG_skin(Module):
+        def load(self):
+            self.layout = cmds.formLayout(p=self.parent, w=5)
+            self.transfertBsButton = self.attach(cmds.iconTextButton(p=self.layout, i="out_transform.png", c=Callback(self.transfertBlendshape)), top="FORM", left="FORM")
+            self.applyAttach()
 
 
     ####################################

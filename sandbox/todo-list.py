@@ -218,14 +218,28 @@ class ToDoList(object):
             else:
                 cmds.textField(self.name_CTF, e=True, text=self.name, ebg=False, bgc=[0.27, 0.27, 0.27], w=1)
 
+            bi = {
+                "WIP" : ('weightHammer.png', "WIP"),
+                "Done" : ('confirm.png', ""),
+                "Abort" : ('error.png', ""),
+                "caution" : ('caution.png', ""),
+                "help" : ('QR_help.png', ""),
+                "delete" : ('QR_delete.png', "")
+            }
+            
+            self.statusButton = {}
+            for n in ["WIP", "Done", "Abort", "caution", "help"]:
+                self.statusButton[n] = cmds.iconTextButton(p=self.layout, image1=bi[n][0], ann=bi[n][1], ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, n))
+            self.statusButton["delete"] = cmds.iconTextButton(p=self.layout,  image1='QR_delete.png',    ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.delete))
+
             # TODO change to dictionary
             self.statusButton = {}
-            self.statusButton["WIP"] = cmds.iconTextButton(p=self.layout, image1='weightHammer.png', ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "WIP"))
-            self.statusButton["Done"] = cmds.iconTextButton(p=self.layout, image1='confirm.png', ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "Done"))
-            self.statusButton["Abort"] = cmds.iconTextButton(p=self.layout, image1='error.png', ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "Abort"))
-            self.statusButton["caution"] = cmds.iconTextButton(p=self.layout, image1='caution.png', ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "caution"))
-            self.statusButton["help"] = cmds.iconTextButton(p=self.layout, image1='QR_help.png', ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "help"))
-            self.statusButton["delete"] = cmds.iconTextButton(p=self.layout, image1='QR_delete.png', ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.delete))
+            self.statusButton["WIP"] = cmds.iconTextButton(p=self.layout,     image1='weightHammer.png', ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "WIP"))
+            self.statusButton["Done"] = cmds.iconTextButton(p=self.layout,    image1='confirm.png',      ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "Done"))
+            self.statusButton["Abort"] = cmds.iconTextButton(p=self.layout,   image1='error.png',        ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "Abort"))
+            self.statusButton["caution"] = cmds.iconTextButton(p=self.layout, image1='caution.png',      ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "caution"))
+            self.statusButton["help"] = cmds.iconTextButton(p=self.layout,    image1='QR_help.png',      ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.setStatus, "help"))
+            self.statusButton["delete"] = cmds.iconTextButton(p=self.layout,  image1='QR_delete.png',    ebg=False, bgc=[0.32, 0.52, 0.65], c=Callback(self.delete))
 
             tmp_sb_l = ["WIP", "Done", "Abort", "caution", "help", "delete"]
 
