@@ -1388,7 +1388,7 @@ class Publisher(Module):
             curHeight = 0
             prevHrztl = "FORM"
             prevVrtcl = "FORM"
-            margin = (3,3,0,0)
+            margin = (3,3,-3,-3)
             child = None
             # print([x.name for x in self.childrens])
             for child in self.childrens:
@@ -1495,16 +1495,17 @@ class Publisher(Module):
 
             self.list[index] = txt
 
-            exOutput = self.fuseWords()
-            cmds.text(self.examplePath , e=True, l=exOutput)
-            print(exOutput)
+            self.updateExample()
 
-        def fuseWords(self):
+        def updateExample(self):
+            exOutput = self.getFuseWords()
+            cmds.text(self.examplePath , e=True, l=exOutput)
+
+        def getFuseWords(self):
             exOutput = ""
             # return self.example()
             for e in self.list:
                 if e in self.variables:
-                    print(self.variables[e])
                     exOutput += Publisher.MC_StrSplitter.getResult(self.variables[e], self.example()) if len(self.variables[e]) != 0 else ""
                 else:
                     exOutput += e
@@ -1512,13 +1513,12 @@ class Publisher(Module):
             return exOutput
 
         @staticmethod
-        def fuseWordsV(words, variables, path):
+        def fuseWords(words, variables, path):
             exOutput = ""
 
             for e in words:
                 if e in variables:
-                    print(variables[e])
-                    exOutput += Publisher.MC_StrSplitter.getResult(variables[e], path) if len(self.variables[e]) != 0 else ""
+                    exOutput += Publisher.MC_StrSplitter.getResult(variables[e], path) if len(variables[e]) != 0 else ""
                 else:
                     exOutput += e
 
@@ -1546,10 +1546,14 @@ class Publisher(Module):
             self.containerVar.resize()()
             self.attach(self.containerVar, top=self.title, left="FORM", right="FORM", margin=(3,3,15,5))
             self.exampleLabel = self.attach(cmds.text(p=self.layout, l="Example : "), top=self.containerVar, left="FORM")
-            exOutput = self.fuseWords()
+            exOutput = self.getFuseWords()
             self.examplePath = self.attach(cmds.text(p=self.layout, l=exOutput, al="left"), top=self.containerVar, left=self.exampleLabel, right="FORM")
             self.attach(cmds.formLayout(p=self.layout, h=5), top=self.examplePath, left="FORM", right="FORM")
 
+
+        def _loadJobs(self):
+            self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", self.updateExample]))
+            self._scriptJobIndex.append(cmds.scriptJob(event=["SceneSaved", self.updateExample]))
 
     class MT_SettingsNameConvertion(Module):
 
@@ -1603,6 +1607,7 @@ class Publisher(Module):
             Module.__init__(self, parent)
             self.example = lambda: "Y a rien"
             self.variables = Publisher.MT_SettingsNameConvertion.VAR_DEFAULT_CS
+            self.pathDefs = {}
 
         @callback
         def cb_editLabel(self, name=None):
@@ -1636,6 +1641,7 @@ class Publisher(Module):
             for n in names:
                 buttons = [x for x in n[1]]
                 prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], buttons, self.variables, self.example).load(), top=prev, left="FORM", right="FORM", margin=(8,8,8,8))
+                self.pathDefs[n[0]] = prev
 
         ## ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
@@ -1808,8 +1814,9 @@ class Publisher(Module):
             self.applyAttach()
 
     class Sync():
-        def __init__(self, pathsModule):
+        def __init__(self, pathsModule, pathDefs):
             self.pathsModule = pathsModule
+            self.pathDefs = pathDefs
             self.wipRollback = None
             self.command = {}
 
@@ -1907,6 +1914,13 @@ class Publisher(Module):
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
             paths, names = self.getPathsAndNames()
+
+            for k, v in self.pathDefs.pathDefs.items():
+                print(k)
+                print("\t" + v.fuseWords(v.list, v.variables, relativePath))
+                print("")
+            #TODO replace paths[] and names[] by pathsDefs
+            pathsDefs = {k: v.fuseWords(v.list, v.variables, relativePath) for k, v in self.pathDefs.pathDefs.items()}
 
             # Prepare meta-data
             self.datas["Comment"] = comment
@@ -2094,7 +2108,7 @@ class Publisher(Module):
         # Loading tabs
         self.tabs.load()
 
-        self.syncEvent = Publisher.Sync(self.paths)
+        self.syncEvent = Publisher.Sync(self.paths, settingsTab.section["nameConv"].childrens[0])
         # Events
         #   Sync
         self.syncEvent.eventHandler("lockPrepPublish", self.SyncCommon.lockPrepPublish)
