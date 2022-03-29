@@ -29,8 +29,8 @@ def getInfluentJoints(vtx, skinCluster):
     joints = cmds.skinCluster( skinCluster, q=True, inf=True)
     jointWeight = {}
     for j, w in zip(joints, weights):
-        if w < 0.001:
-            continue
+        # if w < 0.001:
+        #     continue
         jointWeight[j] = [w]
     return jointWeight
 
@@ -57,7 +57,8 @@ for vtx in vertex:
     if len(newlist) <= 1:
         continue
     for i, e in enumerate(newlist):
-        if e['value'] < 0.1:
+        print(e, i)
+        if e['value'] < 0.05:
             break
     i = min(i, 4)
     print(newlist)

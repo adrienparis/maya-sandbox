@@ -11,7 +11,6 @@ c = "c_faceDn"
 # createAttr(c, "mPinchMid")
 
 cmds.addAttr(c, longName='mBasic', attributeType='enum', en=" : ", k=True)
-createAttr(c, "mStretchL")
 createAttr(c, "mNarrow")
 createAttr(c, "mSmile")
 createAttr(c, "mStretch")

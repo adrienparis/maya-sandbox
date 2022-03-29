@@ -903,6 +903,8 @@ class Publisher(Module):
 
         @thread
         def t_resetColor(self):
+            cmds.warning("test")
+            time.sleep(0.5)
             if self.lockColor:
                 return
             self.lockColor = True
@@ -922,14 +924,22 @@ class Publisher(Module):
                     time.sleep(1.0 / fps)
                     for fp, colorGap in zip(allpaths, colorsList):
                         fp.color = [n + g for n, g in zip(fp.color, colorGap)]
-                for fp in self.pathsLays:
-                    fp.color = Publisher.Theme.SAVE
-                self.relativePath.color = Publisher.Theme.RELATIVE
             except:
                 print("error avoided")
+                cmds.warning("error avoided - color change")
                 pass
             finally:
-                self.lockColor = False
+                try:
+                    for fp in self.pathsLays:
+                        fp.color = Publisher.Theme.SAVE
+                    self.relativePath.color = Publisher.Theme.RELATIVE
+                except:
+                    print("error avoided")
+                    cmds.warning("error avoided - reset")
+                    pass
+                finally:
+                    cmds.warning("unlock color")
+                    self.lockColor = False
 
         def _loadJobs(self):
             self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", self.cb_refreshUI()]))
@@ -1292,6 +1302,7 @@ class Publisher(Module):
             self.varNameLabel = self.attach(cmds.text(parent=self.layout, l="Variable Name"), top="FORM", left="FORM", margin=(5,2,2,2))
             self.varNameInput = self.attach(cmds.textField(parent=self.layout, tx=self.varName, ed=True, ec=self.cb_upadteName(), alwaysInvokeEnterCommandOnReturn=True), top="FORM", left=self.varNameLabel, right="FORM", margin=(2,2,2,2))
 
+            print(self.example, self.operations)
             exOutput = Publisher.MC_StrSplitter.getResult(self.operations, self.example) if len(self.operations) != 0 else self.varName
             self.exampleInputLabel = self.attach(cmds.text(parent=self.layout, l="Input : "), top=self.varNameInput, left="FORM", margin=(5,2,2,2))
             self.exampleInput = self.attach(cmds.textField(parent=self.layout, tx=self.example, ed=True, ec=Callback(self.runEvent, "updateInputTF"), alwaysInvokeEnterCommandOnReturn=True), top=self.varNameInput, left=self.exampleInputLabel, right="FORM", margin=(5,2,2,2))
@@ -1373,35 +1384,56 @@ class Publisher(Module):
             if self.layout is None:
                 return
             width = 0
-            height = 1
+            height = 10
             curHeight = 0
             prevHrztl = "FORM"
             prevVrtcl = "FORM"
-            margin = (3,3,3,3)
+            margin = (3,3,0,0)
+            child = None
+            # print([x.name for x in self.childrens])
             for child in self.childrens:
-                if width + child.width < self.width:
-                    self.attach(child, top=prevVrtcl, left=prevHrztl, margin=margin)
-                    width += child.width
-                    prevHrztl = child
-                    curHeight = max(curHeight, child.height + 10)
+                if isinstance(child, Module):
+                    if width + child.width < self.width:
+                        self.attach(child, top=prevVrtcl, left=prevHrztl, margin=margin)
+                        width += child.width
+                        prevHrztl = child
+                        curHeight = max(curHeight, child.height + 10)
+                    else:
+                        prevVrtcl = prevHrztl
+                        self.attach(child, top=prevVrtcl, left="FORM", margin=margin)
+                        prevHrztl = child
+                        width = 0
+                        height += curHeight
+                        curHeight = 0
                 else:
-                    prevVrtcl = prevHrztl
-                    self.attach(child, top=prevVrtcl, left="FORM", margin=margin)
-                    prevHrztl = child
-                    width = 0
-                    height += curHeight
-                    curHeight = 0
-            height += max(curHeight, child.height + 10)
+                    childWidth = cmds.control(child, q=True, width=True)
+                    childHeight = cmds.control(child, q=True, height=True)
+                    if width + childWidth < self.width:
+                        self.attach(child, top=prevVrtcl, left=prevHrztl, margin=margin)
+                        width += childWidth
+                        prevHrztl = child
+                        curHeight = max(curHeight, childHeight + 10)
+                    else:
+                        prevVrtcl = prevHrztl
+                        self.attach(child, top=prevVrtcl, left="FORM", margin=margin)
+                        prevHrztl = child
+                        width = 0
+                        height += curHeight
+                        curHeight = 0
+            if child is not None:
+                height += max(curHeight, child.height + 10)
+
             cmds.layout(self.layout, e=True, h=height)
             self.applyAttach()
 
         def load(self):
-            self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.MAIN_BGC, h=10)
+            self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.MAIN_BGC)
             self.scrlLay = self.attach(cmds.scrollLayout(parent=self.layout, w=1, cr=True, rc=self.resize()), top="FORM", left="FORM", right="FORM", bottom="FORM")
             self.childrenLayout = cmds.formLayout("StackContChildLay", parent=self.scrlLay)
 
             for child in self.childrens:
-                child.load()
+                if isinstance(child, Module):
+                    child.load()
             self.resize()()
 
 
@@ -1443,26 +1475,81 @@ class Publisher(Module):
             self.applyAttach()
 
     class MC_NameDefinition(Module):
-        def __init__(self, parent, name, lst):
+        def __init__(self, parent, name, lst, variables, example="/"):
             Module.__init__(self, parent, name)
             self.list = lst
+            self.example = example
+            self.variables = variables
 
         @callback
         def cb_remove(self, elem):
             print("removing {}".format(elem))
 
+        @callback
+        def cb_gapUpdateSize(self, gap, index):
+            print("update")
+            txt = cmds.textField(gap, q=True, tx=True)
+            size = len(txt) * 7 + 11
+            cmds.textField(gap, e=True, w=size)
+            self.containerVar.resize()()
+
+            self.list[index] = txt
+
+            exOutput = self.fuseWords()
+            cmds.text(self.examplePath , e=True, l=exOutput)
+            print(exOutput)
+
+        def fuseWords(self):
+            exOutput = ""
+            # return self.example()
+            for e in self.list:
+                if e in self.variables:
+                    print(self.variables[e])
+                    exOutput += Publisher.MC_StrSplitter.getResult(self.variables[e], self.example()) if len(self.variables[e]) != 0 else ""
+                else:
+                    exOutput += e
+
+            return exOutput
+
+        @staticmethod
+        def fuseWordsV(words, variables, path):
+            exOutput = ""
+
+            for e in words:
+                if e in variables:
+                    print(variables[e])
+                    exOutput += Publisher.MC_StrSplitter.getResult(variables[e], path) if len(self.variables[e]) != 0 else ""
+                else:
+                    exOutput += e
+
+            return exOutput
+
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent, bgc=Publisher.Theme.THD_BGC)
 
             self.title = self.attach(cmds.text(p=self.layout, l="{} : ".format(self.name.capitalize())), top="FORM", left="FORM", margin=(3,3,5,3))
-            self.containerVar = Publisher.MC_stackContainer(self.layout)
-            for e in self.list:
-                label = Publisher.MC_Label(self.containerVar, str(e[0]), bgc=e[1])
-                label.eventHandler("remove", self.cb_remove(str(e[0])))
+            self.containerVar = Publisher.MC_stackContainer(self.layout).load()
+            for i, e in enumerate(self.list):
+                if e in self.variables:
+                    label = Publisher.MC_Label(self.containerVar, str(e), bgc=Publisher.Theme.BUTTON)
+                    label.eventHandler("remove", self.cb_remove(str(e)))
+                    label.load()
+                else:
+                    text = str(e)
+                    textWidth = len(text) * 7 + 11
+                    gap = cmds.textField(p=self.containerVar, text=text, fn="fixedWidthFont", w=textWidth, bgc=Publisher.Theme.THD_BGC)
+                    cmds.textField(gap, e=True, cc=self.cb_gapUpdateSize(gap, i))
+                    self.containerVar.childrens.append(gap)
+            print("all child create")
             Publisher.MC_AddOption(self.containerVar, options=["project", "path", "name", "state", "version", "extension", "_", ".", "v", "\\"])
-            self.containerVar.load()
+            # self.containerVar.applyAttach()
+            self.containerVar.resize()()
             self.attach(self.containerVar, top=self.title, left="FORM", right="FORM", margin=(3,3,15,5))
-            self.attach(cmds.formLayout(p=self.layout, h=5), top=self.containerVar, left="FORM", right="FORM")
+            self.exampleLabel = self.attach(cmds.text(p=self.layout, l="Example : "), top=self.containerVar, left="FORM")
+            exOutput = self.fuseWords()
+            self.examplePath = self.attach(cmds.text(p=self.layout, l=exOutput, al="left"), top=self.containerVar, left=self.exampleLabel, right="FORM")
+            self.attach(cmds.formLayout(p=self.layout, h=5), top=self.examplePath, left="FORM", right="FORM")
+
 
     class MT_SettingsNameConvertion(Module):
 
@@ -1473,11 +1560,7 @@ class Publisher(Module):
                     "name" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 1]],
                     "state" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 2]],
                     "version" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 3], [True, "alphaNum", None, -1]],
-                    "extension" : [[True, "str", "\\", -1], [True, "str", ".", -1]],
-                    "_" : [],
-                    "." : [],
-                    "v" : [],
-                    "\\" : [],
+                    "extension" : [[True, "str", "\\", -1], [True, "str", ".", -1]]
             }
         VAR_DEFAULT_CUSTOM = {
                     "project" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 0]],
@@ -1486,11 +1569,7 @@ class Publisher(Module):
                     "state" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 3]],
                     "version" : [[True, "str", "\\", -1], [True, "str", ".", 0], [True, "str", "_", 3], [True, "alphaNum", None, -1]],
                     "extension" : [[True, "str", "\\", -1], [True, "str", ".", -1]],
-                    "type" : [[True, "str", "wip", -1], [True, "str", ".", 0], [True, "str", "_", 2]],
-                    "_" : [],
-                    "." : [],
-                    "v" : [],
-                    "\\" : [],
+                    "type" : [[True, "str", "wip", -1], [True, "str", ".", 0], [True, "str", "_", 2]]
             }
 
         NAME_DEFAULT_EMPTY = [
@@ -1503,17 +1582,19 @@ class Publisher(Module):
         ]
         NAME_DEFAULT_CS = [
                 ("Publish", ["path", "\\", "project", "_", "name", "_", "state", ".", "extension"]),
-                ("Publish Image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"]),
-                ("Version", ["path", "\\", "versionPath", "\\", "project", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]),
-                ("Version Image", ["path", "\\", "versionPath", "\\", "project", "_", "name", "_", "state", "_", "v", "version", "_", "thumbnail", ".", "jpg"]),
-                ("Confo", ["path", "\\", "project", "_", "name", "_", "state", "_", ".", "extension"]),
-                ("Confo image", ["path", "\\", "project", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"])
+                ("Publish Image", ["path", "\\", "project", "_", "name", "_", "state", "_Preview.0001.jpg"]),
+                ("Version", ["path", "\\version\\", "project", "_", "name", "_", "state", "_v", "version", ".", "extension"]),
+                ("Version Image", ["path", "\\version\\", "project", "_", "name", "_", "state", "_v", "version", "_Preview.0001.jpg"]),
+                ("info file", ["path", "\\info.cst"]),
+                ("Confo", ["path", "\\", "project", "_", "name", "_", "state", ".", "extension"]),
+                ("Confo image", ["path", "\\", "project", "_", "name", "_", "state", "_Preview.0001.jpg"])
             ]
         NAME_DEFAULT_CUSTOM = [
                 ("Publish", ["path", "\\", "project", "_", "type", "_", "name", "_", "state", ".", "extension"]),
                 ("Publish Image", ["path", "\\", "project", "_", "type", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"]),
-                ("Version", ["path", "\\", "versionPath", "\\", "project", "_", "type", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]),
-                ("Version Image", ["path", "\\", "versionPath", "\\", "project", "_", "type", "_", "name", "_", "state", "_", "v", "version", "_", "thumbnail", ".", "jpg"]),
+                ("Version", ["path", "\\version\\", "project", "_", "type", "_", "name", "_", "state", "_", "v", "version", ".", "extension"]),
+                ("Version Image", ["path", "\\version\\", "project", "_", "type", "_", "name", "_", "state", "_", "v", "version", "_", "thumbnail", ".", "jpg"]),
+                ("info file", []),
                 ("Confo", ["path", "\\", "project", "_", "type", "_", "name", "_", "state", "_", ".", "extension"]),
                 ("Confo image", ["path", "\\", "project", "_", "type", "_", "name", "_", "state", "_", "thumbnail", ".", "jpg"])
             ]
@@ -1539,7 +1620,6 @@ class Publisher(Module):
                 # self.variables.pop(name)
 
 
-
         ## TODO Not a good solution
         ## ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
         @callback
@@ -1551,12 +1631,11 @@ class Publisher(Module):
             elif name == "CS":
                 self.loadNameDefinitions(Publisher.MT_SettingsNameConvertion.NAME_DEFAULT_CS)
 
-
         def loadNameDefinitions(self, names):
             prev = self.presetDefineNamesDropMenu
             for n in names:
-                buttons = [(x, Module.COLOR_LIGHTGREYRED if not x in self.variables else Module.COLOR_LIGHTGREYBLUE if len(self.variables[x]) == 0 else Publisher.Theme.BUTTON) for x in n[1]]
-                prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], buttons).load(), top=prev, left="FORM", right="FORM", margin=(8,8,8,8))
+                buttons = [x for x in n[1]]
+                prev = self.attach(Publisher.MC_NameDefinition(self.layout, n[0], buttons, self.variables, self.example).load(), top=prev, left="FORM", right="FORM", margin=(8,8,8,8))
 
         ## ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
@@ -1694,8 +1773,6 @@ class Publisher(Module):
             self.layout = cmds.formLayout(parent=self.parent)
             self.scrlLay = self.attach(cmds.scrollLayout("scrlLay", parent=self.layout, cr=True), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
             self.childrenLayout = cmds.formLayout(parent=self.scrlLay)
-            # self.childrenLayout = cmds.formLayout(parent=self.scrlLay)
-            # for img in Publisher.__dir__
             themes = {"THEME_{}".format(c):'#%02x%02x%02x' % (getattr(Publisher.Theme, c)[0] * 255, getattr(Publisher.Theme, c)[1] * 255, getattr(Publisher.Theme, c)[2] * 255) for c in dir(Publisher.Theme) if c.isupper()}
             colors = {c:'#%02x%02x%02x' % (getattr(Publisher, c)[0] * 255, getattr(Publisher, c)[1] * 255, getattr(Publisher, c)[2] * 255) for c in dir(Publisher) if c.startswith("COLOR_")}
             images = {i:getattr(Publisher.Image, i) for i in dir(Publisher.Image) if i.isupper()}
@@ -1716,18 +1793,13 @@ class Publisher(Module):
             context.update(colors)
             context.update(images)
             context.update(info)
-            # modules = [Publisher.MT_Paths, Publisher.MT_SyncCommon, Publisher.MT_SyncAnimation, Publisher.MT_Settings]
-            # txt = self.style + Publisher.lg.About.Publisher + "".join([m.__doc__ for m in modules if m is not None and m.__doc__ is not None])
             abouts_name = ["PUBLISHER", "PATHS", "SYNCCOMMON", "SYNCANIMATION", "SETTINGS"]
             # abouts = [getattr(Publisher.lg.About, a) for a in dir(Publisher.lg.About) if a.isupper()]
             abouts = [getattr(Publisher.LG.About, a) for a in abouts_name]
             txt = self.style + "".join(abouts)
             txt = txt.format(**context)
-            # for t in txt.splitlines():
-            #     print(str(t))
 
 
-            # txt = bytes(str(t).encode("utf-8"))
             prev = "FORM"
             prev = self.attach(cmds.text(p=self.childrenLayout, l=txt), top=prev, bottom=None, left="FORM", right="FORM", margin=(1,1,1,1))
             self.btn_ticket = self.attach(cmds.button(l=Publisher.LG.Button.ticket, c=self.openTicket()), top=prev, bottom=None, left="FORM", right=None, margin=(1,1,1,1))
@@ -1764,19 +1836,14 @@ class Publisher(Module):
                 a = c[1] + args
                 c[0](*a)
 
-        @thread
+        # @thread
         def backup(self):
-            print("backup")
 
             localPath = self.pathsModule.getLocalPath()
-            print("local paths getted")
             relativePath = self.pathsModule.getRelativePath()
-            print("relative paths getted")
             drives = self.pathsModule.getDrivesPath()
-            print("drive getted")
             infos = []
             for drive in drives:
-                print("copy", drive)
 
                 abs_path = os.path.join(drive, relativePath)
                 if abs_path == relativePath:
@@ -1798,6 +1865,40 @@ class Publisher(Module):
             self.pathsModule.infoColorPath(infos)
 
         def upload(self):
+            localPath = self.pathsModule.getLocalPath()
+            relativePath = self.pathsModule.getRelativePath()
+            drives = self.pathsModule.getDrivesPath()
+            paths, names = self.getPathsAndNames()
+
+
+            # Check if it's a wip
+            if os.path.normpath(relativePath).split(os.sep)[-2] != "wip":
+                cmds.warning("The current file is not a WIP")
+                return
+            print("localPath      : " +  str(localPath))
+            print("relativePath   : " +  str(relativePath))
+            print("drives         : " +  str(drives))
+            print("paths          : " +  str(paths))
+            print("names          : " +  str(names))
+
+            copyFiles = []
+            copyFiles.append(os.path.join(paths["publish"], names["publish"]))
+            copyFiles.append(os.path.join(paths["publish"], names["imgPublish"]))
+            copyFiles.append(os.path.join(paths["publish"], names["infoFile"]))
+            copyFiles.append(os.path.join(paths["version"], names["version"]))
+            copyFiles.append(os.path.join(paths["version"], names["imgVersion"]))
+
+            for d in drives:
+                print(d)
+                if not os.path.exists(d):
+                    print("skipped")
+                    continue
+                copyFiles = [(os.path.join(localPath, x), os.path.join(d, x)) for x in copyFiles]
+                for x in copyFiles:
+                    print(x[0])
+                    print(x[1])
+                    print("")
+
             info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
             self.pathsModule.infoColorPath(info)
 
@@ -1810,7 +1911,8 @@ class Publisher(Module):
             # Prepare meta-data
             self.datas["Comment"] = comment
             self.setDatas()
-            self.prepPublish()
+            if self.wipRollback is None:
+                self.prepPublish()
             self.writeMetadata()
             cmds.file( save=True, type='mayaAscii' )
 
@@ -1828,6 +1930,9 @@ class Publisher(Module):
             shutil.copy(image, os.path.join(localPath, paths["publish"], names["imgPublish"]))
             shutil.copy(image, os.path.join(localPath, paths["version"], names["imgVersion"]))
 
+            # optionall file info
+            self.optionalInfoFile()
+
             # Publish
             print(os.path.join(localPath, relativePath))
             print(self.pubPath)
@@ -1842,8 +1947,22 @@ class Publisher(Module):
             cmds.file(rename="/".join([localPath, paths["wip"], names["incWip"]]))
             cmds.file(save=True, type='mayaAscii' )
             self.runEvent("lockPrepPublish", False)
+            self.pathsModule.infoColorPath([(relativePath, True)])
             info("{} -> Published !".format(names["publish"]))
             print("Publish", comment)
+
+        def optionalInfoFile(self):
+            '''Mainly for Pilou's asset manager
+            '''
+            localPath = self.pathsModule.getLocalPath()
+            paths, names = self.getPathsAndNames()
+            now = datetime.now() # current date and time
+            date_time = now.strftime(" %d/%m %H:%M:%S")
+            user = getpass.getuser()
+            line = 'string $user = "{}"; string $date = "{}";'.format(user, date_time)
+            infoPath = os.path.join(localPath, paths["publish"], names["infoFile"])
+            with open(infoPath, "w+") as f:
+                f.write(line)
 
         def confo(self, comment):
             self.datas["Comment"] = comment
@@ -1902,14 +2021,18 @@ class Publisher(Module):
             fileName = "_".join(names["wip"].split(".")[0].split("_")[:-1])
             names["publish"] = fileName + "." + names["wip"].split(".")[-1]
             names["version"] = fileName + "_v{0:0>3d}.".format(nVersion) + names["wip"].split(".")[-1]
+            names["infoFile"] = "info.cst"
             names["incWip"] = fileName + "_v{0:0>3d}.0001.ma".format(nVersion + 1)
-            names["imgPublish"] = "thumbnail.jpg"
+            # names["imgPublish"] = "thumbnail.jpg"
+            # names["imgVersion"] = "thumbnail_v{0:0>3d}.jpg".format(nVersion)
+            names["imgPublish"] = "{}_Preview.0001.jpg".format(fileName)
             names["imgVersion"] = "thumbnail_v{0:0>3d}.jpg".format(nVersion)
 
             return (paths, names)
 
-        def takeSnapshot(self, name="tmp", width=1920, height=1080):
-            os.makedirs("/".join([self.pathsModule.getLocalPath(), "images"]))
+        def takeSnapshot(self, name="tmp", width=1024, height=1024):
+            if not os.path.exists("/".join([self.pathsModule.getLocalPath(), "images"])):
+                os.makedirs("/".join([self.pathsModule.getLocalPath(), "images"]))
             imagePath = "/".join([self.pathsModule.getLocalPath(), "images", name + ".jpg"])
             frame = cmds.currentTime( query=True )
             cmds.playblast(fr=frame, v=False, fmt="image", c="jpg", orn=False, cf=imagePath, wh=[width,height], p=100)
