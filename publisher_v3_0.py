@@ -1490,11 +1490,14 @@ class Publisher(Module):
             print("removing {}".format(elem))
 
         @callback
-        def cb_gapUpdateSize(self, gap):
+        def cb_gapUpdateSize(self, gap, index):
             print("update")
-            size = len(cmds.textField(gap, q=True, tx=True)) * 7 + 11
+            txt = cmds.textField(gap, q=True, tx=True)
+            size = len(txt) * 7 + 11
             cmds.textField(gap, e=True, w=size)
             self.containerVar.resize()()
+
+            self.list[index] = txt
 
             exOutput = self.fuseWords()
             cmds.text(self.examplePath , e=True, l=exOutput)
@@ -1530,7 +1533,7 @@ class Publisher(Module):
 
             self.title = self.attach(cmds.text(p=self.layout, l="{} : ".format(self.name.capitalize())), top="FORM", left="FORM", margin=(3,3,5,3))
             self.containerVar = Publisher.MC_stackContainer(self.layout).load()
-            for e in self.list:
+            for i, e in enumerate(self.list):
                 if e in self.variables:
                     label = Publisher.MC_Label(self.containerVar, str(e), bgc=Publisher.Theme.BUTTON)
                     label.eventHandler("remove", self.cb_remove(str(e)))
@@ -1539,7 +1542,7 @@ class Publisher(Module):
                     text = str(e)
                     textWidth = len(text) * 7 + 11
                     gap = cmds.textField(p=self.containerVar, text=text, fn="fixedWidthFont", w=textWidth, bgc=Publisher.Theme.THD_BGC)
-                    cmds.textField(gap, e=True, cc=self.cb_gapUpdateSize(gap))
+                    cmds.textField(gap, e=True, cc=self.cb_gapUpdateSize(gap, i))
                     self.containerVar.childrens.append(gap)
             print("all child create")
             Publisher.MC_AddOption(self.containerVar, options=["project", "path", "name", "state", "version", "extension", "_", ".", "v", "\\"])
@@ -1583,12 +1586,12 @@ class Publisher(Module):
         ]
         NAME_DEFAULT_CS = [
                 ("Publish", ["path", "\\", "project", "_", "name", "_", "state", ".", "extension"]),
-                ("Publish Image", ["path", "\\", "project", "_", "name", "_", "state", "_thumbnail.jpg"]),
+                ("Publish Image", ["path", "\\", "project", "_", "name", "_", "state", "_Preview.0001.jpg"]),
                 ("Version", ["path", "\\version\\", "project", "_", "name", "_", "state", "_v", "version", ".", "extension"]),
-                ("Version Image", ["path", "\\version\\", "project", "_", "name", "_", "state", "_v", "version", "_thumbnail.jpg"]),
+                ("Version Image", ["path", "\\version\\", "project", "_", "name", "_", "state", "_v", "version", "_Preview.0001.jpg"]),
                 ("info file", ["path", "\\info.cst"]),
                 ("Confo", ["path", "\\", "project", "_", "name", "_", "state", ".", "extension"]),
-                ("Confo image", ["path", "\\", "project", "_", "name", "_", "state", "_thumbnail.jpg"])
+                ("Confo image", ["path", "\\", "project", "_", "name", "_", "state", "_Preview.0001.jpg"])
             ]
         NAME_DEFAULT_CUSTOM = [
                 ("Publish", ["path", "\\", "project", "_", "type", "_", "name", "_", "state", ".", "extension"]),
