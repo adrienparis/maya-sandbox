@@ -1537,7 +1537,7 @@ class Publisher(Module):
                 else:
                     text = str(e)
                     textWidth = len(text) * 7 + 11
-                    gap = cmds.textField(p=self.containerVar, text=text, fn="fixedWidthFont", w=textWidth, bgc=Publisher.Theme.THD_BGC)
+                    gap = cmds.textField(p=self.containerVar, text=text, fn="fixedWidthFont", w=textWidth, bgc=Publisher.Theme.THD_BGC) #, ed=False)
                     cmds.textField(gap, e=True, cc=self.cb_gapUpdateSize(gap, i))
                     self.containerVar.childrens.append(gap)
             print("all child create")
@@ -2109,6 +2109,9 @@ class Publisher(Module):
         self.tabs.load()
 
         self.syncEvent = Publisher.Sync(self.paths, settingsTab.section["nameConv"].childrens[0])
+            # passing self.paths (mt_path that contain paths) and the setting section that contain the definition of paths
+            # TODO maybe change the link with definitions of name by a preference file
+
         # Events
         #   Sync
         self.syncEvent.eventHandler("lockPrepPublish", self.SyncCommon.lockPrepPublish)
