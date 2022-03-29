@@ -31,7 +31,7 @@ class Callback():
     __email__ = "a.paris.cs@gmail.com"
     __version__     = "3.1.0"
     __copyright__   = "Copyright 2021, Creative Seeds"
-    
+
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -39,7 +39,7 @@ class Callback():
         self.kwargs = kwargs
         self.repeatable_value = False
         self.getCommandArgument_value = False
-        
+
     def repeatable(self):
         ''' Call this methode to make the function repeatable with 'g' key
         '''
@@ -51,7 +51,7 @@ class Callback():
         '''
         self.getCommandArgument_value = True
         return self
-        
+
     def _repeatCall(self):
         return self.func(*self.repeatArgs, **self.kwargs)
 
@@ -77,9 +77,9 @@ class Module(object):
 
     When converting this object to str, it print the layout to store his childrens
     like that, even if whe call it has a parent, it still return a maya's layout
-    
+
     You must create a load function.
-    
+
     Name your class starting by
     M_  if it's a simple module
     MG_ if it's a group of module
@@ -106,7 +106,7 @@ class Module(object):
     _drag = None
 
     def __init__(self, parent, name=None):
-        
+
         if name is None:
             name = self.__class__.__name__ + str(Module._increment)
             Module._increment += 1
@@ -145,7 +145,7 @@ class Module(object):
         if name == "width":
             return cmds.layout(self.layout, q=True, w=True)
         return object.__getattribute__(self, name)
-    
+
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
         if name == "height":
@@ -161,7 +161,7 @@ class Module(object):
                 func()
 
     def getter(self, name, func=None):
-
+        pass
 
     @callback
     def _cb_getter(self, name, updateFunc=None):
@@ -178,7 +178,7 @@ class Module(object):
 
     def attach(self, elem, top=False, bottom=False, left=False, right=False, margin=(0,0,0,0)):
         '''For formLayout
-            Register the attach information of your elem 
+            Register the attach information of your elem
             attach "FORM": string
                     elem : layout/control
                     pos : float
@@ -190,7 +190,7 @@ class Module(object):
             e = elem.layout
         else:
             e = elem
-        for s, n, m in [(top, "top", margin[0]), (bottom, "bottom", margin[1]), (left, "left", margin[2]), (right, "right", margin[3])]: 
+        for s, n, m in [(top, "top", margin[0]), (bottom, "bottom", margin[1]), (left, "left", margin[2]), (right, "right", margin[3])]:
             if isinstance(s, bool):
                 if not s:
                     continue
@@ -214,7 +214,7 @@ class Module(object):
         self._ac = []
         self._ap = []
         self._an = []
-    
+
     @staticmethod
     def _getParentLayout(attachList):
         parLayout = {}
@@ -229,7 +229,7 @@ class Module(object):
                     parent = cmds.control(e, q=True, p=True)
                 else:
                     continue
-                parLayout[parent] = [af] if parent not in parLayout else parLayout[parent] + [af] 
+                parLayout[parent] = [af] if parent not in parLayout else parLayout[parent] + [af]
         return parLayout
 
     def applyAttach(self):
@@ -264,7 +264,7 @@ class Module(object):
         self.childrenLayout = cmds.formLayout(p=self.layout)
         defaultLayout = self.layout
         defaultChildrenLay = self.childrenLayout
-        
+
         # Execute The function develope by the user
         object.__getattribute__(self, "load")()
 
@@ -281,7 +281,7 @@ class Module(object):
 
         # Apply Attach to the form Layout
         self.applyAttach()
-        
+
         # log UnloadEvent
         cmds.scriptJob(ro=True, uid=[self.layout, Callback(self.unloadEvent)])
 
@@ -315,7 +315,7 @@ class Module(object):
     def unload(self):
         '''Unload function'''
         pass
-    
+
     def unloadEvent(self):
         '''Called function when the module is deleted'''
         pass
@@ -323,7 +323,7 @@ class Module(object):
     # Jobs
     def loadJobs(self):
         '''Load all jobs
-            Example : 
+            Example :
             self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", Callback(self.methode)]))
         '''
         pass
@@ -338,7 +338,7 @@ class Module(object):
     # drag&Drop
     def _dragCb(self, dragControl, x, y, modifiers):
         Module._drag = self
-        
+
         if not self._dragged:
             self.bgc = cmds.layout(self.layout, q=True, bgc=True)
             self.ebg = cmds.layout(self.layout, q=True, ebg=True)
@@ -394,7 +394,7 @@ def main():
 
 
 # ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-# ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ YOUR APPLICATION  ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ 
+# ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ YOUR APPLICATION  ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼
 
 class Template(Module):
 
@@ -439,7 +439,7 @@ class Template(Module):
         ######################################
         pass
 
-# ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ 
+# ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲ ▲
 # ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 
 CURRENT_APP = Template
