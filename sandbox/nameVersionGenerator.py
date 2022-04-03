@@ -403,7 +403,15 @@ class Module(object):
             a = c[1] + args
             c[0](*a)
 
-class Preferences():
+def main():
+    if sys.executable.endswith(u"bin\maya.exe"):
+        CURRENT_APP().load()
+    else:
+        ctypes.windll.user32.MessageBoxW(0, "Version : {}\n\nJust drag&drop this file to maya's viewport\n\n{}".format(__version__, __doc__), "{} info".format(__file__), 0)
+
+
+
+class Preferences(Module):
     class Theme():
         SAVE = Module.COLOR_BLUE
         SELECTED = Module.COLOR_BLUE
@@ -662,6 +670,15 @@ class Preferences():
 
     lg = Language.Fr
 
+    def __init__(self):
+        Module.__init__(self, None)
+        self.name = "{} V{}".format(str(self.__class__.__name__), __version__)
+        Preferences.LG = Preferences.Language.getLg(Preferences.readPref("lg"))
+        if self.LG is None:
+            Preferences.LG = Preferences.Language.Fr
+            Preferences.writePref("lg", Preferences.LG.__name__)
+
+
 
 class MC_NameDefinition(Module):
     def __init__(self, parent, name, lst):
@@ -817,3 +834,9 @@ class MT_SettingsNameConvertion(Module):
         cmds.menuItem(p=self.presetDefineNamesDropMenu, label='CS')
 
         self.loadNameDefinitions(MT_SettingsNameConvertion.NAME_DEFAULT_CS)
+
+CURRENT_APP = Preferences
+
+if __name__ == "__main__":
+    main()
+
