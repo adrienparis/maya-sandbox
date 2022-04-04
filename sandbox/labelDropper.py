@@ -503,7 +503,11 @@ class labelDropper(Module):
     def load(self):
         self.frame = cmds.formLayout(p=self.layout, bgc=Module.Color.DARKGREY)
         self.attach(self.frame, top="FORM", )
-
+        
+        pm = cmds.popupMenu( parent=self.frame, button=3)
+        labels = ["path","name","version","step"]
+        for n in labels:
+            cmds.menuItem(n, p=pm, i="addClip.png",sm=True)
         ################
         # LOAD UI HERE #
         ################
