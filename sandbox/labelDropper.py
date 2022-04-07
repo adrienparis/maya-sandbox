@@ -417,8 +417,8 @@ class labelDropper(Module):
         prev = "FORM"
         for i, p in enumerate(self.pathLays):
             m = (7,7,-3,-3) if i % 2 == 0 else (5,5,-3,-3)
-            prev = self.attach(p, top="FORM",bottom="FORM", left=prev, margin=m)
-        # self.attach(p, right="FORM", margin=(0,0,5,5))
+            prev = self.attach(p, top="FORM",bottom="FORM", left=prev, right=None, margin=m)
+        self.attach(p, right="FORM", margin=(0,0,5,5))
         self.attach(self.pathLays[0], left="FORM", margin=(0,0,5,5))
 
     @callback
@@ -481,7 +481,7 @@ class labelDropper(Module):
     # Loading methods
     def load(self):
         self.frame = cmds.formLayout(p=self.layout, bgc=Module.Color.DARKGREY)
-        self.attach(self.frame, top="FORM", )
+        self.attach(self.frame, top="FORM", left="FORM", right="FORM")
         
         pm = cmds.popupMenu( parent=self.frame, button=3)
         labels = ["path","name","version","step"]
