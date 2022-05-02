@@ -63,6 +63,8 @@ vtxs_C = [i for i, v in enumerate(vtxs) if v[0] <= -1 * gap and v[0] >= gap]
 
 for j, side in enumerate([("_L", vtxs_L), ("_R", vtxs_R)]):
 	for i, _ in enumerate(sorted(weights)):
+		print(blendshapes[0], i)
+		print(cmds.listConnections("{}.inputTarget[0].inputTargetGroup[{}].inputTargetItem[6000].inputGeomTarget".format(blendshapes[0], i)))
 		name = cmds.listConnections("{}.inputTarget[0].inputTargetGroup[{}].inputTargetItem[6000].inputGeomTarget".format(blendshapes[0], i) )[0]
 		print(name)
 
