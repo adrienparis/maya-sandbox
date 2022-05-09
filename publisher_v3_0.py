@@ -21,6 +21,7 @@ import shutil
 import re
 import getpass
 import io
+import subprocess
 import re
 from datetime import datetime
 
@@ -501,6 +502,7 @@ class Publisher(Module):
                 install = "Install"
                 uninstall = "Uninstall"
                 loadLanguage = "Install a language"
+                revealExplorer = u"Reveal in file explorer" 
 
             class Label():
                 comment = "Comments : "
@@ -605,7 +607,8 @@ class Publisher(Module):
                 settings = u"Paramètre"
                 install = u"Installer"
                 uninstall = u"Désinstaller"
-                loadLanguage = "Installer une langue"
+                loadLanguage = u"Installer une langue"
+                revealExplorer = u"Afficher dans l'explorateur de fichier" 
 
             class Label():
                 comment = u"Commentaires : "
@@ -1081,6 +1084,7 @@ class Publisher(Module):
             self.btn_rollBack = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.UNDO,   h=30, w=30, bgc=Publisher.Theme.BUTTON,     c=Callback(self.runEvent, "btn_rollBack"), ann=Publisher.LG.Button.rollback, en=False), top="FORM", bottom=None, left=self.btn_prep, right=None, margin=(m,m,m,m))
 
             self.btn_backup = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.SAVE,     h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_backup"), ann=Publisher.LG.Button.backup), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
+            self.btn_revealExplorer = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER,     h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_revealExplorer"), ann=Publisher.LG.Button.revealExplorer), top=None, bottom="FORM", left=None, right=self.btn_backup, margin=(m,m,m,m))
 
             self.btn_test = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.CHECK,      h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_test"), ann=Publisher.LG.Button.check, en=False), top=None, bottom="FORM", left="FORM", right=None, margin=(m,m,m,m))
             self.btn_publish = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.PUBLISH, h=30, w=30, bgc=Publisher.Theme.LOCAL,      c=self.cb_publishEvent(), ann=Publisher.LG.Button.publish), top=None, bottom="FORM", left=self.btn_test , right=None, margin=(m,m,m,m))
@@ -1114,6 +1118,7 @@ class Publisher(Module):
             self.layout = cmds.formLayout(parent=self.parent)
 
             self.btn_backup   = self.attach(cmds.iconTextButton(image=Publisher.Image.SAVE, h=30, w=30, bgc=Publisher.Theme.RELATIVE, c=Callback(self.runEvent, "btn_backup"), ann="Backup current WIP to drives"), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
+            self.btn_revealExplorer = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER,     h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_revealExplorer"), ann=Publisher.LG.Button.revealExplorer), top=None, bottom="FORM", left=None, right=self.btn_backup, margin=(m,m,m,m))
 
             self.btn_publish  = self.attach(cmds.iconTextButton(image=Publisher.Image.PUBLISH, h=30, w=30, bgc=Publisher.Theme.LOCAL, c=self.cb_confoEvent(), ann="Confo"), top=None, bottom="FORM", left="FORM" , right=None, margin=(m,m,m,m))
             self.btn_upload   = self.attach(cmds.iconTextButton(image=Publisher.Image.NETWORK, h=30, w=30, bgc=Publisher.Theme.SAVE, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top=None, bottom="FORM", left=self.btn_publish, right=None, margin=(m,m,m,m))
@@ -2081,6 +2086,11 @@ class Publisher(Module):
             Publisher.LG = Publisher.Language.Fr
             Publisher.writePref("lg", Publisher.LG.__name__)
 
+    def revealExplorer(self):
+        relativePath = self.paths.getRelativePath()
+        localPath = self.paths.getLocalPath()
+        subprocess.Popen('explorer /select,"{}"'.format(os.path.join(localPath, relativePath)))
+
     def load(self):
         '''loading The window
         '''
@@ -2113,6 +2123,8 @@ class Publisher(Module):
             # TODO maybe change the link with definitions of name by a preference file
 
         # Events
+        self.SyncCommon.eventHandler("btn_revealExplorer", self.revealExplorer)
+        self.SyncAnimation.eventHandler("btn_revealExplorer", self.revealExplorer)
         #   Sync
         self.syncEvent.eventHandler("lockPrepPublish", self.SyncCommon.lockPrepPublish)
         #   Common sync
