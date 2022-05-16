@@ -907,7 +907,7 @@ class Publisher(Module):
         @thread
         def t_resetColor(self):
             cmds.warning("test")
-            time.sleep(0.5)
+            time.sleep(1)
             if self.lockColor:
                 return
             self.lockColor = True
@@ -1848,7 +1848,7 @@ class Publisher(Module):
                 a = c[1] + args
                 c[0](*a)
 
-        # @thread
+        @thread
         def backup(self):
 
             localPath = self.pathsModule.getLocalPath()
@@ -1876,6 +1876,7 @@ class Publisher(Module):
                 infos.append((drive, state))
             self.pathsModule.infoColorPath(infos)
 
+        # @thread
         def upload(self):
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
@@ -1897,21 +1898,42 @@ class Publisher(Module):
             copyFiles.append(os.path.join(paths["publish"], names["publish"]))
             copyFiles.append(os.path.join(paths["publish"], names["imgPublish"]))
             copyFiles.append(os.path.join(paths["publish"], names["infoFile"]))
+
+
+            return
+            #TODO Get the last version in the versions' folder
             copyFiles.append(os.path.join(paths["version"], names["version"]))
             copyFiles.append(os.path.join(paths["version"], names["imgVersion"]))
 
+            info = []
             for d in drives:
-                print(d)
                 if not os.path.exists(d):
                     print("skipped")
                     continue
-                copyFiles = [(os.path.join(localPath, x), os.path.join(d, x)) for x in copyFiles]
-                for x in copyFiles:
-                    print(x[0])
-                    print(x[1])
-                    print("")
+                cf = [(os.path.join(localPath, x), os.path.join(d, x)) for x in copyFiles]
 
-            info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
+                for x in cf:
+                    print(x)
+                    if not os.path.exists(x[0]):
+                        info.append((localPath, False))
+                        break
+
+                    if os.path.exists(x[1]):
+                        if os.path.getmtime(x[0]) == os.path.getmtime(x[1]):
+                            info.append((d, None))
+                            break
+
+                    try:
+                        # shutil.copy(x[0], x[1])
+                        # print("copy {} to {}".format(x[0], x[1]))
+                        print("")
+                    except:
+                        info.append((d, False))
+                        break
+                else :
+                    info.append((d, True))
+
+            # info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
             self.pathsModule.infoColorPath(info)
 
         def publish(self, comment):
@@ -2172,6 +2194,8 @@ def onMayaDroppedPythonFile(*args):
     '''Just to get rid of the anoying warning message of maya
     '''
     Publisher().load()
+    if os.path.exists(__file__ + "c"):
+        os.remove(__file__ + "c")
 
 PLUGIN_SHELF_NAME = "CreativeSeeds"
 PLUGIN_SHELF_BUTTON = "ButtonPublisher"

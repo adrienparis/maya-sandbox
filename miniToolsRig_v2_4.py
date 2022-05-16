@@ -2955,6 +2955,8 @@ def onMayaDroppedPythonFile(*args):
     '''Just to get rid of the anoying warning message of maya
     '''
     MiniToolRig().load()
+    if os.path.exists(__file__ + "c"):
+        os.remove(__file__ + "c")
 
 def initializePlugin(*args):
     '''To load the tool as a plugin
