@@ -398,8 +398,39 @@ class Module(object):
             a = c[1] + args
             c[0](*a)
 
-def info(message):
+def Info(message):
     mel.eval('trace -where ""; print "{}\\n"; trace -where "";'.format(message))
+
+def threadPrint(message):
+    time.sleep(0.001)
+    print(message)
+
+def threadTitle(message, type_=0):
+    if type_ == 1:
+        gap = 20
+        horz = u"═"
+        vert = u"║"
+        ctl = u"╔"
+        ctr = u"╗"
+        cbl = u"╚"
+        cbr = u"╝"
+    else:
+        gap = 10
+        horz = u"─"
+        vert = u"│"
+        ctl = u"┌"
+        ctr = u"┐"
+        cbl = u"└"
+        cbr = u"┘"
+        
+
+    # threadPrint("")
+    threadPrint("")
+    threadPrint(u" " * gap + ctl + horz * len(message) + ctr)
+    threadPrint(u" " * gap + vert + unicode(message) + vert)
+    threadPrint(u" " * gap + cbl + horz * len(message) + cbr)
+    # threadPrint("")
+
 
 # @singleton
 class Publisher(Module):
@@ -906,7 +937,7 @@ class Publisher(Module):
 
         @thread
         def t_resetColor(self):
-            cmds.warning("test")
+            # cmds.warning("test")
             time.sleep(1)
             if self.lockColor:
                 return
@@ -941,7 +972,7 @@ class Publisher(Module):
                     cmds.warning("error avoided - reset")
                     pass
                 finally:
-                    cmds.warning("unlock color")
+                    # cmds.warning("unlock color")
                     self.lockColor = False
 
         def _loadJobs(self):
@@ -1712,7 +1743,7 @@ class Publisher(Module):
 
             cmds.unloadPlugin(f)
             os.remove(os.path.join(PFolder, f))
-            info("Uninstalled")
+            Info("Uninstalled")
 
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
@@ -1834,6 +1865,8 @@ class Publisher(Module):
             self.datas["Date"] = None
             self.datas["Version"] = None
 
+            self.lock = False
+
         # Events
         def eventHandler(self, event, c, *args):
             if not event in self.command:
@@ -1850,6 +1883,9 @@ class Publisher(Module):
 
         @thread
         def backup(self):
+            if self.lock:
+                return
+            self.lock = True
 
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
@@ -1875,24 +1911,28 @@ class Publisher(Module):
                         state = False
                 infos.append((drive, state))
             self.pathsModule.infoColorPath(infos)
+            self.lock = False
 
-        # @thread
+        @thread
         def upload(self):
+            if self.lock:
+                return
+            self.lock = True
+            threadTitle(" Uploading last version to drives ", type_=1)
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
             drives = self.pathsModule.getDrivesPath()
-            paths, names = self.getPathsAndNames()
-
+            paths, names = self.getPathsAndNames(version=0)
 
             # Check if it's a wip
             if os.path.normpath(relativePath).split(os.sep)[-2] != "wip":
                 cmds.warning("The current file is not a WIP")
                 return
-            print("localPath      : " +  str(localPath))
-            print("relativePath   : " +  str(relativePath))
-            print("drives         : " +  str(drives))
-            print("paths          : " +  str(paths))
-            print("names          : " +  str(names))
+            # print("localPath      : " +  str(localPath))
+            # print("relativePath   : " +  str(relativePath))
+            # print("drives         : " +  str(drives))
+            # print("paths          : " +  str(paths))
+            # print("names          : " +  str(names))
 
             copyFiles = []
             copyFiles.append(os.path.join(paths["publish"], names["publish"]))
@@ -1900,43 +1940,67 @@ class Publisher(Module):
             copyFiles.append(os.path.join(paths["publish"], names["infoFile"]))
 
 
-            return
-            #TODO Get the last version in the versions' folder
+            # return
+            # #TODO Get the last version in the versions' folder
             copyFiles.append(os.path.join(paths["version"], names["version"]))
             copyFiles.append(os.path.join(paths["version"], names["imgVersion"]))
 
             info = []
+
+            state = True
+            for f in copyFiles:
+                x = os.path.join(localPath, f)
+                if not os.path.exists(x):
+                    threadPrint("WARNING : no such file [..\\{}]".format('\\'.join(x.split('\\')[-3:])))
+                    state = None
+                    continue
+            if state is None:
+                info.append((relativePath, state))
+
             for d in drives:
+                threadTitle(d, type_=0)
                 if not os.path.exists(d):
-                    print("skipped")
+                    threadPrint("ERROR : Path not found [{}] ".format(d))
+                    info.append((d, False))
+                    cmds.warning("Somes errors might occur, check console output for details")
                     continue
                 cf = [(os.path.join(localPath, x), os.path.join(d, x)) for x in copyFiles]
 
-                for x in cf:
-                    print(x)
-                    if not os.path.exists(x[0]):
-                        info.append((localPath, False))
-                        break
 
+                state = True
+                for x in cf:
+                    if not os.path.exists(x[0]):
+                        continue
                     if os.path.exists(x[1]):
-                        if os.path.getmtime(x[0]) == os.path.getmtime(x[1]):
-                            info.append((d, None))
-                            break
+                        if abs(os.path.getmtime(x[0]) - os.path.getmtime(x[1])) <= 10000:
+                            threadPrint("WARNING : already exist [..\\{}] ".format('\\'.join(x[0].split('\\')[-3:])))
+                            state = None
+                            continue
 
                     try:
-                        # shutil.copy(x[0], x[1])
-                        # print("copy {} to {}".format(x[0], x[1]))
-                        print("")
-                    except:
-                        info.append((d, False))
+                        # pass
+                        treepath = '\\'.join(x[1].split('\\')[:-1])
+                        if not os.path.exists(treepath):
+                            os.makedirs(treepath)
+                        shutil.copy(x[0], x[1])
+                        # threadPrint("copy {}\n  to {}\n".format(x[0], x[1]))
+                    except Exception as e:
+                        print(e)
+                        state = False
                         break
-                else :
-                    info.append((d, True))
-
+                if state is True:
+                    threadPrint("Copy done successfully")
+                if state is not True:
+                    cmds.warning("Somes errors might occur, check console output for details")
+                info.append((d, state))
             # info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
             self.pathsModule.infoColorPath(info)
+            self.lock = False
 
         def publish(self, comment):
+            if self.lock:
+                return
+            self.lock = True
 
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
@@ -1989,8 +2053,9 @@ class Publisher(Module):
             cmds.file(save=True, type='mayaAscii' )
             self.runEvent("lockPrepPublish", False)
             self.pathsModule.infoColorPath([(relativePath, True)])
-            info("{} -> Published !".format(names["publish"]))
+            Info("{} -> Published !".format(names["publish"]))
             print("Publish", comment)
+            self.lock = False
 
         def optionalInfoFile(self):
             '''Mainly for Pilou's asset manager
@@ -2047,7 +2112,8 @@ class Publisher(Module):
             self.datas["Computer"] = os.environ['COMPUTERNAME']
             self.datas["Date"] = datetime.now().strftime("%H:%M:%S")
 
-        def getPathsAndNames(self):
+        def getPathsAndNames(self, version=False):
+            localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
             paths = {}
             names = {}
@@ -2055,7 +2121,10 @@ class Publisher(Module):
             paths["wip"], names["wip"] = os.path.split(relativePath)
             paths["publish"], _ = os.path.split(paths["wip"])
             paths["version"]= os.path.join(paths["publish"], "versions")
-            nVersion = Publisher.Sync.getVersionFromName(names["wip"])
+            if version is False:
+                nVersion = Publisher.Sync.getVersionFromName(names["wip"])
+            else:
+                nVersion = Publisher.Sync.getLastVersion(os.path.join(localPath, paths["publish"])) - version
 
             self.datas["Version"] = nVersion
 
@@ -2165,7 +2234,7 @@ class Publisher(Module):
         self.attach(self.tabs, top=self.paths, bottom="FORM", left="FORM", right="FORM", margin=(2,2,2,2))
 
         self.applyAttach()
-        info("[{}] -> loaded!".format(self.name))
+        Info("[{}] -> loaded!".format(self.name))
         return self
 
     def _unload(self):
