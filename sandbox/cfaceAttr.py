@@ -62,6 +62,8 @@ for i, w in enumerate(weights):
 	md = cmds.createNode("multiplyDivide", n="md_{}".format(w))
 	ctrl = ctrlUp if attr in cmds.listAttr(ctrlUp) else ctrlDn
 	cmds.setAttr("{}.input2X".format(md), 0.1)
+	if attr not in cmds.listAttr(ctrl):
+		continue
 	cmds.connectAttr("{}.{}".format(ctrl, attr), "{}.input1X".format(md))
 	cmds.connectAttr("{}.outputX".format(md), "{}.{}".format(blendshapes[0], w))
 	

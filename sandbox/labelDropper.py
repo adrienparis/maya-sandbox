@@ -413,33 +413,12 @@ class labelDropper(Module):
     def reorderPath(self, bypassLoaded=False):
         if not (self.loaded or bypassLoaded):
             return
-        if not self.pathLays:
-            for i, label in enumerate(self.path):
-                if i % 2 == 0:
-                    text = str(label)
-                    textWidth = len(text) * 7 + 11
-                    tf = cmds.textField(tx=label, p=self.frame, ed=True, w=textWidth,
-                                        bgc=Module.Color.DARKGREY, fn="fixedWidthFont",
-                                        dpc=self.cb_dropEvent().getCommandArgument())
-                    cmds.textField(tf, e=True, cc=self.cb_gapUpdateSize(tf, i))
-                    self.pathLays.append(tf)
-                else:
-                    self.pathLays.append(None)
-
-            for i, label in enumerate(self.path):
-                if i % 2 == 1:
-                    text = str(label)
-                    textWidth = len(text) * 7 + 11
-                    tf = cmds.textField(tx=label, p=self.frame, ed=False, w=textWidth, h=25,
-                                        bgc=Module.Color.LIGHTGREY, fn="fixedWidthFont",
-                                        dgc=self.cb_dragEvent().getCommandArgument())
-                    self.pathLays[i] = tf
 
         prev = "FORM"
         for i, p in enumerate(self.pathLays):
             m = (7,7,-3,-3) if i % 2 == 0 else (5,5,-3,-3)
-            prev = self.attach(p, top="FORM",bottom="FORM", left=prev, margin=m)
-        # self.attach(p, right="FORM", margin=(0,0,5,5))
+            prev = self.attach(p, top="FORM",bottom="FORM", left=prev, right=None, margin=m)
+        self.attach(p, right="FORM", margin=(0,0,5,5))
         self.attach(self.pathLays[0], left="FORM", margin=(0,0,5,5))
 
     @callback
@@ -502,8 +481,12 @@ class labelDropper(Module):
     # Loading methods
     def load(self):
         self.frame = cmds.formLayout(p=self.layout, bgc=Module.Color.DARKGREY)
-        self.attach(self.frame, top="FORM", )
-
+        self.attach(self.frame, top="FORM", left="FORM", right="FORM")
+        
+        pm = cmds.popupMenu( parent=self.frame, button=3)
+        labels = ["path","name","version","step"]
+        for n in labels:
+            cmds.menuItem(n, p=pm, i="addClip.png")
         ################
         # LOAD UI HERE #
         ################
@@ -515,6 +498,28 @@ class labelDropper(Module):
         # self.attach(self.ui_buttonB, top=0, right="FORM")
         # self.attach(self.ui_text, top="FORM", left=self.ui_buttonA, right=self.ui_buttonB)
 
+        if not self.pathLays:
+            for i, label in enumerate(self.path):
+                if i % 2 == 0:
+                    text = str(label)
+                    textWidth = len(text) * 7 + 11
+                    tf = cmds.textField(tx=label, p=self.frame, ed=True, w=textWidth,
+                                        bgc=Module.Color.DARKGREY, fn="fixedWidthFont",
+                                        dpc=self.cb_dropEvent().getCommandArgument())
+                    cmds.textField(tf, e=True, cc=self.cb_gapUpdateSize(tf, i))
+                    self.pathLays.append(tf)
+                else:
+                    self.pathLays.append(None)
+
+            for i, label in enumerate(self.path):
+                if i % 2 == 1:
+                    text = str(label)
+                    textWidth = len(text) * 7 + 11
+                    tf = cmds.textField(tx=label, p=self.frame, ed=False, w=textWidth, h=25,
+                                        bgc=Module.Color.LIGHTGREY, fn="fixedWidthFont",
+                                        dgc=self.cb_dragEvent().getCommandArgument())
+                    self.pathLays[i] = tf
+                    
         self.reorderPath(bypassLoaded=True)
         pass
 

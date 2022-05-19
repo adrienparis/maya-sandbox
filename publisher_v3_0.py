@@ -21,6 +21,7 @@ import shutil
 import re
 import getpass
 import io
+import subprocess
 import re
 from datetime import datetime
 
@@ -397,8 +398,39 @@ class Module(object):
             a = c[1] + args
             c[0](*a)
 
-def info(message):
+def Info(message):
     mel.eval('trace -where ""; print "{}\\n"; trace -where "";'.format(message))
+
+def threadPrint(message):
+    time.sleep(0.001)
+    print(message)
+
+def threadTitle(message, type_=0):
+    if type_ == 1:
+        gap = 20
+        horz = u"═"
+        vert = u"║"
+        ctl = u"╔"
+        ctr = u"╗"
+        cbl = u"╚"
+        cbr = u"╝"
+    else:
+        gap = 10
+        horz = u"─"
+        vert = u"│"
+        ctl = u"┌"
+        ctr = u"┐"
+        cbl = u"└"
+        cbr = u"┘"
+        
+
+    # threadPrint("")
+    threadPrint("")
+    threadPrint(u" " * gap + ctl + horz * len(message) + ctr)
+    threadPrint(u" " * gap + vert + unicode(message) + vert)
+    threadPrint(u" " * gap + cbl + horz * len(message) + cbr)
+    # threadPrint("")
+
 
 # @singleton
 class Publisher(Module):
@@ -501,6 +533,7 @@ class Publisher(Module):
                 install = "Install"
                 uninstall = "Uninstall"
                 loadLanguage = "Install a language"
+                revealExplorer = u"Reveal in file explorer" 
 
             class Label():
                 comment = "Comments : "
@@ -605,7 +638,8 @@ class Publisher(Module):
                 settings = u"Paramètre"
                 install = u"Installer"
                 uninstall = u"Désinstaller"
-                loadLanguage = "Installer une langue"
+                loadLanguage = u"Installer une langue"
+                revealExplorer = u"Afficher dans l'explorateur de fichier" 
 
             class Label():
                 comment = u"Commentaires : "
@@ -903,8 +937,8 @@ class Publisher(Module):
 
         @thread
         def t_resetColor(self):
-            cmds.warning("test")
-            time.sleep(0.5)
+            # cmds.warning("test")
+            time.sleep(1)
             if self.lockColor:
                 return
             self.lockColor = True
@@ -938,7 +972,7 @@ class Publisher(Module):
                     cmds.warning("error avoided - reset")
                     pass
                 finally:
-                    cmds.warning("unlock color")
+                    # cmds.warning("unlock color")
                     self.lockColor = False
 
         def _loadJobs(self):
@@ -1081,6 +1115,7 @@ class Publisher(Module):
             self.btn_rollBack = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.UNDO,   h=30, w=30, bgc=Publisher.Theme.BUTTON,     c=Callback(self.runEvent, "btn_rollBack"), ann=Publisher.LG.Button.rollback, en=False), top="FORM", bottom=None, left=self.btn_prep, right=None, margin=(m,m,m,m))
 
             self.btn_backup = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.SAVE,     h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_backup"), ann=Publisher.LG.Button.backup), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
+            self.btn_revealExplorer = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER,     h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_revealExplorer"), ann=Publisher.LG.Button.revealExplorer), top=None, bottom="FORM", left=None, right=self.btn_backup, margin=(m,m,m,m))
 
             self.btn_test = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.CHECK,      h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_test"), ann=Publisher.LG.Button.check, en=False), top=None, bottom="FORM", left="FORM", right=None, margin=(m,m,m,m))
             self.btn_publish = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.PUBLISH, h=30, w=30, bgc=Publisher.Theme.LOCAL,      c=self.cb_publishEvent(), ann=Publisher.LG.Button.publish), top=None, bottom="FORM", left=self.btn_test , right=None, margin=(m,m,m,m))
@@ -1114,6 +1149,7 @@ class Publisher(Module):
             self.layout = cmds.formLayout(parent=self.parent)
 
             self.btn_backup   = self.attach(cmds.iconTextButton(image=Publisher.Image.SAVE, h=30, w=30, bgc=Publisher.Theme.RELATIVE, c=Callback(self.runEvent, "btn_backup"), ann="Backup current WIP to drives"), top=None, bottom="FORM", left=None, right="FORM", margin=(m,m,m,m))
+            self.btn_revealExplorer = self.attach(cmds.iconTextButton(p=self.layout, image=Publisher.Image.FOLDER,     h=30, w=30, bgc=Publisher.Theme.RELATIVE,   c=Callback(self.runEvent, "btn_revealExplorer"), ann=Publisher.LG.Button.revealExplorer), top=None, bottom="FORM", left=None, right=self.btn_backup, margin=(m,m,m,m))
 
             self.btn_publish  = self.attach(cmds.iconTextButton(image=Publisher.Image.PUBLISH, h=30, w=30, bgc=Publisher.Theme.LOCAL, c=self.cb_confoEvent(), ann="Confo"), top=None, bottom="FORM", left="FORM" , right=None, margin=(m,m,m,m))
             self.btn_upload   = self.attach(cmds.iconTextButton(image=Publisher.Image.NETWORK, h=30, w=30, bgc=Publisher.Theme.SAVE, c=Callback(self.runEvent, "btn_upload"), ann="Upload to drives"), top=None, bottom="FORM", left=self.btn_publish, right=None, margin=(m,m,m,m))
@@ -1707,7 +1743,7 @@ class Publisher(Module):
 
             cmds.unloadPlugin(f)
             os.remove(os.path.join(PFolder, f))
-            info("Uninstalled")
+            Info("Uninstalled")
 
         def load(self):
             self.layout = cmds.formLayout(parent=self.parent)
@@ -1829,6 +1865,8 @@ class Publisher(Module):
             self.datas["Date"] = None
             self.datas["Version"] = None
 
+            self.lock = False
+
         # Events
         def eventHandler(self, event, c, *args):
             if not event in self.command:
@@ -1843,8 +1881,11 @@ class Publisher(Module):
                 a = c[1] + args
                 c[0](*a)
 
-        # @thread
+        @thread
         def backup(self):
+            if self.lock:
+                return
+            self.lock = True
 
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
@@ -1870,46 +1911,96 @@ class Publisher(Module):
                         state = False
                 infos.append((drive, state))
             self.pathsModule.infoColorPath(infos)
+            self.lock = False
 
+        @thread
         def upload(self):
+            if self.lock:
+                return
+            self.lock = True
+            threadTitle(" Uploading last version to drives ", type_=1)
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
             drives = self.pathsModule.getDrivesPath()
-            paths, names = self.getPathsAndNames()
-
+            paths, names = self.getPathsAndNames(version=0)
 
             # Check if it's a wip
             if os.path.normpath(relativePath).split(os.sep)[-2] != "wip":
                 cmds.warning("The current file is not a WIP")
                 return
-            print("localPath      : " +  str(localPath))
-            print("relativePath   : " +  str(relativePath))
-            print("drives         : " +  str(drives))
-            print("paths          : " +  str(paths))
-            print("names          : " +  str(names))
+            # print("localPath      : " +  str(localPath))
+            # print("relativePath   : " +  str(relativePath))
+            # print("drives         : " +  str(drives))
+            # print("paths          : " +  str(paths))
+            # print("names          : " +  str(names))
 
             copyFiles = []
             copyFiles.append(os.path.join(paths["publish"], names["publish"]))
             copyFiles.append(os.path.join(paths["publish"], names["imgPublish"]))
             copyFiles.append(os.path.join(paths["publish"], names["infoFile"]))
+
+
+            # return
+            # #TODO Get the last version in the versions' folder
             copyFiles.append(os.path.join(paths["version"], names["version"]))
             copyFiles.append(os.path.join(paths["version"], names["imgVersion"]))
 
-            for d in drives:
-                print(d)
-                if not os.path.exists(d):
-                    print("skipped")
-                    continue
-                copyFiles = [(os.path.join(localPath, x), os.path.join(d, x)) for x in copyFiles]
-                for x in copyFiles:
-                    print(x[0])
-                    print(x[1])
-                    print("")
+            info = []
 
-            info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
+            state = True
+            for f in copyFiles:
+                x = os.path.join(localPath, f)
+                if not os.path.exists(x):
+                    threadPrint("WARNING : no such file [..\\{}]".format('\\'.join(x.split('\\')[-3:])))
+                    state = None
+                    continue
+            if state is None:
+                info.append((relativePath, state))
+
+            for d in drives:
+                threadTitle(d, type_=0)
+                if not os.path.exists(d):
+                    threadPrint("ERROR : Path not found [{}] ".format(d))
+                    info.append((d, False))
+                    cmds.warning("Somes errors might occur, check console output for details")
+                    continue
+                cf = [(os.path.join(localPath, x), os.path.join(d, x)) for x in copyFiles]
+
+
+                state = True
+                for x in cf:
+                    if not os.path.exists(x[0]):
+                        continue
+                    if os.path.exists(x[1]):
+                        if abs(os.path.getmtime(x[0]) - os.path.getmtime(x[1])) <= 10000:
+                            threadPrint("WARNING : already exist [..\\{}] ".format('\\'.join(x[0].split('\\')[-3:])))
+                            state = None
+                            continue
+
+                    try:
+                        # pass
+                        treepath = '\\'.join(x[1].split('\\')[:-1])
+                        if not os.path.exists(treepath):
+                            os.makedirs(treepath)
+                        shutil.copy(x[0], x[1])
+                        # threadPrint("copy {}\n  to {}\n".format(x[0], x[1]))
+                    except Exception as e:
+                        print(e)
+                        state = False
+                        break
+                if state is True:
+                    threadPrint("Copy done successfully")
+                if state is not True:
+                    cmds.warning("Somes errors might occur, check console output for details")
+                info.append((d, state))
+            # info = [(p, bool(random.randint(0,1))) for p in self.pathsModule.getDrivesPath()]
             self.pathsModule.infoColorPath(info)
+            self.lock = False
 
         def publish(self, comment):
+            if self.lock:
+                return
+            self.lock = True
 
             localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
@@ -1962,8 +2053,9 @@ class Publisher(Module):
             cmds.file(save=True, type='mayaAscii' )
             self.runEvent("lockPrepPublish", False)
             self.pathsModule.infoColorPath([(relativePath, True)])
-            info("{} -> Published !".format(names["publish"]))
+            Info("{} -> Published !".format(names["publish"]))
             print("Publish", comment)
+            self.lock = False
 
         def optionalInfoFile(self):
             '''Mainly for Pilou's asset manager
@@ -2020,7 +2112,8 @@ class Publisher(Module):
             self.datas["Computer"] = os.environ['COMPUTERNAME']
             self.datas["Date"] = datetime.now().strftime("%H:%M:%S")
 
-        def getPathsAndNames(self):
+        def getPathsAndNames(self, version=False):
+            localPath = self.pathsModule.getLocalPath()
             relativePath = self.pathsModule.getRelativePath()
             paths = {}
             names = {}
@@ -2028,7 +2121,10 @@ class Publisher(Module):
             paths["wip"], names["wip"] = os.path.split(relativePath)
             paths["publish"], _ = os.path.split(paths["wip"])
             paths["version"]= os.path.join(paths["publish"], "versions")
-            nVersion = Publisher.Sync.getVersionFromName(names["wip"])
+            if version is False:
+                nVersion = Publisher.Sync.getVersionFromName(names["wip"])
+            else:
+                nVersion = Publisher.Sync.getLastVersion(os.path.join(localPath, paths["publish"])) - version
 
             self.datas["Version"] = nVersion
 
@@ -2081,6 +2177,11 @@ class Publisher(Module):
             Publisher.LG = Publisher.Language.Fr
             Publisher.writePref("lg", Publisher.LG.__name__)
 
+    def revealExplorer(self):
+        relativePath = self.paths.getRelativePath()
+        localPath = self.paths.getLocalPath()
+        subprocess.Popen('explorer /select,"{}"'.format(os.path.join(localPath, relativePath)))
+
     def load(self):
         '''loading The window
         '''
@@ -2113,6 +2214,8 @@ class Publisher(Module):
             # TODO maybe change the link with definitions of name by a preference file
 
         # Events
+        self.SyncCommon.eventHandler("btn_revealExplorer", self.revealExplorer)
+        self.SyncAnimation.eventHandler("btn_revealExplorer", self.revealExplorer)
         #   Sync
         self.syncEvent.eventHandler("lockPrepPublish", self.SyncCommon.lockPrepPublish)
         #   Common sync
@@ -2131,7 +2234,7 @@ class Publisher(Module):
         self.attach(self.tabs, top=self.paths, bottom="FORM", left="FORM", right="FORM", margin=(2,2,2,2))
 
         self.applyAttach()
-        info("[{}] -> loaded!".format(self.name))
+        Info("[{}] -> loaded!".format(self.name))
         return self
 
     def _unload(self):
@@ -2160,6 +2263,8 @@ def onMayaDroppedPythonFile(*args):
     '''Just to get rid of the anoying warning message of maya
     '''
     Publisher().load()
+    if os.path.exists(__file__ + "c"):
+        os.remove(__file__ + "c")
 
 PLUGIN_SHELF_NAME = "CreativeSeeds"
 PLUGIN_SHELF_BUTTON = "ButtonPublisher"

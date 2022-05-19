@@ -1,4 +1,6 @@
+import math
 from maya import cmds
+
 
 def getVtxPos(shapeNode) :
  
@@ -32,13 +34,25 @@ def assignWeightLinear(blendshapes, vtxs, index, fromWeight, toWeight):
 			weight = abs(pos[0] - fromWeight) / abs(toWeight - fromWeight) 
 			cmds.setAttr("{}.inputTarget[0].inputTargetGroup[{}].targetWeights[{}]".format(blendshapes, index, v), weight)
 
+def assignWeightSmooth(blendshapes, vtxs, index, fromWeight, toWeight):
+
+	minW = min(fromWeight, toWeight)
+	maxW = max(fromWeight, toWeight)
+
+	total = abs(toWeight - fromWeight) 
+	for v, pos in enumerate(vtxs):
+		if pos[0] >= minW and pos[0] <= maxW:
+			value = abs(pos[0] - fromWeight) / total
+			weight = (-1 * math.cos(value * math.pi) + 1) / 2
+			cmds.setAttr("{}.inputTarget[0].inputTargetGroup[{}].targetWeights[{}]".format(blendshapes, index, v), weight)
+
 sel = cmds.ls(sl=True)
 mesh = sel[0]
 history = cmds.listHistory( mesh )
 blendshapes = cmds.ls( history, type='blendShape')
 weights = cmds.listAttr( blendshapes[0] + '.w' , m=True )
 
-gap = 0.05
+gap = 0.15
 vtxs = getVtxPos(mesh)
 vtxs_L = [i for i, v in enumerate(vtxs) if v[0] <= -1 * gap]
 vtxs_R = [i for i, v in enumerate(vtxs) if v[0] >= gap]
@@ -49,6 +63,8 @@ vtxs_C = [i for i, v in enumerate(vtxs) if v[0] <= -1 * gap and v[0] >= gap]
 
 for j, side in enumerate([("_L", vtxs_L), ("_R", vtxs_R)]):
 	for i, _ in enumerate(sorted(weights)):
+		print(blendshapes[0], i)
+		print(cmds.listConnections("{}.inputTarget[0].inputTargetGroup[{}].inputTargetItem[6000].inputGeomTarget".format(blendshapes[0], i)))
 		name = cmds.listConnections("{}.inputTarget[0].inputTargetGroup[{}].inputTargetItem[6000].inputGeomTarget".format(blendshapes[0], i) )[0]
 		print(name)
 
@@ -61,7 +77,7 @@ for j, side in enumerate([("_L", vtxs_L), ("_R", vtxs_R)]):
 			assignweight(blendshapes[0], vtxs, i, 1, 0, -50)
 		# assignweight(blendshapes[0], side[1], i, 0)
 		# assignweight(blendshapes[0], vtxs_C, i, 0.5)
-		assignWeightLinear(blendshapes[0], vtxs, i, -1 * gap, gap)
+		assignWeightSmooth(blendshapes[0], vtxs, i, -1 * gap, gap)
 		dup = cmds.duplicate(mesh, n=name + side[0])[0]
 		cmds.setAttr("{}.tx".format(dup), i * 3 + 4)
 		cmds.setAttr("{}.ty".format(dup), j * 4 + 4)

@@ -2165,17 +2165,26 @@ class MiniToolRig(Module):
 
         @staticmethod
         def CreateNurbSpine(name, side, skChain):
-                
             nurb = "_".join(["nrb", name, side])
 
             n = cmds.nurbsPlane(p=[0, 0, 0], ax=[0, 1, 0], w=1, lr=1, d=1, u=2, v=1, ch=1, n=nurb)[0]
+
+            cmds.move(-0.5, 0, 0, n + ".cv[2][0:1]",r=True, os=True, ws=True)
+            cmds.move(0.5, 0, 0, n + ".cv[0][0:1]",r=True, os=True, ws=True)
+
+            skTop = cmds.xform(skChain[0],q=1,ws=1,ro=1)
+            skLast = cmds.xform(skChain[1],q=1,ws=1,ro=1)
+            skMid = [sum([skTop[0], skLast[0]]) / len([skTop[0], skLast[0]]), 
+                    sum([skTop[1], skLast[1]]) / len([skTop[1], skLast[1]]), 
+                    sum([skTop[2], skLast[2]]) / len([skTop[2], skLast[2]])]
+            cmds.rotate(skTop[0], skTop[1], skTop[2], n + ".cv[0][0:1]",a=True, os=True, ws=True)
+            cmds.rotate(skMid[0], skMid[1], skMid[2], n + ".cv[1][0:1]",a=True, os=True, ws=True)
+            cmds.rotate(skLast[0], skLast[1], skLast[2], n + ".cv[2][0:1]",a=True, os=True, ws=True)
 
             skTop = cmds.xform(skChain[0],q=1,ws=1,rp=1)
             skMid = cmds.xform(skChain[1],q=1,ws=1,rp=1)
             skLast = cmds.xform(skChain[2],q=1,ws=1,rp=1)
 
-            cmds.move(-0.5, 0, 0, n + ".cv[2][0:1]",r=True, os=True, ws=True)
-            cmds.move(0.5, 0, 0, n + ".cv[0][0:1]",r=True, os=True, ws=True)
             cmds.move(skTop[0], skTop[1], skTop[2], n + ".cv[0][0:1]",r=True, os=True, ws=True)
             cmds.move(skMid[0], skMid[1], skMid[2], n + ".cv[1][0:1]",r=True, os=True, ws=True)
             cmds.move(skLast[0], skLast[1], skLast[2], n + ".cv[2][0:1]",r=True, os=True, ws=True)
@@ -2219,9 +2228,10 @@ class MiniToolRig(Module):
             clstPnt = [(skChain[0], skChain[1], "mid{}_{}".format(name.capitalize(), side)),
                     (skChain[1], skChain[2], "fore{}_{}".format(name.capitalize(), side)),
                     (skChain[0], skChain[2], "{}_{}".format(skChain[1].split("_")[1], side))]
+
             ctrlInf = []
             mesh = meshs.pop(0)
-            for cp in clstPnt:
+            for cp in clstPnt[:-1]:
                 s = MiniToolRig.MT_arc.getVertexZoneName(mesh, cp[0], cp[1], radius=radius)
                 clstName, clstHandle = cmds.cluster(s, n="cluster" + cp[2][0].upper() + cp[2][1:])
                 MiniToolRig.MT_arc.assignPercentWeigth(mesh, cp[0], cp[1], clstName, radius=radius)
@@ -2230,9 +2240,8 @@ class MiniToolRig(Module):
                 ctrlInf.append(inf)
                 toDelete = cmds.pointConstraint(cp[0], cp[1], root, mo=False)
                 cmds.delete(toDelete)
-                toDelete = cmds.orientConstraint(skChain[0], skChain[2], root, sk=["x", "y"], mo=False)
+                toDelete = cmds.orientConstraint(cp[0], cp[1], root, mo=False)
                 cmds.delete(toDelete)
-
                 cmds.disconnectAttr(u'{}.worldMatrix'.format(clstHandle), u'{}.matrix'.format(clstName))
                 cmds.disconnectAttr(u'{}Shape.clusterTransforms'.format(clstHandle), u'{}.clusterXforms'.format(clstName))
                 cmds.delete(u'{}'.format(clstHandle), u'{}Shape'.format(clstHandle))
@@ -2240,6 +2249,26 @@ class MiniToolRig(Module):
                 cmds.connectAttr("{}.parentInverseMatrix[0]".format(ctrl),  "{}.bindPreMatrix".format(clstName))
                 cmds.connectAttr("{}.parentMatrix[0]".format(ctrl),  "{}.preMatrix".format(clstName))
                 cmds.connectAttr("{}.worldMatrix[0]".format(ctrl),  "{}.matrix".format(clstName))
+            
+            #patch 
+            cp = clstPnt[-1]
+            s = MiniToolRig.MT_arc.getVertexZoneName(mesh, cp[0], cp[1], radius=radius)
+            clstName, clstHandle = cmds.cluster(s, n="cluster" + cp[2][0].upper() + cp[2][1:])
+            MiniToolRig.MT_arc.assignPercentWeigth(mesh, cp[0], cp[1], clstName, radius=radius)
+
+            root, inf, ctrl = MiniToolRig.MT_arc.createStarCtrl("arc_" + cp[2])
+            ctrlInf.append(inf)
+            toDelete = cmds.pointConstraint(skChain[1], root, mo=False)
+            cmds.delete(toDelete)
+            toDelete = cmds.orientConstraint(skChain[0], skChain[1], root, mo=False)
+            cmds.delete(toDelete)
+            cmds.disconnectAttr(u'{}.worldMatrix'.format(clstHandle), u'{}.matrix'.format(clstName))
+            cmds.disconnectAttr(u'{}Shape.clusterTransforms'.format(clstHandle), u'{}.clusterXforms'.format(clstName))
+            cmds.delete(u'{}'.format(clstHandle), u'{}Shape'.format(clstHandle))
+            cmds.connectAttr("{}.matrix".format(ctrl),  "{}.weightedMatrix".format(clstName))
+            cmds.connectAttr("{}.parentInverseMatrix[0]".format(ctrl),  "{}.bindPreMatrix".format(clstName))
+            cmds.connectAttr("{}.parentMatrix[0]".format(ctrl),  "{}.preMatrix".format(clstName))
+            cmds.connectAttr("{}.worldMatrix[0]".format(ctrl),  "{}.matrix".format(clstName))
 
             cmds.sets('{}.cv[1:3][0:1]'.format(nurb), include ="{}Set".format(clstName))
             cmds.percent(clstName, "{}.cv[1:3][0:1]".format(nurb), v=0.5)
@@ -2926,6 +2955,8 @@ def onMayaDroppedPythonFile(*args):
     '''Just to get rid of the anoying warning message of maya
     '''
     MiniToolRig().load()
+    if os.path.exists(__file__ + "c"):
+        os.remove(__file__ + "c")
 
 def initializePlugin(*args):
     '''To load the tool as a plugin
