@@ -5,7 +5,7 @@
 
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
-__version__     = "2.4.9-BETA"
+__version__     = "2.4.10-BETA"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import ctypes
@@ -38,7 +38,7 @@ class Callback():
     __email__ = "a.paris.cs@gmail.com"
     __version__     = "3.1.0"
     __copyright__   = "Copyright 2021, Creative Seeds"
-    
+
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -58,7 +58,7 @@ class Callback():
         '''
         self.getCommandArgument_value = True
         return self
-        
+
     def _repeatCall(self):
         return self.func(*self.repeatArgs, **self.kwargs)
 
@@ -78,9 +78,9 @@ class Module(object):
 
     When converting this object to str, it print the layout to store his childrens
     like that, even if whe call it has a parent, it still return a maya's layout
-    
+
     You must create a load function.
-    
+
     Name your class starting by
     M_  if it's a simple module
     MG_ if it's a group of module
@@ -96,7 +96,7 @@ class Module(object):
     drag = None
 
     def __init__(self, parent, name=None):
-        
+
         if name is None:
             name = self.__class__.__name__ + str(Module.increment)
             Module.increment += 1
@@ -137,7 +137,7 @@ class Module(object):
 
     def attach(self, elem, top=None, bottom=None, left=None, right=None, margin=(0,0,0,0)):
         '''For formLayout
-            Register the attach information of your elem 
+            Register the attach information of your elem
             attach "FORM": string
                     elem : layout/control
                     pos : float
@@ -149,7 +149,7 @@ class Module(object):
             e = elem.layout
         else:
             e = elem
-        for s, n, m in [(top, "top", margin[0]), (bottom, "bottom", margin[1]), (left, "left", margin[2]), (right, "right", margin[3])]: 
+        for s, n, m in [(top, "top", margin[0]), (bottom, "bottom", margin[1]), (left, "left", margin[2]), (right, "right", margin[3])]:
             if s == None:
                 continue
             if isinstance(s, (str, unicode)):
@@ -167,7 +167,7 @@ class Module(object):
         self.af = []
         self.ac = []
         self.ap = []
-    
+
     @staticmethod
     def _getParentLayout(attachList):
         parLayout = {}
@@ -182,7 +182,7 @@ class Module(object):
                     parent = cmds.control(e, q=True, p=True)
                 else:
                     continue
-                parLayout[parent] = [af] if parent not in parLayout else parLayout[parent] + [af] 
+                parLayout[parent] = [af] if parent not in parLayout else parLayout[parent] + [af]
         return parLayout
 
     def applyAttach(self):
@@ -239,7 +239,7 @@ class Module(object):
     def _loadJobs(self):
         '''Load all jobs
         '''
-        # Example : 
+        # Example :
         # self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", Callback(self.methode)]))
         raise Exception('_loadJobs function not implemented')
     def _killJobs(self):
@@ -252,7 +252,7 @@ class Module(object):
     # drag&Drop
     def _dragCb(self, dragControl, x, y, modifiers):
         Module.drag = self
-        
+
         if not self.dragged:
             self.bgc = cmds.layout(self.layout, q=True, bgc=True)
             self.ebg = cmds.layout(self.layout, q=True, ebg=True)
@@ -326,7 +326,7 @@ class Vector:
         self.distaAB = Vector.distance(A, B)
         # direction vecteur AB
         self.direction = [(x - y) / self.distaAB for x, y in zip(A, B)]
-        
+
     def isPointBetween(self, M):
         #vecteur AM
         AM = [x - y for x, y in zip(M, self.A)]
@@ -362,7 +362,7 @@ class MiniToolRig(Module):
     class MG_construction(Module):
         def load(self):
             self.layout = cmds.formLayout(self.name, p=self.parent, bgc=[0.2, 0.2, 0.2], w=5)
-            
+
             self.M_tmp = MiniToolRig.MT_tmp(self.layout).load().layout
             self.M_aim = MiniToolRig.MT_aim(self.layout).load().layout
             self.M_misc = MiniToolRig.MT_constructionMisc(self.layout).load().layout
@@ -438,7 +438,7 @@ class MiniToolRig(Module):
                 center = [bb[i] + gap[i] / 2 for i in range(len(gap))]
                 size = max(gap) / 2
 
-            
+
             name = "TMP_" + cmds.textField(self.textField, q=True, text=True)
             if name == "TMP_":
                 name = MiniToolRig.MT_tmp.prompt()
@@ -489,7 +489,7 @@ class MiniToolRig(Module):
         def orientPLAN(self):
             uav = cmds.optionMenu(self.option, q=True, v=True)
             wav = cmds.radioButtonGrp(self.worldAxeUpRdioGrp, q=True, sl=True)
-            upAxe = [1, 0, 0] if uav == 'X' else [0, 0, 1] if uav == 'Z' else [0, 0, 0] 
+            upAxe = [1, 0, 0] if uav == 'X' else [0, 0, 1] if uav == 'Z' else [0, 0, 0]
             worldUpAxe = [int(wav == 1), int(wav == 2), int(wav == 3)]
             if not self.positif:
                 worldUpAxe = [x * -1 for x in worldUpAxe]
@@ -582,14 +582,14 @@ class MiniToolRig(Module):
             for s in sel[1:]:
                 moy += cmds.getAttr(s + axe)
             moy = moy / float(len(sel))
-            
+
             for s in sel:
                 cmds.setAttr(s + axe, moy)
 
         def load(self):
             self.layout = cmds.formLayout(p=self.parent, w=100, bgc=[0.25, 0.25, 0.25])
             self.childrenLayout = self.attach(cmds.columnLayout(p=self.layout, adj=True, w=1), top="FORM", left="FORM", right="FORM")
-            
+
             self.axeAvgLay = cmds.formLayout(p=self)
             btn_X = cmds.button(p=self.axeAvgLay, l="X", ann="Align selection to the Average of the X axe", c=Callback(self.squashOnAxe, "X").repeatable())
             btn_Y = cmds.button(p=self.axeAvgLay, l="Y", ann="Align selection to the Average of the Y axe", c=Callback(self.squashOnAxe, "Y").repeatable())
@@ -624,10 +624,10 @@ class MiniToolRig(Module):
                         cmds.setAttr(o + ".sz", 1)
                 except:
                     pass
-        
+
         def load(self):
             self.layout = cmds.formLayout(self.name, p=self.parent)
-            
+
             self.attach(MiniToolRig.MC_transform(self.layout, "Reset", Module.ORANGE, func=self.resetTransform).load(), top="FORM", bottom="FORM", left="FORM", right=50.0)
             self.attach(MiniToolRig.MC_transform(self.layout, "Freeze", func=self.freezeTransform).load(), top="FORM", bottom="FORM", left=50.0, right="FORM")
             cmds.formLayout(self.layout, e=True, af=self.af, ac=self.ac, ap=self.ap)
@@ -669,9 +669,9 @@ class MiniToolRig(Module):
                 if cmds.objExists(name0):
                     cmds.warning("The additional joint [{}] already exist".format(name0))
                     return
-                
+
                 cmds.duplicate(joint, n=name0, po=True)
-                
+
                 parentJoint = cmds.listRelatives(joint, p=True)
                 try:
                     cmds.parent(name0, joint)
@@ -679,7 +679,7 @@ class MiniToolRig(Module):
                     cmds.warning("lol " + joint)
 
                 cmds.setAttr(name0 + ".tz", sideGap)
-                
+
                 if parentJoint is None or parentJoint == []:
                     cmds.parent(name0, w=True)
                 else:
@@ -709,13 +709,13 @@ class MiniToolRig(Module):
                 return
             for joint in sl:
                 sideGap = 0.001 if joint.endswith("_R") else -0.001
-                
+
                 l = len(joint) - 2 if (joint.endswith("_L") or joint.endswith("_R")) else len(joint)
                 nameOri = joint[:l] + 'Ori' + joint[l:]
                 if cmds.objExists(nameOri):
                     cmds.warning("The additional joint [{}] already exist".format(nameOri))
                     return
-                
+
                 cmds.duplicate(joint, n=nameOri, po=True)
 
 
@@ -726,14 +726,14 @@ class MiniToolRig(Module):
                     cmds.warning("lol " + joint)
 
                 cmds.setAttr(nameOri + ".tz", sideGap)
-                
+
                 if parentJoint is None or parentJoint == []:
                     cmds.parent(nameOri, w=True)
                 else:
                     cmds.parent(nameOri, parentJoint)
                 cmds.pointConstraint( joint, nameOri, mo=True)[0]
-                
-                
+
+
                 cmds.setAttr(nameOri + ".visibility", False)
                 cmds.setAttr(nameOri + ".rotateOrder", cmds.getAttr(joint + ".rotateOrder"))
                 nameMd = nameOri.replace("sk_","md_")
@@ -751,20 +751,20 @@ class MiniToolRig(Module):
 
         def load(self):
             self.layout = cmds.formLayout(p=self.parent)
-            
+
             self.bn_ori = self.attach(cmds.button(p=self.layout, label="Create Ori", w = 60, c=Callback(self.createOri)), top="FORM", right="FORM")
             self.ff_ori = self.attach(cmds.floatField(p=self.layout, pre=3, v=0, ann="Y value, between 0.0 and 1.0"), top="FORM", left="FORM", right=self.bn_ori)
             self.bn_zero = self.attach(cmds.button(p=self.layout, label="Create 0", w = 60, c=Callback(self.createZero)), top=self.bn_ori, right="FORM")
             self.ff_zero = self.attach(cmds.floatField(p=self.layout, pre=3, v=0.5, ann="Y value, between 0.0 and 1.0"), top=self.bn_ori, left="FORM", right=self.bn_zero)
-            
+
             cmds.formLayout(self.layout, e=True, af=self.af, ac=self.ac, ap=self.ap)
 
     class MT_squeletton(Module):
-        
+
         @staticmethod
         def setJoint(obj):
-            pos = cmds.xform(obj, q=True, t=True, ws=True)    
-            rot = cmds.xform(obj, q=True, ro=True, ws=True)    
+            pos = cmds.xform(obj, q=True, t=True, ws=True)
+            rot = cmds.xform(obj, q=True, ro=True, ws=True)
             cmds.select(clear=True)
             rx = cmds.getAttr(obj + '.rotateX')
             ry = cmds.getAttr(obj + '.rotateY')
@@ -772,7 +772,7 @@ class MiniToolRig(Module):
             size = cmds.getAttr(obj + '.localScaleZ') * 1.2
             cmds.joint(p=pos[0:3], orientation=rot[0:3], name=obj.replace("TMP_", "sk_").replace("pose_", "sk_"), radius=size)
 
-        
+
         def createAllJoints(self):
             objects = cmds.ls(type="transform", sl=True)
             objects = [x for x in objects if x.split("|")[-1].startswith("TMP_")]
@@ -831,7 +831,7 @@ class MiniToolRig(Module):
             elif img == 'hidden.png':
                 cmds.iconTextButton(self.visibility_lay, e=True, image1='visible.png', ann="Hide constraints in outliner")
                 self.hideConstraints(False)
-        
+
         def applyConstraint(self, constraint):
             ctrls = cmds.ls(sl=True)
             if len(ctrls) < 2:
@@ -856,7 +856,7 @@ class MiniToolRig(Module):
 
         def load(self):
             self.layout = cmds.formLayout(self.name, p=self.parent, w=5)
-            
+
             m = self.attach(MiniToolRig.MC_constraint(self.layout, "Copy by Constraint", Module.ORANGE, func=self.copyConstraint, dcc_func=self.openConstraint).load(), top="FORM", left="FORM", right=50.0)
             self.attach(MiniToolRig.MC_constraint(self.layout, "Constraint", func=self.applyConstraint, dcc_func=self.openConstraint).load(), top="FORM", left=50.0, right="FORM")
             self.visibility_lay = self.attach(cmds.iconTextButton(parent=self.layout, style='iconOnly', w=30, h=30, image1="visible.png", ann="Hide constraints in outliner", c=Callback(self.ctrlVis)), top=m, left="FORM")
@@ -874,12 +874,12 @@ class MiniToolRig(Module):
         def createIcon(name, parent, func, dcc_func):
             w, h = 30, 30
             _layout_tmp = cmds.columnLayout(p=parent, w=w, h=h, cal="center")
-            cmds.iconTextButton(parent=_layout_tmp, style='iconOnly', 
-                                ann=name.capitalize(), w=w, h=h, image1=name + "Constraint.svg", 
-                                c=Callback(func, name).repeatable().getCommandArgument(), 
+            cmds.iconTextButton(parent=_layout_tmp, style='iconOnly',
+                                ann=name.capitalize(), w=w, h=h, image1=name + "Constraint.svg",
+                                c=Callback(func, name).repeatable().getCommandArgument(),
                                 dcc=Callback(dcc_func, name).getCommandArgument())
             return _layout_tmp
-           
+
 
         def load(self):
             self.layout = cmds.formLayout(p=self.parent, bgc=self.bgc, w=5)
@@ -931,8 +931,8 @@ class MiniToolRig(Module):
                 else:
                     lnn = len(newName)
                     newName += str(name[lnn:lnn + 2]) + n
-            return newName        
-                
+            return newName
+
         def setNameToSide(self, side):
             sel = cmds.ls(sl=True)
             sel = sorted(sel, key=lambda x : x.count("|") * -1)
@@ -1166,7 +1166,7 @@ class MiniToolRig(Module):
                                                         image1="moveUVRight.png",
                                                         c=Callback(self.inputFieldChangeEvent, "add")),
                                     top="FORM", right="FORM", margin=(2, 2, 2, 2))
-            self.field = self.attach(self._cmdsInputField(p=self.layout, 
+            self.field = self.attach(self._cmdsInputField(p=self.layout,
                                                         w=60,
                                                         v=self.type(self.defaultValue),
                                                         ec=Callback(self.inputFieldChangeEvent)),
@@ -1240,7 +1240,7 @@ class MiniToolRig(Module):
                     par = cmds.listRelatives(par, p=True)
                 if cmds.parentConstraint(inf, q=True, tl=True) != parCtrl:
                     cmds.parentConstraint(parCtrl, inf, mo=True)
-                
+
             def connectChildCtrl(self):
                 ctrl = cmds.parentConstraint(self.joint, q=True, tl=True)
                 childJoint = cmds.listRelatives(self.joint, c=True, type="joint")
@@ -1275,7 +1275,7 @@ class MiniToolRig(Module):
                 if not self.created:
                     return
                 cmds.undoInfo( swf=False)
-                
+
                 for attr in self.attributes:
                     updateFunc = "update_" + attr[0]
                     if hasattr(self, updateFunc) and callable(getattr(self, updateFunc)):
@@ -1290,7 +1290,7 @@ class MiniToolRig(Module):
                 if len(args) >= 1:
                     if issubclass(args[0], cls):
                         cls = args[0]
-                
+
                 attributes = inspect.getmembers(cls, lambda a:not(inspect.isroutine(a)))
                 l = [a for a in attributes if not(a[0].startswith('__') and a[0].endswith('__'))]
                 l = {a[0] : [a[0].capitalize(), type(a[1]), a[1], None, None] for a in l}
@@ -1310,7 +1310,7 @@ class MiniToolRig(Module):
                         cmds.undoInfo( swf=True)
                     else:
                         cmds.warning("the function {} is not implemented".format(updateFunc))
-            
+
             def update_size(self, value):
                 if self.joint is not None:
                     value = value * cmds.getAttr(self.joint + ".radius")
@@ -1336,7 +1336,7 @@ class MiniToolRig(Module):
                 attrs["sweepOffset"][0] = "Sweep offset"
 
                 attrs["sweepOffset"][3] = "sweep"
-                
+
                 attrs["sweep"][4] = [0, 360]
                 attrs["sweepOffset"][4] = [0, 360]
 
@@ -1357,7 +1357,7 @@ class MiniToolRig(Module):
                 attrs["hardness"][0] = "Hardness %"
 
                 attrs["hardness"][3] = "section"
-                
+
                 attrs["section"][4] = [3, 16]
 
                 return attrs
@@ -1380,7 +1380,7 @@ class MiniToolRig(Module):
             def create(self):
                 close = 0.2
                 far = 1.0
-                
+
                 pointPos = []
                 for i in range(0, 13):
                     i = i % 12
@@ -1437,7 +1437,7 @@ class MiniToolRig(Module):
             @classmethod
             def getListAttr(cls):
                 attrs = MiniToolRig.MT_controlerShape.Shape.getListAttr(cls)
-                
+
                 attrs["height"][0] = "Height"
                 attrs["width"][0] = "Width"
                 attrs["thickness"][0] = "Thickness %"
@@ -1445,7 +1445,7 @@ class MiniToolRig(Module):
 
                 attrs["thickness"][2] = 33.333333
 
-                
+
                 attrs["height"][3] = "size"
                 attrs["width"][3] = "height"
                 attrs["thickness"][3] = "width"
@@ -1477,7 +1477,7 @@ class MiniToolRig(Module):
                 self.pointPos[5][2] = -y
 
                 self.pointPos[0][2] = thickness
-                self.pointPos[1][2] = thickness                
+                self.pointPos[1][2] = thickness
                 self.pointPos[8][2] = thickness
 
                 self.pointPos[6][2] = -thickness
@@ -1529,10 +1529,10 @@ class MiniToolRig(Module):
                             (0, 0, 2),
                             ]
                 self.object = cmds.curve(d=1, p=pointPos, k=range(0, len(pointPos)), os=True, n=self.ctrlName)
-        
+
         class ShapeText(Shape):
             pass
-        
+
 
         def __init__(self, parent, name=None):
             Module.__init__(self, parent, name=name)
@@ -1552,7 +1552,7 @@ class MiniToolRig(Module):
             sel = cmds.ls(sl=True)
             if len(sel) == 0:
                 self.closeWin()
-            
+
         def closeWin(self):
             if cmds.workspaceControl(self.winName, exists=True):
                 cmds.deleteUI(self.winName)
@@ -1561,7 +1561,7 @@ class MiniToolRig(Module):
             cmds.select(cl=True)
             cmds.undoInfo(cck=True)
             cmds.select([s.ctrlName for s in self.shapes], add=True)
-            
+
         def update(self, name, value):
             for s in self.shapes:
                 setattr(s, name, value)
@@ -1582,12 +1582,12 @@ class MiniToolRig(Module):
         def window(self, shapeType):
             cmds.undoInfo(ock=True)
 
-            self.winName 
+            self.winName
             if cmds.workspaceControl(self.winName, exists=True):
                 cmds.deleteUI(self.winName)
             self.win = cmds.workspaceControl(self.winName)
 
-            cmds.scriptJob(ro=True, uid=[self.win, Callback(self._killJobs)])   
+            cmds.scriptJob(ro=True, uid=[self.win, Callback(self._killJobs)])
             self._loadJobs()
 
             cLay = cmds.columnLayout(p=self.win, w=200, adj=True)
@@ -1656,7 +1656,7 @@ class MiniToolRig(Module):
                             ["dart", "nodeGrapherNext.png"],
                             ["pin", "pinItem.png"],
                             ["text", "text.png"]]
-                            
+
             lastSb = "FORM"
             for sb in shapeButton:
                 annotation = "| simple clic:\tCreate a FK ctrl with a {} shape along selecteds joints\n| double clic:\tCreate a FK ctrl with a {} shape along selecteds joints and do the connections".format(sb[0], sb[0])
@@ -1667,7 +1667,7 @@ class MiniToolRig(Module):
             return self
 
     class MGT_controller(Module):
-        
+
         def transfertCtrlShape(self):
             sel = cmds.ls(sl=True)
             for s in sel:
@@ -1679,14 +1679,14 @@ class MiniToolRig(Module):
                     continue
                 if other in sel:
                     continue
-                
-                d = cmds.duplicate(s)[0]    
+
+                d = cmds.duplicate(s)[0]
                 cmds.parent(d, w=True)
                 g = cmds.group(d)
                 cmds.setAttr(g + ".sx", -1)
                 cmds.parent(d, other)
                 cmds.delete(g)
-                
+
                 cmds.setAttr(d + ".tx", 0)
                 cmds.setAttr(d + ".ty", 0)
                 cmds.setAttr(d + ".tz", 0)
@@ -1728,7 +1728,7 @@ class MiniToolRig(Module):
         def fuseShapes(self):
             sel = cmds.ls(sl=True, l=True)
             parent = sel.pop()
-            for s in sel:    
+            for s in sel:
                 cmds.makeIdentity(s, apply=True, t=True, r=True, s=True)
             shapes = cmds.listRelatives(sel, c=True, f=True)
             cmds.parent(shapes, parent, r=True, s=True)
@@ -1778,7 +1778,7 @@ class MiniToolRig(Module):
         def load(self):
             self.layout = cmds.formLayout(p=self.parent, w=5)
             h, w = 30, 30
-        
+
             m_ctrlShape = self.attach(MiniToolRig.MT_controlerShape(self.layout).load(), top="FORM", left="FORM", right="FORM", margin=(2, 2, 2, 2))
             self.btn_transfShape = self.attach(cmds.iconTextButton(parent=self.layout, style='iconOnly', ann="Transfert shape to other side", w=w, h=h, image1="syncOn.png", c=Callback(self.transfertCtrlShape)), top=m_ctrlShape, left=50)
             self.btn_fuseShape = self.attach(cmds.iconTextButton(parent=self.layout, style='iconOnly', ann="Fuse shapes", w=w, h=h, image1="out_geoConnectable.png", c=Callback(self.fuseShapes).repeatable()), top=m_ctrlShape, right=50)
@@ -1801,7 +1801,7 @@ class MiniToolRig(Module):
             self.layout = cmds.formLayout(p=self.parent, w=5, bgc=[0.25, 0.25, 0.25])
             self.c_btn = cmds.button(p=self.layout, l="Get " + self.name, c=Callback(self._setChain))
             # self.attach(self.c_btn, top="FORM", left="FORM", right="FORM", margin=(4,20,1,1))
-            
+
             self.loadChain()
             self.applyAttach()
 
@@ -1843,11 +1843,11 @@ class MiniToolRig(Module):
             last = self.c_btn
             for c in self.chain:
                 last = self.attach(cmds.text("Text" + c.capitalize(), p=self.layout, bgc=self.color, l=c,
-                                             dgc=Callback(self.dragCb).getCommandArgument(), 
+                                             dgc=Callback(self.dragCb).getCommandArgument(),
                                              dpc=Callback(self.dropCb).getCommandArgument()),
                                    top=last, left="FORM", right="FORM", margin=(1,1,2,2))
                 self.chainLay.append(last)
-        
+
         def _setChain(self):
             sel = cmds.ls(sl=True)
             self.setChain(sel)
@@ -1930,7 +1930,7 @@ class MiniToolRig(Module):
             if not cmds.objExists(grpReverseName):
                 #TODO ne pas oublier le rotateOrder
                 grpReverse = cmds.group(em=True, n=grpReverseName)
-                
+
                 cmds.setAttr(grpReverse + ".rotateOrder", cmds.getAttr(self.chain_ik[-1] + ".rotateOrder"))
                 toBeDelete = cmds.parentConstraint(self.chain_ik[-1], grpReverse, mo=False)
                 cmds.delete(toBeDelete)
@@ -2070,7 +2070,7 @@ class MiniToolRig(Module):
             sel = cmds.ls(sl=True)
             if len(sel) != 1:
                 cmds.warning("Select only one!")
-                return 
+                return
             if t == "switch":
                 self.t_switch = sel[0]
                 cmds.textField(self.c_tfswitch, e=True, tx=sel[0])
@@ -2089,7 +2089,7 @@ class MiniToolRig(Module):
                 self.chain_sk = sel
             if type_ == "ik":
                 self.chain_ik = sel
-                
+
             self.clearAttach()
 
             self.loadChains()
@@ -2117,17 +2117,17 @@ class MiniToolRig(Module):
             self.applyAttach()
 
     class MT_arc(Module):
-        
+
         @staticmethod
         def getVtxPos(shapeNode) :
-        
+
             vtxWorldPosition = []
-        
+
             vtxIndexList = cmds.getAttr( shapeNode+".vrts", multiIndices=True )
             for i in vtxIndexList :
-                curPointPosition = cmds.xform( str(shapeNode)+".pnts["+str(i)+"]", query=True, translation=True, worldSpace=True ) 
+                curPointPosition = cmds.xform( str(shapeNode)+".pnts["+str(i)+"]", query=True, translation=True, worldSpace=True )
                 vtxWorldPosition.append(curPointPosition)
-        
+
             return vtxWorldPosition
 
         @staticmethod
@@ -2152,7 +2152,7 @@ class MiniToolRig(Module):
 
             zone = Vector(A, B)
             vtx = MiniToolRig.MT_arc.getVtxPos(mesh)
-            
+
             totalVtx = len(vtx)
             for v, p in enumerate(vtx):
                 if zone.isPointBetween(p):
@@ -2174,8 +2174,8 @@ class MiniToolRig(Module):
 
             skTop = cmds.xform(skChain[0],q=1,ws=1,ro=1)
             skLast = cmds.xform(skChain[1],q=1,ws=1,ro=1)
-            skMid = [sum([skTop[0], skLast[0]]) / len([skTop[0], skLast[0]]), 
-                    sum([skTop[1], skLast[1]]) / len([skTop[1], skLast[1]]), 
+            skMid = [sum([skTop[0], skLast[0]]) / len([skTop[0], skLast[0]]),
+                    sum([skTop[1], skLast[1]]) / len([skTop[1], skLast[1]]),
                     sum([skTop[2], skLast[2]]) / len([skTop[2], skLast[2]])]
             cmds.rotate(skTop[0], skTop[1], skTop[2], n + ".cv[0][0:1]",a=True, os=True, ws=True)
             cmds.rotate(skMid[0], skMid[1], skMid[2], n + ".cv[1][0:1]",a=True, os=True, ws=True)
@@ -2204,10 +2204,10 @@ class MiniToolRig(Module):
                     n = "_".join([t, sec + name.capitalize(), side])
                     tmp.append(cmds.group(n=n, em=True))
                 grps.append(tmp)
-            
+
 
             nbShape = cmds.listRelatives(nurb)[0]
-            
+
             gap = 0.25
             for sec in grps:
                 for t in sec:
@@ -2249,8 +2249,8 @@ class MiniToolRig(Module):
                 cmds.connectAttr("{}.parentInverseMatrix[0]".format(ctrl),  "{}.bindPreMatrix".format(clstName))
                 cmds.connectAttr("{}.parentMatrix[0]".format(ctrl),  "{}.preMatrix".format(clstName))
                 cmds.connectAttr("{}.worldMatrix[0]".format(ctrl),  "{}.matrix".format(clstName))
-            
-            #patch 
+
+            #patch
             cp = clstPnt[-1]
             s = MiniToolRig.MT_arc.getVertexZoneName(mesh, cp[0], cp[1], radius=radius)
             clstName, clstHandle = cmds.cluster(s, n="cluster" + cp[2][0].upper() + cp[2][1:])
@@ -2296,7 +2296,7 @@ class MiniToolRig(Module):
         @staticmethod
         def createStarCtrl(name, pointed=8, strenght=0.09):
             nb = max(3,pointed) * 2
-            
+
             ctrl = cmds.circle(c=[0, 0, 0], nr=[0, 1, 0], sw=360, r=1, d=3, ut=0, tol=0.01, s=nb, ch=1, n="c_{}".format(name))[0]
             vtx = ["{}.cv[{}]".format(ctrl, x) for x in range(0, nb, 2)]
             cmds.scale(strenght, strenght, strenght, *vtx, r=True, ocp=True)
@@ -2388,11 +2388,11 @@ class MiniToolRig(Module):
             self.label =  cmds.textFieldGrp(label="Resources: ", text="click icons to get icon names")
             sl_listIcon = cmds.scrollLayout(verticalScrollBarThickness=16, h=500)
             rcl_list = cmds.rowColumnLayout(numberOfColumns=25)
-                
+
             icons = cmds.resourceManager(nameFilter="*")
             for ico in icons:
                 cmds.iconTextButton(w=32, h=32, style="iconOnly", command=Callback(self.updateIconField, self.label, ico), image1=ico)
-        
+
         def updateIconField(self, label, name):
             cmds.textFieldGrp(label, e=True, text=name)
 
@@ -2435,17 +2435,17 @@ class MiniToolRig(Module):
                 cmds.iconTextButton(style='iconOnly', w=w, h=h, p=iconLayout, image1=sec.image)
                 iconLock = cmds.image(p=line, i="lock.png", vis=sec.locked, ann="you do not have the permission to use this tool")
                 iconWip = cmds.image(p=line, i="out_time.png", vis=sec.wip, ann="Work in progress")
-                
+
 
                 stateIcon = "switchOff.png" if sec.hidden else "switchOn.png"
-                
+
                 iconSwitch = cmds.iconTextButton(style='iconOnly', w=w, h=h, p=line, image1=stateIcon, c=Callback(self.secSwitch, k))
                 self.switchsButtons[k] = iconSwitch
                 title = cmds.text(p=line, l=sec.name)
-                
+
                 cmds.formLayout(line, e=True, af=[(iconLayout, "top", 0), (iconLayout, "left", 5),
                                                   (iconSwitch, "top", 0), (iconSwitch, "right", 2),
-                                                  (iconLock, "top", 0), 
+                                                  (iconLock, "top", 0),
                                                   (iconWip, "top", 0),
                                                   (title, "top", 5)],
                                               ac=[(title, "left", 5, iconLayout),
@@ -2519,11 +2519,11 @@ class MiniToolRig(Module):
                         cmds.setAttr(inf + "_" + CONSTRAINT[const] + "1.reverseroot", 1)
                         cmds.setAttr(inf + "_" + CONSTRAINT[const] + "1."  + Wname, 0)
                         cmds.setDrivenKeyframe(inf + "_" + CONSTRAINT[const] + "1." + Wname, cd=inf + "_" + CONSTRAINT[const] + "1.reverseroot")
-                    
+
                     else:
                         print(c + '.follow' + name)
                         cmds.addAttr(c, longName='follow' + name, defaultValue=0, minValue=0, maxValue=1, k=True)
-                        
+
                         cmds.setAttr(inf + "_" + CONSTRAINT[const] + "1." + Wname, 1)
                         cmds.setAttr(inf + "_" + CONSTRAINT[const] + "1.reverseroot", 1)
                         cmds.setDrivenKeyframe(inf + "_" + CONSTRAINT[const] + "1.reverseroot", cd=inf + "_" + CONSTRAINT[const] + "1." + Wname)
@@ -2532,7 +2532,7 @@ class MiniToolRig(Module):
                         cmds.setAttr(inf + "_" + CONSTRAINT[const] + "1.reverseroot", 0)
                         cmds.setDrivenKeyframe(inf + "_" + CONSTRAINT[const] + "1.reverseroot", cd=inf + "_" + CONSTRAINT[const] + "1." + Wname)
                         cmds.connectAttr( c + '.follow' + name, inf + "_" + CONSTRAINT[const] + "1." + Wname)
-                        # reinitialisation de precaution 
+                        # reinitialisation de precaution
                         print(c + '.follow' + name)
                         cmds.setAttr(c + '.follow' + name, 1)
                         cmds.setAttr(c + '.follow' + name, 0)
@@ -2571,7 +2571,7 @@ class MiniToolRig(Module):
 
         def load(self):
             self.layout = cmds.formLayout(p=self.parent)
-            
+
             self.b_DnSet = self.attach(cmds.button(p=self.layout, label="Set", en=True, c=Callback(self.setNurbsSel, "LTF_Up")), top="FORM", right="FORM")
             self.t_Dn = self.attach(cmds.text(p=self.layout, label="Dn"), top="FORM", left="FORM")
             self.tf_Dn = self.attach(cmds.textField(p=self.layout, ed=False), top="FORM", left=self.t_Dn, right=self.b_DnSet, margin=(0,0,3,0))
@@ -2589,7 +2589,7 @@ class MiniToolRig(Module):
             self.applyAttach()
 
     class MTG_blendshapes(Module):
-        
+
         def transfertBlendshape(self):
             sel = cmds.ls(sl=True)
             if len(sel) != 2:
@@ -2606,9 +2606,9 @@ class MiniToolRig(Module):
             cmds.select(cl=True)
             cmds.select(dst, src)
             cmds.CreateWrap()
-            history = cmds.listHistory(src)        
+            history = cmds.listHistory(src)
             blendshapes = cmds.ls(history, type='blendShape')
-            history = cmds.listHistory(dst)  
+            history = cmds.listHistory(dst)
             wrapDef = cmds.ls(history, type='wrap')
             weights = cmds.listAttr(blendshapes[0] + '.w' , m=True)
             for i, w in enumerate(weights):
@@ -2628,7 +2628,7 @@ class MiniToolRig(Module):
             cmds.delete(wrapDef)
 
             cmds.xform(src, t=originPos)
-        
+
         def load(self):
             self.layout = cmds.formLayout(p=self.parent, w=5)
             self.transfertBsButton = self.attach(cmds.iconTextButton(p=self.layout, i="out_transform.png", c=Callback(self.transfertBlendshape)), top="FORM", left="FORM")
@@ -2691,11 +2691,11 @@ class MiniToolRig(Module):
             if not self.hidden:
                 MiniToolRig.Section.tmp = not MiniToolRig.Section.tmp
             c = 0.25 + 0.05 * MiniToolRig.Section.tmp
-            self.layout = cmds.formLayout(self.name, p=self.parent, bgc=[c, c, c], dgc=Callback(self._dragCb).getCommandArgument(), dpc=Callback(self._dropCb).getCommandArgument(), en=True, vis=not self.hidden) 
+            self.layout = cmds.formLayout(self.name, p=self.parent, bgc=[c, c, c], dgc=Callback(self._dragCb).getCommandArgument(), dpc=Callback(self._dropCb).getCommandArgument(), en=True, vis=not self.hidden)
             self.iconLayout = self.attach(cmds.columnLayout(p=self.layout, w=30, h=30,), top="FORM", left="FORM")
             self.icon = cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.iconLayout, image1=self.image, c=Callback(self.collapseSwitch),dcc=Callback(self.parentCollapseSwitch))
             self.childrenLayout = self.attach(cmds.columnLayout(p=self.layout, adj=True, bgc=[0.2, 0.2, 0.2], vis=not self.collapsed, en=not self.locked), top=self.iconLayout, left="FORM", right="FORM", margin=(5,5,5,5))
-            
+
             self.lockStatus = self.attach(cmds.image(p=self.layout, i="lock.png", h=30, w=30, vis=self.locked), top="FORM", right="FORM")
             self.wipStatus = self.attach(cmds.image(p=self.layout, i="out_time.png", h=30, w=30, vis=self.wip), top="FORM", right=self.lockStatus)
             annotation = "\n| [LOCKED] You do not have permission to use this tools" * self.locked + "\n| [WIP] Use with caution\n" * self.wip
@@ -2753,7 +2753,7 @@ class MiniToolRig(Module):
                     ap.append((c.layout, "right", 2, side_right))
                 an.append((c.layout, "bottom"))
 
-                
+
                 side_top = c.layout
                 if total_h > heightPerColumn:
                     total_h = 0
@@ -2775,11 +2775,11 @@ class MiniToolRig(Module):
                 c.load()
             self.reformatChildLay()
             cmds.formLayout(self.layout, e=True, af=self.af, ac=self.ac, ap=self.ap)
-            
+
     sections_order = ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "switch", "nurbs", "follow", "still", "arc", "blendshape"]
 
     def __init__(self):
-        Module.__init__(self, None) 
+        Module.__init__(self, None)
 
         self.name = "{} V{}".format(str(self.__class__.__name__), __version__)
         self._scriptJobIndex = []
@@ -2803,8 +2803,8 @@ class MiniToolRig(Module):
 
     def cs_defineLockState(self):
         '''Function to limit Creative seeds' student
-        
-        
+
+
         Si tu t'es donné•e la peine d'aller jusqu'ici pour dévérouiller des options bonus
         tu le mérite amplement ;)
         Ajoute ton nom dans le authorizedUser
@@ -2822,7 +2822,7 @@ class MiniToolRig(Module):
 
         if not os.path.exists("Q:/"):
             return self.sections_order[:]
-            
+
         if present < datetime.datetime(2022, 1, 31):
             return self.sections_order[:]
 
@@ -2841,21 +2841,21 @@ class MiniToolRig(Module):
     def defineSections(self):
         self.sections = {}
 
-        self.sections["construction"] = MiniToolRig.Section(self.pannel_rig, "Construction", "locator.svg")  
-        self.sections["squeletton"] = MiniToolRig.Section(self.pannel_rig, "Squeletton", "HIKCharacterToolSkeleton.png")  
-        self.sections["additionalJoint"] = MiniToolRig.Section(self.pannel_rig, "Additional Joint", "ikRPsolver.svg")  
-        self.sections["naming"] = MiniToolRig.Section(self.pannel_rig, "Naming", "renamePreset_100.png")  
-        self.sections["constraint"] = MiniToolRig.Section(self.pannel_rig, "Constraint", "out_aimConstraint.png")  
-        self.sections["transform"] = MiniToolRig.Section(self.pannel_rig, "Transform", "holder.svg")  
-        self.sections["controllers"] = MiniToolRig.Section(self.pannel_rig, "Controllers", "polySuperEllipse.png")  
-        self.sections["coloring"] = MiniToolRig.Section(self.pannel_rig, "Coloring", "colorProfile.png")  
-        self.sections["ik"] = MiniToolRig.Section(self.pannel_rig, "Ik", "ikHandle.svg", wip=True) 
-        self.sections["switch"] = MiniToolRig.Section(self.pannel_rig, "Switch", "redrawPaintEffects.png", wip=True) 
-        self.sections["nurbs"] = MiniToolRig.Section(self.pannel_rig, "Nurbs", "nurbsSurface.svg", wip=True) 
-        self.sections["arc"] = MiniToolRig.Section(self.pannel_rig, "Arcs", "motionTrail.png")  
-        self.sections["follow"] = MiniToolRig.Section(self.pannel_rig, "Follows", "menuIconFocus.png")  
-        self.sections["still"] = MiniToolRig.Section(self.pannel_rig, "Stills", "nodeGrapherDockBack.png", wip=True) 
-        self.sections["blendshape"] = MiniToolRig.Section(self.pannel_rig, "BlendShapes", "blendShape.png", wip=True) 
+        self.sections["construction"] = MiniToolRig.Section(self.pannel_rig, "Construction", "locator.svg")
+        self.sections["squeletton"] = MiniToolRig.Section(self.pannel_rig, "Squeletton", "HIKCharacterToolSkeleton.png")
+        self.sections["additionalJoint"] = MiniToolRig.Section(self.pannel_rig, "Additional Joint", "ikRPsolver.svg")
+        self.sections["naming"] = MiniToolRig.Section(self.pannel_rig, "Naming", "renamePreset_100.png")
+        self.sections["constraint"] = MiniToolRig.Section(self.pannel_rig, "Constraint", "out_aimConstraint.png")
+        self.sections["transform"] = MiniToolRig.Section(self.pannel_rig, "Transform", "holder.svg")
+        self.sections["controllers"] = MiniToolRig.Section(self.pannel_rig, "Controllers", "polySuperEllipse.png")
+        self.sections["coloring"] = MiniToolRig.Section(self.pannel_rig, "Coloring", "colorProfile.png")
+        self.sections["ik"] = MiniToolRig.Section(self.pannel_rig, "Ik", "ikHandle.svg", wip=True)
+        self.sections["switch"] = MiniToolRig.Section(self.pannel_rig, "Switch", "redrawPaintEffects.png", wip=True)
+        self.sections["nurbs"] = MiniToolRig.Section(self.pannel_rig, "Nurbs", "nurbsSurface.svg", wip=True)
+        self.sections["arc"] = MiniToolRig.Section(self.pannel_rig, "Arcs", "motionTrail.png")
+        self.sections["follow"] = MiniToolRig.Section(self.pannel_rig, "Follows", "menuIconFocus.png")
+        self.sections["still"] = MiniToolRig.Section(self.pannel_rig, "Stills", "nodeGrapherDockBack.png", wip=True)
+        self.sections["blendshape"] = MiniToolRig.Section(self.pannel_rig, "BlendShapes", "blendShape.png", wip=True)
 
         MiniToolRig.MG_construction(self.sections["construction"])
         MiniToolRig.MT_squeletton(self.sections["squeletton"])
@@ -2905,7 +2905,7 @@ class MiniToolRig(Module):
 
         self.layout = cmds.formLayout(p=self.win)
         self.optionButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, ann="Options", image1="advancedSettings.png", c=Callback(self.displayOption)), bottom="FORM", right="FORM")
-        
+
         self.helpButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, ann="About", image1="help.png", c=Callback(self.openDoc)), bottom="FORM", right=self.optionButton)
         self.ticketButton = self.attach(cmds.iconTextButton(style='iconOnly', w=30, h=30, p=self.layout, ann="Send ticket", image1="SP_FileIcon.png", c=Callback(self.sendTicket)), bottom="FORM", right=self.helpButton)
         self.childrenLayout = self.attach(cmds.tabLayout(innerMarginWidth=5, innerMarginHeight=5), top="FORM", left="FORM", right="FORM", bottom=self.optionButton)
@@ -2915,7 +2915,7 @@ class MiniToolRig(Module):
 
         self.pannel_rig = MiniToolRig.Tabs(self.childrenLayout, "Rig").load()
         # self.pannel_mod = MiniToolRig.Tabs(self.tabs, "Mod").load()
-        
+
         self.applyAttach()
         for name in self.sections_order:
             if name in self.sections.keys():
@@ -2932,7 +2932,7 @@ class MiniToolRig(Module):
     def _loadJobs(self):
         '''Load all jobs
         '''
-        # Example : 
+        # Example :
         # self._scriptJobIndex.append(cmds.scriptJob(event=["SceneOpened", Callback(self.methode)]))
 
     def _killJobs(self):
