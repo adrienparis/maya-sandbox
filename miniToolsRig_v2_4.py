@@ -5,13 +5,14 @@
 
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
-__version__     = "2.4.9-BETA"
+__version__     = "2.4.11-BETA"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import ctypes
 import getpass
 import os
 import sys
+import shutil
 from math import *
 import webbrowser
 import inspect
@@ -38,7 +39,7 @@ class Callback():
     __email__ = "a.paris.cs@gmail.com"
     __version__     = "3.1.0"
     __copyright__   = "Copyright 2021, Creative Seeds"
-    
+
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -58,7 +59,7 @@ class Callback():
         '''
         self.getCommandArgument_value = True
         return self
-        
+
     def _repeatCall(self):
         return self.func(*self.repeatArgs, **self.kwargs)
 
@@ -70,6 +71,12 @@ class Callback():
             self.repeatArgs = ag
             cmds.repeatLast(ac='''python("import __main__; __main__.cb_repeatLast._repeatCall()"); ''')
         return self.func(*ag, **self.kwargs)
+
+# Decorator
+def callback(func):
+    def wrapper(*args, **kwargs):
+        return Callback(func, *args, **kwargs)
+    return wrapper
 
 class Module(object):
     '''Little bloc to encapsulate the UI's maya's system
@@ -91,6 +98,8 @@ class Module(object):
     BLUE = [0.32, 0.52, 0.65]
     TURQUOISE = [0.28, 0.66, 0.70]
     ORANGE = [0.86, 0.58, 0.34]
+    RED = [0.85, 0.34, 0.34]
+
 
     increment = 0
     drag = None
@@ -119,13 +128,17 @@ class Module(object):
         return str(self.childrenLayout)
 
     def __getattribute__(self, name):
-        if name == 'load':
-            return object.__getattribute__(self, "_load")
-        if name == "height":
-            return cmds.layout(self.layout, q=True, h=True)
-        if name == "width":
-            return cmds.layout(self.layout, q=True, w=True)
-        return object.__getattribute__(self, name)
+        try:
+            if name == 'load':
+                return object.__getattribute__(self, "_load")
+            if name == "height":
+                # print("{} : {}".format(self.__class__.__name__, name))
+                return cmds.layout(self.layout, q=True, h=True)
+            if name == "width":
+                return cmds.layout(self.layout, q=True, w=True)
+            return object.__getattribute__(self, name)
+        except Exception as inst:
+            raise Exception("{} : {}- {}".format(inst, self.__class__.__name__, name))
 
     def setParent(self, parent):
         if self.parent is not None:
@@ -303,7 +316,7 @@ def singleton(class_):
     class_w.__name__ = class_.__name__
     return class_w
 
-def info(message):
+def Info(message):
     print(" ")
     mel.eval('trace -where ""; print "{}"; trace -where "";'.format(message))
 
@@ -2400,14 +2413,14 @@ class MiniToolRig(Module):
             if self.vscConnect:
                 cmds.commandPort(n="localhost:7001", close=True)
                 cmds.iconTextButton(self.SyncIconBtn, e=True, image1="syncOff.png")
-                info("Disconnected")
+                Info("Disconnected")
             else:
                 try:
                     cmds.commandPort(n="localhost:7001", stp="mel", echoOutput=True)
                 except:
                     cmds.error("Can't connect to VS code. The connection must be already established with an other instance of maya")
                     pass
-                info("Connection Established")
+                Info("Connection Established")
                 cmds.iconTextButton(self.SyncIconBtn, e=True, image1="syncOn.png")
             self.vscConnect = not self.vscConnect
 
@@ -2461,6 +2474,46 @@ class MiniToolRig(Module):
             self.SyncIconBtn = self.attach(cmds.iconTextButton(p=self.layout, image1=cntIcon, c=self.SwitchVscConnection), top=self.showIconBtn, left="FORM")
             self.applyAttach()
             # cmds.formLayout(self.layout, e=True, af=[(self.templayout, "top", 0), (self.templayout, "bottom", 0), (self.templayout, "left", 0), (self.templayout, "right", 0)])
+
+    class MT_SettingsPlugin(Module):
+        @callback
+        def cb_install(self):
+            self.cb_uninstall()()
+            PFolder = os.path.join(os.path.expanduser('~'),"maya", cmds.about(version=True), "plug-ins")
+            f = str(MiniToolRig().__class__.__name__) + ".py"
+            try:
+                if not os.path.exists(PFolder):
+                    os.makedirs(PFolder)
+                shutil.copy(__file__, os.path.join(PFolder, f))
+                cmds.loadPlugin(f)
+            except Exception as inst:
+                print(inst)
+                cmds.warning("Can't install! Did you drag & drop the file into the viewport?")
+
+        @callback
+        def cb_uninstall(self):
+            PFolder = os.path.join(os.path.expanduser('~'),"maya", cmds.about(version=True), "plug-ins")
+            f = str(MiniToolRig().__class__.__name__) + ".py"
+
+            if not os.path.exists(os.path.join(PFolder, f)):
+                cmds.warning("MiniToolRig plug-in already uninstaled")
+                return
+
+            cmds.unloadPlugin(f)
+            os.remove(os.path.join(PFolder, f))
+            Info("Uninstalled")
+
+        def load(self):
+            self.layout = cmds.formLayout(parent=self.parent)
+            prev = "FORM"
+            PFolder = os.path.join(os.path.expanduser('~'),"maya", cmds.about(version=True), "plug-ins")
+            f = str(MiniToolRig().__class__.__name__) + ".py"
+            if "__file__" in globals():
+                if not os.path.normpath(os.path.join(PFolder, f)) == os.path.normpath(__file__):
+                    self.attach(cmds.button(p=self.layout, l="install", c=self.cb_install()), top="FORM", left="FORM", right=50, margin=(3,3,3,3))
+                    prev = 50
+            self.attach(cmds.button(p=self.layout, l="uninstall", c=self.cb_uninstall(), bgc=Module.RED), top="FORM", right="FORM", left=prev, margin=(3,3,3,3))
+            self.applyAttach()
 
     class MT_follows(Module):
         presetMainTarget = "c_FLY"
@@ -2856,7 +2909,7 @@ class MiniToolRig(Module):
         self.sections["follow"] = MiniToolRig.Section(self.pannel_rig, "Follows", "menuIconFocus.png")  
         self.sections["still"] = MiniToolRig.Section(self.pannel_rig, "Stills", "nodeGrapherDockBack.png", wip=True) 
         self.sections["blendshape"] = MiniToolRig.Section(self.pannel_rig, "BlendShapes", "blendShape.png", wip=True) 
-
+        
         MiniToolRig.MG_construction(self.sections["construction"])
         MiniToolRig.MT_squeletton(self.sections["squeletton"])
         MiniToolRig.MT_additional(self.sections["additionalJoint"])
@@ -2871,6 +2924,8 @@ class MiniToolRig(Module):
         MiniToolRig.MT_nurbs(self.sections["nurbs"])
         MiniToolRig.MT_arc(self.sections["arc"])
         MiniToolRig.MTG_blendshapes(self.sections["blendshape"])
+
+
 
         unlockSection = self.sections_order[:]
         if self.cs_defineLockState():
@@ -2911,6 +2966,8 @@ class MiniToolRig(Module):
         self.childrenLayout = self.attach(cmds.tabLayout(innerMarginWidth=5, innerMarginHeight=5), top="FORM", left="FORM", right="FORM", bottom=self.optionButton)
         self.optLayout = self.attach(MiniToolRig.Tabs(self.layout, "Option").load(), top=50, left="FORM", right="FORM", bottom=self.optionButton)
         self.optionModule = MiniToolRig.MT_options(self.optLayout, self.sections).load()
+        self.optionPlgin = MiniToolRig.MT_SettingsPlugin(self.optLayout).load()
+
         self.displayOption()
 
         self.pannel_rig = MiniToolRig.Tabs(self.childrenLayout, "Rig").load()
@@ -2958,10 +3015,67 @@ def onMayaDroppedPythonFile(*args):
     if os.path.exists(__file__ + "c"):
         os.remove(__file__ + "c")
 
+PLUGIN_NAME = "MiniToolRig"
+PLUGIN_SHELF_NAME = "CreativeSeeds"
+PLUGIN_SHELF_BUTTON = "ButtonMinitToolRig"
+
+def getLastCommonParent(top):
+    childrens = cmds.layout(top, q=True, ca=True)
+    if len(childrens) != 1:
+        return top, childrens
+    return getLastCommonParent("{}|{}".format(top, childrens[0]))
+
+def getPlugInShelf():
+    parent, childrens = getLastCommonParent("Shelf|MainShelfLayout")
+    n = [c for c in childrens if c.startswith("ShelfLayout")]
+    if len(n) != 1:
+        return None
+    n = n[0]
+    n = "{}|{}".format(parent, n)
+    lay, _ = getLastCommonParent(n)
+    return lay
+
+def getShelfButton(tab, name):
+    array = cmds.layout(tab, q=True, ca=True)
+    if array == None:
+        return None
+    for sb in array:
+        if cmds.shelfButton(sb, q=True, annotation=True) == name:
+            return sb
+    return None
+
 def initializePlugin(*args):
     '''To load the tool as a plugin
     '''
-    MiniToolRig().load()
+    shelfLay = getPlugInShelf()
+    print(shelfLay)
+    if shelfLay is not None:
+        plugInTab = "{}|{}".format(shelfLay, PLUGIN_SHELF_NAME)
+        if not cmds.layout(plugInTab, q=True, ex=True):
+            cmds.shelfLayout(PLUGIN_SHELF_NAME, p=shelfLay)
+        button = getShelfButton(plugInTab, PLUGIN_NAME)
+        PFolder = os.path.join(os.path.expanduser('~'),"maya", cmds.about(version=True), "plug-ins")
+        f = str(MiniToolRig().__class__.__name__) + ".py"
+        cmd = "import sys;"
+        cmd += "sys.path.append(r'{}') if r'{}' not in sys.path else None;".format(PFolder, PFolder)
+        cmd += "from {} import {};".format(PLUGIN_NAME, PLUGIN_NAME)
+        cmd += "{}().load();".format(PLUGIN_NAME)
+        if button is None:
+            cmds.shelfButton(PLUGIN_SHELF_BUTTON, p=plugInTab, annotation=PLUGIN_NAME, image1='character.svg', command=cmd)
+        else:
+            cmds.shelfButton(button, e=True, p=plugInTab, annotation=PLUGIN_NAME, image1='character.svg', command=cmd)
 
 def uninitializePlugin(*args):
-    MiniToolRig().unload()
+    shelfLay = getPlugInShelf()
+    plugInTab = "{}|{}".format(shelfLay, PLUGIN_SHELF_NAME)
+    if shelfLay is not None:
+        if not cmds.layout(plugInTab, q=True, ex=True):
+            cmds.shelfLayout(PLUGIN_SHELF_NAME, p=shelfLay)
+        button = getShelfButton(plugInTab, PLUGIN_NAME)
+        if button is not None:
+            if cmds.control(button, q=True, ex=True):
+                cmds.deleteUI(button)
+
+            if cmds.layout(plugInTab, q=True, ex=True):
+                if cmds.layout(plugInTab, q=True, ca=True) is None:
+                    cmds.deleteUI(plugInTab)
