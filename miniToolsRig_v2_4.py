@@ -2694,7 +2694,71 @@ class MiniToolRig(Module):
             self.applyAttach()
 
     class MGT_Modeling(Module):
-        pass
+
+        def __init__(self, parent, name=None):
+            Module.__init__(self, parent, name=name)
+            self.opacities = {"relax": 10, "smooth": 10}
+        
+        @callback
+        def cb_geoCut(self):
+            sel = cmds.ls(sl=True)
+
+            for s in sel:
+                s = s.split(".")[0]
+                l = cmds.polyEvaluate(s, f=True)
+                f_ro_delete = []
+                for i in range(0, l):
+                    f = "{}.f[{}]".format(s, i)
+                    bbs = cmds.exactWorldBoundingBox(f)
+                    if bbs[0] <= 0.001 and bbs[3] <= 0.001:
+                        f_ro_delete.append(f)
+                cmds.delete(f_ro_delete)
+                cmds.delete(s, constructionHistory = True)
+
+        @callback
+        def cb_geoMirror(self):
+            sel = cmds.ls(sl=True)
+
+            for s in sel:
+                s = s.split(".")[0]
+                cmds.polyMirrorFace(s, cutMesh=1, axis=0, axisDirection=1, mergeMode=1, mergeThresholdType=1, mergeThreshold=0.001, mirrorAxis=2, mirrorPosition=0, smoothingAngle=30, flipUVs=0, ch=1)
+                cmds.delete(s, constructionHistory = True)
+
+        @callback
+        def cb_updateOpacitySlider(self, mode="relax"):
+            slider = self.opacityRelaxSlider if mode == "relax" else self.opacitySmoothSlider
+            v = cmds.floatSlider(slider, q=True, v=True)
+            self.opacities[mode] = v
+            op = self.opacities[mode] * 0.01
+            if cmds.artPuttyCtx('artPuttyContext', q=True, mtm=True) == mode:
+                cmds.artPuttyCtx('artPuttyContext', e=True, op=op)
+
+        @callback
+        def cb_toolSculpt(self, mode="relax", reflexion=False):
+            """" mode -> relax/smooth"""
+            op = self.opacities[mode] * 0.01
+            cmds.selectMode( co=True )
+            cmds.selectMode( object=True )
+            cmds.SculptGeometryTool()
+            cmds.artPuttyCtx('artPuttyContext', e=True, mtm=mode, op=op, rn=reflexion)
+
+
+        def load(self):
+            self.layout = cmds.formLayout(p=self.parent, w=5)
+            self.geoCutBtn =            self.attach(cmds.iconTextButton(p=self.layout, i="polyMirrorCut.png", c=self.cb_geoCut()),
+                                                    top="FORM", right=50, margin=(3,3,3,3))
+            self.geoMirrorBtn =         self.attach(cmds.iconTextButton(p=self.layout, i="polyMirrorGeometry.png", c=self.cb_geoMirror()),
+                                                    top="FORM", left=50, margin=(3,3,3,3))
+            self.relaxBtn =             self.attach(cmds.iconTextButton(p=self.layout, i="sculptRelax.png", c=self.cb_toolSculpt(), dcc=self.cb_toolSculpt(reflexion=True)),
+                                                    top=self.geoMirrorBtn, left="FORM", margin=(3,3,3,3))
+            self.opacityRelaxSlider =   self.attach(cmds.floatSlider(p=self.layout, min=0, max=100, value=self.opacities["relax"], step=1, cc=self.cb_updateOpacitySlider("relax")),
+                                                    top=self.geoCutBtn, left=self.relaxBtn, right="FORM", margin=(15,3,15,15))
+            self.smoothBtn =            self.attach(cmds.iconTextButton(p=self.layout, i="sculptSmooth.png", c=self.cb_toolSculpt(mode="smooth"), dcc=self.cb_toolSculpt(mode="smooth", reflexion=True)),
+                                                    top=self.relaxBtn, left="FORM", margin=(3,3,3,3))
+            self.opacitySmoothSlider =  self.attach(cmds.floatSlider(p=self.layout, min=0, max=100, value=self.opacities["smooth"], step=1, cc=self.cb_updateOpacitySlider("smooth")),
+                                                    top=self.relaxBtn, left=self.smoothBtn, right="FORM", margin=(15,3,15,15))
+
+            self.applyAttach()
 
     ####################################
     #    core of the main Interface    #
@@ -2831,7 +2895,7 @@ class MiniToolRig(Module):
             self.reformatChildLay()
             cmds.formLayout(self.layout, e=True, af=self.af, ac=self.ac, ap=self.ap)
 
-    sections_order = ["naming", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "switch", "nurbs", "follow", "still", "arc", "blendshape"]
+    sections_order = ["naming", "modeling", "transform", "constraint", "coloring", "construction", "squeletton", "additionalJoint", "controllers", "ik", "switch", "nurbs", "follow", "still", "arc", "blendshape"]
 
     def __init__(self):
         Module.__init__(self, None)
