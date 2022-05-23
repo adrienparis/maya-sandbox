@@ -364,7 +364,7 @@ class Vector:
         projection = [x + t * y for x, y in zip(self.A, self.direction)]
         return Vector.distance(M, projection)
 
-@singleton
+# @singleton
 class MiniToolRig(Module):
     Singleton = None
 
@@ -2693,6 +2693,8 @@ class MiniToolRig(Module):
             self.transfertBsButton = self.attach(cmds.iconTextButton(p=self.layout, i="out_transform.png", c=Callback(self.transfertBlendshape)), top="FORM", left="FORM")
             self.applyAttach()
 
+    class MGT_Modeling(Module):
+        pass
 
     ####################################
     #    core of the main Interface    #
@@ -2909,7 +2911,8 @@ class MiniToolRig(Module):
         self.sections["follow"] = MiniToolRig.Section(self.pannel_rig, "Follows", "menuIconFocus.png")  
         self.sections["still"] = MiniToolRig.Section(self.pannel_rig, "Stills", "nodeGrapherDockBack.png", wip=True) 
         self.sections["blendshape"] = MiniToolRig.Section(self.pannel_rig, "BlendShapes", "blendShape.png", wip=True) 
-        
+        self.sections["modeling"] = MiniToolRig.Section(self.pannel_rig, "Modeling", "faces_NEX.png", wip=True) 
+
         MiniToolRig.MG_construction(self.sections["construction"])
         MiniToolRig.MT_squeletton(self.sections["squeletton"])
         MiniToolRig.MT_additional(self.sections["additionalJoint"])
@@ -2924,6 +2927,7 @@ class MiniToolRig(Module):
         MiniToolRig.MT_nurbs(self.sections["nurbs"])
         MiniToolRig.MT_arc(self.sections["arc"])
         MiniToolRig.MTG_blendshapes(self.sections["blendshape"])
+        MiniToolRig.MGT_Modeling(self.sections["modeling"])
 
 
 
