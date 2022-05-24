@@ -1,6 +1,21 @@
 import mido
 
-mid = mido.MidiFile(r"S:\a.paris\Downloads\Where No One Goes.mid")
+import tkinter as tk
+from tkinter import filedialog
+
+# root = tk.Tk()
+
+# root.withdraw()
+
+
+path = filedialog.askopenfilename(title="Sélectionnez un fichier midi à convertir", filetypes=[("Midi files", "mid")])
+
+if path == "":
+    exit()
+
+
+mid = mido.MidiFile(path)
+# mid = mido.MidiFile(r"S:\a.paris\Downloads\Where No One Goes.mid")
 # mid = mido.MidiFile(r"S:\a.paris\Downloads\Flying with Mother.mid")
 
 mididict = []
@@ -40,7 +55,10 @@ for i in output:
     print(i)
 print(mid.ticks_per_beat)
 
-with open("convertedPiano.txt", "w+") as f:
+# Piano converted maya -> pcm
+exportPath = path[:-4] + ".pcm"
+
+with open(exportPath, "w+") as f:
     f.write("[\n")
     for i in output:
         f.write("{},\n".format(i))
