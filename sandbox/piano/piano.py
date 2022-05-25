@@ -14,6 +14,8 @@ notes = ["C", "C_", "D", "D_", "E", "F", "F_", "G", "G_", "A", "A_", "B"]
 cmds.progressWindow(title="Assign key to key ", progress=0, status="Sett all key to 0")
 totalKey = len(midi)
 
+# FRAMERATE = 30
+# FRAMERATE = 29.97
 FRAMERATE = 24
 STARTTIME = 100
 PRESSED = -3.5
@@ -57,18 +59,18 @@ for p, i in enumerate(midi):
     # cmds.currentTime(int(frame - velocity))
     # cmds.setKeyframe(ctrl, at='rz', v=0.0)
     if i[0] == "note_off":
-        cmds.currentTime(STARTTIME + int(frame) - 2)
-        cmds.setKeyframe(ctrl, at='rz', v=PRESSED, ott="spline", itt="flat")
-        cmds.currentTime(STARTTIME + int(frame))
-        cmds.setKeyframe(ctrl, at='rz', v=0.0, ott="flat", itt="spline")
-        cmds.setKeyframe(ctrl, at='hand', v=0, ott="step")
+        # cmds.currentTime(STARTTIME + int(frame) - 2)
+        cmds.setKeyframe(ctrl, at='rz', v=PRESSED, ott="spline", itt="step", t=[STARTTIME + int(frame) - 2])
+        # cmds.currentTime(STARTTIME + int(frame))
+        cmds.setKeyframe(ctrl, at='rz', v=0.0, ott="step", itt="spline", t=[STARTTIME + int(frame)])
+        cmds.setKeyframe(ctrl, at='hand', v=0, ott="step", t=[STARTTIME + int(frame)])
     elif i[0] == "note_on":
         # if cmds.getAttr(ctrl)
-        cmds.currentTime(STARTTIME + int(frame) - 1)
-        cmds.setKeyframe(ctrl, at='rz', v=0, ott="spline", itt="flat")
+        # cmds.currentTime(STARTTIME + int(frame) - 1)
+        cmds.setKeyframe(ctrl, at='rz', v=0, ott="spline", itt="step", t=[STARTTIME + int(frame) - 1])
 
-        cmds.currentTime(STARTTIME + int(frame))
-        cmds.setKeyframe(ctrl, at='rz', v=PRESSED, ott="flat", itt="spline")
-        cmds.setKeyframe(ctrl, at='hand', v=color, ott="step")
+        # cmds.currentTime(STARTTIME + int(frame))
+        cmds.setKeyframe(ctrl, at='rz', v=PRESSED, ott="step", itt="spline", t=[STARTTIME + int(frame)])
+        cmds.setKeyframe(ctrl, at='hand', v=color, ott="step", t=[STARTTIME + int(frame)])
 
 cmds.progressWindow(endProgress=True)
