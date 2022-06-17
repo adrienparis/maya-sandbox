@@ -2742,9 +2742,16 @@ class MiniToolRig(Module):
             cmds.SculptGeometryTool()
             cmds.artPuttyCtx('artPuttyContext', e=True, mtm=mode, op=op, rn=reflexion)
 
+        @callback
+        def cb_ngoneSelect(self, selectionOnly=False):
+            if selectionOnly:
+                cmds.polySelectConstraint(m=2, sz=2)
+                cmds.InvertSelection()
 
         def load(self):
             self.layout = cmds.formLayout(p=self.parent, w=5)
+            self.nGoneSelBtn =            self.attach(cmds.iconTextButton(p=self.layout, i="polyTriangulate.png", c=self.cb_ngoneSelect(), dcc=self.cb_ngoneSelect(True)),
+                                                    top="FORM", left="FORM", margin=(3,3,3,3))
             self.geoCutBtn =            self.attach(cmds.iconTextButton(p=self.layout, i="polyMirrorCut.png", c=self.cb_geoCut()),
                                                     top="FORM", right=50, margin=(3,3,3,3))
             self.geoMirrorBtn =         self.attach(cmds.iconTextButton(p=self.layout, i="polyMirrorGeometry.png", c=self.cb_geoMirror()),
