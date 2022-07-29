@@ -6,6 +6,7 @@
 __author__      = "Adrien PARIS"
 __email__       = "a.paris.cs@gmail.com"
 __version__     = "2.4.11-BETA"
+__mayaversion__ = "Autodesk Maya 2020"
 __copyright__   = "Copyright 2021, Creative Seeds"
 
 import ctypes
@@ -3081,7 +3082,7 @@ if __name__ == "__main__":
         plop.load()
     else:
         print("display version")
-        ctypes.windll.user32.MessageBoxW(0, "Version : {}\n\nJust drag&drop this file to maya's viewport\n\n{}".format(__version__, __doc__), "{} info".format(__file__), 0)
+        ctypes.windll.user32.MessageBoxW(0, "Version : {}\n{}\n\nJust drag&drop this file to maya's viewport\n\n{}".format(__version__,__mayaversion__, __doc__), "{} info".format(__file__), 0)
 
 def onMayaDroppedPythonFile(*args):
     '''Just to get rid of the anoying warning message of maya
