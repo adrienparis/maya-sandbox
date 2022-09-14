@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -- coding: utf-8 --
-
 import random
 from maya import cmds
 from maya import mel
@@ -65,6 +62,7 @@ def yzWeightStore(node, doStoreGeo):
     doSkin = bool(len(skin))
     doClusters = bool(len(clusters))
 
+
     # get infos
     pointList = getPointList(node)
 
@@ -75,6 +73,7 @@ def yzWeightStore(node, doStoreGeo):
         infList = cmds.skinCluster(q=True, inf=skin[0])
         maxInf = cmds.getAttr(skin[0] + ".mi")
         maxInf = len(infList) if len(infList) < maxInf else 5 if cmds.getAttr(skin[0] + ".mmi") == 0 else 0
+
 
     iSize = len(infList)
     cSize = len(pointList)
@@ -144,7 +143,7 @@ def yzWeightStore(node, doStoreGeo):
         cmds.setAttr(copy+".materialBlend", 0)
 
         mel.eval('source "assignSG";')
-        mel.eval('assignSG("lambert1", {})'.format(copy))
+        mel.eval('assignSG("lambert1", )'.format(copy))
 
     # attributes
     cmds.addAttr(pcl[0], ln="skinGeometry", dt="string")
@@ -184,7 +183,6 @@ def yzWeightStore(node, doStoreGeo):
 
     for i in range(colorSize):
         wColor.append([random.random(),random.random(),random.random()])
-    print(wColor)
 
     # display
     cmds.addAttr(pcl[1], ln="rgbPP", dt="vectorArray")
@@ -196,9 +194,6 @@ def yzWeightStore(node, doStoreGeo):
     cmdAlpha = ("setAttr {}.vclr[0:{}].vxal ".format(copy, len(pointList)-1))
 
     iList = range(iSize)
-
-    lsColor = []
-    lsAlpha = []
 
 
     # emit pcl from weights
@@ -254,12 +249,8 @@ def yzWeightStore(node, doStoreGeo):
 
         # mesh color
         if doDye:
-            # cmdColor += ("{} {} {} ".format(color[0], color[1], color[2]))
-            # cmdAlpha += "1 "
-            lsColor += [color[0], color[1], color[2]]
-            lsAlpha += [1]
-
-
+            cmdColor += ("".format(color[0], color[1], color[2]))
+            cmdAlpha += "1 "
 
 
         cmd += ("-at rgbPP -vv {} {} {}".format(color[0], color[1], color[2]))
@@ -272,12 +263,8 @@ def yzWeightStore(node, doStoreGeo):
 
     # color mesh
     if doDye:
-        print(cmdColor)
-        print(cmdAlpha)
-        cmds.setAttr("{}.vclr[0:{}].vrgb".format(copy, len(pointList)-1), lsColor)
-        cmds.setAttr("{}.vclr[0:{}].vxal".format(copy, len(pointList)-1), lsAlpha)
-        # mel.eval(cmdColor)
-        # mel.eval(cmdAlpha)
+        mel.eval(cmdColor)
+        mel.eval(cmdAlpha)
         cmds.setAttr("{}.displayImmediate".format(copy), 1)
         cmds.setAttr("{}.displayImmediate".format(copy), 0)
 
@@ -298,16 +285,17 @@ def yzWeightStore(node, doStoreGeo):
     cmds.particle(pcl[1], e=True, cache=0)
     cmds.saveInitialState(pcl[0])
 
+
     # exit
     cmds.progressWindow(endProgress=True)
     return pcl
 
-def  yzwsStoreCB(doStoreGeo=False):
+def  yzwsStoreCB():
     sel = cmds.ls(sl=True, et="transform")
     weights = []
 
     # doStoreGeo = cmds.checkBox("yzwsStoreGeo", q=True, v=True)
-
+    doStoreGeo = False
 
     for s0 in sel:
         #got milk
