@@ -139,11 +139,11 @@ class ToDoList(object):
                 c[0](*a)
 
         def open(self):
-            if cmds.iconTextButton(self.open_CB, q=True, image1=True) == 'moveUVRight.png':
-                cmds.iconTextButton(self.open_CB, e=True, image1='moveUVDown.png')
+            if cmds.iconTextButton(self.open_CB, q=True, image1=True) == 'teRightArrow.png':
+                cmds.iconTextButton(self.open_CB, e=True, image1='teDownArrow.png')
                 cmds.columnLayout(self.childrens_LC, e=True, vis=True)
-            elif cmds.iconTextButton(self.open_CB, q=True, image1=True) == 'moveUVDown.png':
-                cmds.iconTextButton(self.open_CB, e=True, image1='moveUVRight.png')
+            elif cmds.iconTextButton(self.open_CB, q=True, image1=True) == 'teDownArrow.png':
+                cmds.iconTextButton(self.open_CB, e=True, image1='teRightArrow.png')
                 cmds.columnLayout(self.childrens_LC, e=True, vis=False)
 
         def setName(self, *arg):
@@ -212,7 +212,7 @@ class ToDoList(object):
         def _loadNote(self):
             cmds.formLayout(self.layout, e=True, dgc=Callback(self._dragCb), dpc=Callback(self._dropCb))
 
-            self.open_CB = cmds.iconTextButton(p=self.layout, image1='moveUVRight.png', c=Callback(self.open))
+            self.open_CB = cmds.iconTextButton(p=self.layout, image1='teRightArrow.png', c=Callback(self.open))
             if not cmds.textField(self.name_CTF, exists=True):
                 self.name_CTF = cmds.textField(p=self.layout, text=self.name, ebg=False, bgc=[0.27, 0.27, 0.27], cc=Callback(self.setName), w=1)
             else:
@@ -249,6 +249,8 @@ class ToDoList(object):
             self._loadChildrens()
 
             tabulation = 15 * self.howManyParents()
+            print("\n" + "=" * 20)
+            print(self.name)
             print(tabulation)
             ac = [(self.name_CTF, "right", 2, self.statusButton[tmp_sb_l[0]]), (self.name_CTF, "left", 2, self.open_CB)]
             af = [(self.open_CB, "top", 2), (self.open_CB, "left", tabulation), (self.name_CTF, "top", 2)]
@@ -264,6 +266,7 @@ class ToDoList(object):
                 af.append((self.statusButton[sb], "top", 2))
                 ac.append((self.statusButton[sb], "right", 2, prev))
                 prev = self.statusButton[sb]
+            print(af, ac)
             cmds.formLayout(self.layout, e=True, af=af, ac=ac)
 
         def _loadChildrens(self):

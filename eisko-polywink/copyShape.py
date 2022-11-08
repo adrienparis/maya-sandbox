@@ -19,7 +19,7 @@ def copyShape(src, tgt):
         cmds.xform("{}.vtx[{}]".format(tgt, v), translation=new_pos, ws=True, a=True) 
         
 
-FROM_GRP = "BS_GRP_mouth"
+FROM_GRP = "BS_GRP_new"
 TO_GRP = "BS_GRP"
 
 for sel in cmds.ls(sl=True):

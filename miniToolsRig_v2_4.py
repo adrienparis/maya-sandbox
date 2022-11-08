@@ -84,17 +84,20 @@ class Module(object):
     The parent must be either a Module, either a string that has the name of a maya's layout
     (cmds.layout, cmds.formLayout, cmds.columnLayout, ...)
 
-    When converting this object to str, it print the layout to store his childrens
-    like that, even if whe call it has a parent, it still return a maya's layout
+    When converting this object to str, it print the layout to store his childrens.
+    Even if we call it as a parent, it still return a maya's layout    
 
     You must create a load function.
 
     Name your class starting by
     M_  if it's a simple module
     MG_ if it's a group of module
-    MT_ if it's for a specific tools
-    MC_ if it's for a control
-    MGT_ if it's a group that contain tools
+    MT_ if it's for a specific tools*
+    MC_ if it's for a control (it's the kind of module that can be reused in an other place without context)
+    MGT_ if it's a group that contain tools* and modules
+
+    *A 'tool' is refered here as one use in maya for the user of the script
+
     '''
     BLUE = [0.32, 0.52, 0.65]
     TURQUOISE = [0.28, 0.66, 0.70]
@@ -618,6 +621,7 @@ class MiniToolRig(Module):
             cmds.formLayout(self.layout, e=True, af=self.af, ac=self.ac, ap=self.ap)
 
     class MG_transformGroup(Module):
+        
         def freezeTransform(self, t=False, r=False, s=False):
             cmds.makeIdentity(apply=True, t=t, r=r, s=s)
 
@@ -647,6 +651,11 @@ class MiniToolRig(Module):
             cmds.formLayout(self.layout, e=True, af=self.af, ac=self.ac, ap=self.ap)
 
     class MC_transform(Module):
+        '''Display button of the 3 main transformations deformer (translate, rotate, scale)
+            it execute the function given when click on it.
+            The function must have as parameter func(t=False, r=False, s=False)
+            where each of thoses parameters define on witch button the user click
+        '''
         def __init__(self, parent, name=None, bgc=Module.BLUE, func=lambda x: x):
             Module.__init__(self, parent, name=name)
             self.bgc = bgc

@@ -1,124 +1,8 @@
-
-
-# ###_________________________________________________________________####
-# ##__select_all_BS__##
-# BS_list = []
-# for x in pm.ls(selection=True):
-#     BS_list.append(str(x))
-# ###_________________________________________________________________####
-# BS_list=pm.listAttr('BS_Node.w',m=1)
-# ###_________________________________________________________________####
-# ##__select_all_Mesh_to_combine__##
-# msh_to_combine = []
-# for x in pm.ls(selection=True):
-#     msh_to_combine.append(str(x))
-# ###_________________________________________________________________####
-# ##__FOR_SPECIFIC_EXISTING_BS_##
-# print(BS_list)
-# Prefixe = ""
-# meshs_duplicated = []
-# for b in BS_list:
-#     for m in msh_to_combine:
-#         pm.duplicate(m, n = m + "_duplicated")
-#         meshs_duplicated.append(str(m + "_duplicated"))
-#     pm.polyUnite(meshs_duplicated, n = Prefixe+b, ch = False)
-#     for x in meshs_duplicated:
-#         pm.delete(x)
-# ###_________________________________________________________________####
-# ##__FOR_SPECIFIC_NON-EXISTING_BS_##
-# Prefixe = ""
-# newBS = "Neutral"
-# newBS = "tongueOut"
-# meshs_duplicated = []
-# for m in msh_to_combine:
-#     pm.duplicate(m, n = m + "_duplicated")
-#     meshs_duplicated.append(str(m + "_duplicated"))
-# pm.polyUnite(meshs_duplicated, n = Prefixe+newBS, ch = False)
-# for x in meshs_duplicated:
-#     if pm.objExists(x):
-#         pm.delete(x)
-# ###_________________________________________________________________####
-# ##__fill_BS_list__check_names__and_execute__##
-# BS_Node = "MASTER_BS_Node_cnt"
-# Prefixe = "XXX_"
-# BS_Grp="BS_tmp_GRP"
-# aim_constraint=pm.aimConstraint('Jaw_01_jnt', q=1)
-# aim_constraint=aim_constraint+'.jawAimW0'
-# for b in BS_list:
-#     print("processing shape: "+b)
-#     #reset BS value to zero to avoid interference
-#     for w in BS_list:
-#         pm.setAttr(BS_Node+'.'+w, 0)
-#     #set BS value of list to 1
-#     pm.setAttr(BS_Node+'.'+b, 1)
-#     if "jaw" in b:
-#         pm.setAttr(aim_constraint,1)
-#     else:
-#         pm.setAttr(aim_constraint,0)
-#     #duplicate all mesh with 1 activated blendshape, combine and delete history
-#     meshs_duplicated = []
-#     for m in msh_to_combine:
-#         meshs_duplicated.append(pm.duplicate(m, n = m + "_duplicated"))
-#     if len(msh_to_combine) > 1 :
-#         pm.polyUnite(meshs_duplicated, n = b, ch = False)
-#         for x in meshs_duplicated:
-#             if pm.objExists(x):
-#                 pm.delete(x)
-#     elif len(msh_to_combine) == 1 :
-#         pm.rename(meshs_duplicated[0], b)
-#     pm.rename(BS_Grp+'|'+b,Prefixe+b)
-#     pm.hide(b)
-#     #reset all BS value to zero
-#     for w in BS_list:
-#         pm.setAttr(BS_Node+'.'+w, 0)
-# pm.setAttr(aim_constraint,1)
-# ###_________________________________________________________________####
-# ##__fill_BS_list__check_names__and_execute__##
-# BS_Node = "BS_Node"
-# Prefixe = "XXX_"
-# BS_Grp="BS_tmp_GRP"
-# for b in BS_list:
-#     print("processing shape: "+b)
-#     #reset BS value to zero to avoid interference
-#     for w in BS_list:
-#         pm.setAttr(BS_Node+'.'+w, 0)
-#     #set BS value of list to 1
-#     pm.setAttr(BS_Node+'.'+b, 1)
-#     #duplicate all mesh with 1 activated blendshape, combine and delete history
-#     meshs_duplicated = []
-#     for m in msh_to_combine:
-#         meshs_duplicated.append(pm.duplicate(m, n = m + "_duplicated"))
-#     if len(msh_to_combine) > 1 :
-#         pm.polyUnite(meshs_duplicated, n = b, ch = False)
-#         for x in meshs_duplicated:
-#             if pm.objExists(x):
-#                 pm.delete(x)
-#     elif len(msh_to_combine) == 1 :
-#         pm.rename(meshs_duplicated[0], b)
-#     #pm.rename(BS_Grp+'|'+b,Prefixe+b)
-#     #pm.hide(b)
-#     #reset all BS value to zero
-#     for w in BS_list:
-#         pm.setAttr(BS_Node+'.'+w, 0)
-		
-# ###_____________________________________________________
-# ###Connect all new blendshapes to the rig Node with all blendshapes selected
-# ###_____________________________________________________
-# BSNode = "BS_Node"
-# BSLoc = "MASTER_BS_Node_cnt"
-# for x in BS_list:
-#     if pm.objExists(BSLoc+"."+x):
-#         pm.connectAttr(BSLoc+"."+x, BSNode+"."+x, force = True)
-#         print (x + "  connected")
-#     else:
-#         print (str(BSLoc+"."+x) + '  not found')
-
-
 # -- coding: utf-8 --
 #!/usr/bin/env python
 
 
-"""generateBlendshape.py: A little tool to help fuse mesh according to blendshapes"""
+"""flipShapes.py: A little tool to help flip mutliple shape"""
 
 __author__      = "Adrien PARIS"
 __email__       = "adrien.paris@eisko.com"
@@ -129,25 +13,11 @@ import sys
 import os
 import ctypes
 import threading
-import time
-import random
-import webbrowser
-import urllib
-import shutil
-import re
-import getpass
-import io
-import subprocess
-import re
-from datetime import datetime
-from maya import cmds
-import pymel.core as pm
 
 
 try:
     import maya.cmds as cmds
     import maya.mel as mel
-    import pymel.core as pm
 except:
     pass
 
@@ -537,7 +407,7 @@ def Info(message):
     mel.eval('trace -where ""; print "{}\\n"; trace -where "";'.format(message))
 
 
-class BlendshapeGenerator(Module):
+class FlipShapes(Module):
     class MC_getChain(Module):
         def __init__(self, parent, name=None, color=Module.COLOR_TURQUOISE, filter=lambda x: True):
             Module.__init__(self, parent, name=name)
@@ -549,9 +419,7 @@ class BlendshapeGenerator(Module):
         def load(self):
 
             self.layout = cmds.formLayout(p=self.parent, w=5, bgc=[0.25, 0.25, 0.25])
-            self.c_btn = cmds.button(p=self.layout, l="Get " + self.name, c=Callback(self._setChain), bgc=Module.COLOR_LIGHTGREY)
-            self.attach(self.c_btn, top="FORM", left="FORM", right="FORM", margin=(4,20,1,1))
-            
+            self.c_btn = self.attach(cmds.button(p=self.layout, l="Get " + self.name, c=Callback(self._setChain), bgc=Module.COLOR_LIGHTGREY), top="FORM", left="FORM", right="FORM", margin=(4,20,1,1))
             self.scrlLay = self.attach(cmds.scrollLayout(p=self.layout, verticalScrollBarThickness=16, h=150, cr=True), top=self.c_btn, bottom="FORM", left="FORM", right="FORM")
             self.midLay = cmds.formLayout(p=self.scrlLay, w=5, bgc=[0.25, 0.25, 0.25])
 
@@ -623,63 +491,7 @@ class BlendshapeGenerator(Module):
         Module.__init__(self, None)
         self.name = "{} V{}".format(str(self.__class__.__name__), __version__)
 
-    @callback
-    def cb_nonExisting(self):
-        Prefixe = ""
-        newBS = cmds.textField(self.tf_SpecNonBS, q=True, tx=True)
-        meshs_duplicated = []
-        for m in self.meshLay.chain:
-            pm.duplicate(m, n = m + "_duplicated")
-            meshs_duplicated.append(str(m + "_duplicated"))
-        pm.polyUnite(meshs_duplicated, n = Prefixe+newBS, ch = False)
-        for x in meshs_duplicated:
-            if pm.objExists(x):
-                pm.delete(x)
 
-    @callback
-    def cb_execJaw(self):
-        BS_list = self.bsLay.chain
-        msh_to_combine = self.meshLay.chain
-        BS_Node = "MASTER_BS_Node_cnt"
-        Prefixe = "XXX_"
-        BS_Grp="BS_tmp_GRP"
-        if not cmds.objExists("Jaw_01_jnt"):
-            raise Exception("Jaw_01_jnt does not exists")
-        aim_constraint=pm.aimConstraint('Jaw_01_jnt', q=1)
-        aim_constraint=aim_constraint+'.jawAimW0'
-        cmds.progressWindow(title="Execute + Jaw", progress=0, status="Starting")
-
-        for i, b in enumerate(BS_list):
-            cmds.progressWindow(e=True, progress=(float(i)/float(len(BS_list)) * 100), status=b)
-
-            print("processing shape: "+b)
-            #reset BS value to zero to avoid interference
-            for w in BS_list:
-                pm.setAttr(BS_Node+'.'+w, 0)
-            #set BS value of list to 1
-            pm.setAttr(BS_Node+'.'+b, 1)
-            if "jaw" in b:
-                pm.setAttr(aim_constraint,1)
-            else:
-                pm.setAttr(aim_constraint,0)
-            #duplicate all mesh with 1 activated blendshape, combine and delete history
-            meshs_duplicated = []
-            for m in msh_to_combine:
-                meshs_duplicated.append(pm.duplicate(m, n = m + "_duplicated"))
-            if len(msh_to_combine) > 1 :
-                pm.polyUnite(meshs_duplicated, n = b, ch = False)
-                for x in meshs_duplicated:
-                    if pm.objExists(x):
-                        pm.delete(x)
-            elif len(msh_to_combine) == 1 :
-                pm.rename(meshs_duplicated[0], b)
-            pm.rename(BS_Grp+'|'+b,Prefixe+b)
-            pm.hide(b)
-            #reset all BS value to zero
-            for w in BS_list:
-                pm.setAttr(BS_Node+'.'+w, 0)
-        pm.setAttr(aim_constraint,1)
-        cmds.progressWindow(endProgress=True)
 
     def load(self):
         '''loading The window
@@ -691,16 +503,24 @@ class BlendshapeGenerator(Module):
         self.layout = cmds.formLayout("BSGen_layout",parent=self.win)
         self.childrenLayout = self.attach(cmds.formLayout("BSGen_childLay", parent=self.layout), top="FORM", bottom="FORM", left="FORM", right="FORM", margin=(0,0,0,0))
 
+        self.btnGetNeutral = self.attach(cmds.button(p=self, l="get Neutral"), top="FORM", left="FORM", margin=(3,3,3,3))
+        self.tNeutralDisp = self.attach(cmds.text(p=self, l="Neutre"), top="FORM", left=self.btnGetNeutral, right="FORM", margin=(3,3,3,3))
+        self.labelFilter = self.attach(cmds.text(p=self, l="Convert from"), top=self.btnGetNeutral, left="FORM", margin=(3,3,3,3))
+        self.tfFilter = self.attach(cmds.textField(p=self, tx="*_Left"), top=self.btnGetNeutral, left=self.labelFilter, right="FORM", margin=(3,3,3,3))
+        self.tfConvertTo = self.attach(cmds.textField(p=self, tx="*_Right"), top=self.tfFilter, left=self.labelFilter, right="FORM", margin=(3,3,3,3))
+        self.meshLay = self.attach(FlipShapes.MC_getChain(self, "mesh to switch", filter=FlipShapes.isMesh, color=Module.COLOR_LIGHTGREY).load(), top=self.tfConvertTo, left="FORM", right="FORM", margin=(3,3,3,3))
+        self.btnGetNeutral = self.attach(cmds.button(p=self, l="Switch !"), top=self.meshLay, bottom="FORM", left="FORM", right="FORM", margin=(3,3,3,3))
 
-        self.meshLay = self.attach(BlendshapeGenerator.MC_getChain(self, "mesh to combine", filter=BlendshapeGenerator.isMesh, color=Module.COLOR_LIGHTGREY).load(), top="FORM", left="FORM", right=50, margin=(3,3,3,3))
-        self.bsLay = self.attach(BlendshapeGenerator.MC_getChain(self, "blendshapes", filter=BlendshapeGenerator.isMesh, color=Module.COLOR_LIGHTGREY).load(), top="FORM", left=50, right="FORM", margin=(3,3,3,3))
-        self.btn_SpecBS = self.attach(cmds.button(p=self, l="For specific existing bs", en=False), top=self.meshLay, left="FORM", right="FORM", margin=(4,20,1,1))
-        self.btn_SpecNonBS = self.attach(cmds.button(p=self, l="For specific non-existing bs", c=self.cb_nonExisting()), top=self.btn_SpecBS, left=None, right="FORM", margin=(4,20,1,1))
-        self.tf_SpecNonBS = self.attach(cmds.textField(p=self, text="Neutral"), top=self.btn_SpecBS, left="FORM", right=self.btn_SpecNonBS, margin=(4,20,1,1))
-        self.btn_ExecJaw = self.attach(cmds.button(p=self, l="fill BS list check names and execute + JAW", c=self.cb_execJaw()), top=self.btn_SpecNonBS, left="FORM", right="FORM", margin=(4,20,1,1))
-        self.btn_Exec = self.attach(cmds.button(p=self, l="fill BS list check names and execute", en=False), top=self.btn_ExecJaw, left="FORM", right="FORM", margin=(4,20,1,1))
-        # print(cmds.textField(self.tf_SpecNonBS, q=True, disableButtons=True))
-
+    @staticmethod
+    def matchnmatch(a, b):
+        if len(a) == 0:
+            return False
+        if len(b) == 0:
+            return True
+        if a[0] == b[0]:
+            return FlipShapes.matchnmatch(a, b[1:])
+        if a[0] != b[0]:
+            return FlipShapes.matchnmatch(a[1:], b)
 
     @staticmethod
     def isMesh(node):
@@ -709,18 +529,23 @@ class BlendshapeGenerator(Module):
             if mesh is None:
                 return False        
             return cmds.objectType(mesh, isType="mesh")
-        return False        
+        return False
+    
+    @staticmethod
+    def drawVector(point, vec):
+        pt2 = [i + j for i,j in zip(point, vec)]
+        cmds.curve(d=1, p=[point, pt2])
 
 if __name__ == "__main__":
     if sys.executable.endswith(u"bin\maya.exe"):
-        BlendshapeGenerator().load()
+        FlipShapes().load()
     else:
         ctypes.windll.user32.MessageBoxW(0, "Version : {}\n\nJust drag&drop this file to maya's viewport\n\n{}".format(__version__, __doc__), "{} info".format(__file__), 0)
 
 def onMayaDroppedPythonFile(*args):
     '''Just to get rid of the anoying warning message of maya
     '''
-    BlendshapeGenerator().load()
+    FlipShapes().load()
     if os.path.exists(__file__ + "c"):
         os.remove(__file__ + "c")
 
