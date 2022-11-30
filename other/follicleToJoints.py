@@ -127,33 +127,6 @@ def particleFillSelection(  ):
 mesh = cmds.ls(sl=True)[0]
 
 vtxs = particleFillSelection()
-
-# print(cmds.ls(type="joint"))
-# closest = {}
-# for j in cmds.ls(type="joint"):
-#     p = cmds.xform(j, query=True, translation=True, worldSpace=True)
-#     # closest[j] = getClosestVertex(mesh, p)
-#     closest[j] = [getClosestVtxToPoint(vtxs, p)]
-#     # closest[j] = getListClosestVtxToPoint(vtxs, p)
-
-# for j, c in closest.items():
-#     if c:
-#         f = createFollicleToMeshAt(mesh, c, j)
-#         cmds.parentConstraint(f, j, mo=True, n="{}_PC".format(j.replace("sk_", "flc_")))
-#         cmds.rename(f, "flc_{}_attach".format(j))
-# # closest = ["head_preDeform_geo.vtx[{}]".format(i) for i in closest]
-# # cmds.select(closest)
-
-
-
-for j in cmds.ls(type="joint"):
-    p = cmds.xform(j, query=True, translation=True, worldSpace=True)
-    u, v = getUVCoordToPoint(p)
-    f = createAttach(mesh, u, v)
-    cmds.parentConstraint(f, j, mo=True, n="{}_PC".format(j.replace("sk_", "flc_")))
-    cmds.rename(f, "flc_{}_attach".format(j))
-
-
 def getSkinCluster(self, dag):
     """A convenience function for finding the skinCluster deforming a mesh.
 
@@ -175,3 +148,16 @@ def getSkinCluster(self, dag):
 
     else:
       raise RuntimeError("Selected mesh has no skinCluster")
+
+sel = cmds.ls(sl=True)
+jnts = cmds.listRelatives(sel, allDescendents=True)
+jnts = cmds.ls(jnts, type="joint")
+
+for j in cmds.ls(type="joint"):
+    p = cmds.xform(j, query=True, translation=True, worldSpace=True)
+    u, v = getUVCoordToPoint(p)
+    f = createAttach(mesh, u, v)
+    cmds.parentConstraint(f, j, mo=True, n="{}_PC".format(j.replace("sk_", "flc_")))
+    cmds.rename(f, "flc_{}_attach".format(j))
+
+

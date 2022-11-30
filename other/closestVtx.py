@@ -3,6 +3,7 @@ import maya.OpenMaya as OpenMaya
 from maya import cmds
 import time
 
+fakeDistanceBetween = lambda x, y: sum([(x[i] - y[i])**2 for i, x, y in enumerate(zip(x, y))])
 
 def getVtxPos(mesh):
     """mesh : str = name of the mesh (the transform, not the shape)
@@ -39,8 +40,17 @@ def getVtxPos(mesh):
 
         return pointList
 
-def getClosestVtxToPnt()
-
+def getClosestVtxToPnt(vtxs, point):
+    closest = None
+    for i, v in enumerate(vtxs):
+        if closest is None:
+            d = fakeDistanceBetween(point, v)
+            closest = (i, v, d)
+            continue
+        vtxDist = fakeDistanceBetween(point, v)
+        if vtxDist < closest[2]:
+            closest = (i, v, vtxDist)
+    return closest[0]
 
 def matchinVtxClosest(meshAlpha, meshBeta):
     vtxPosAlpha = getVtxPos(meshAlpha)
