@@ -2,6 +2,7 @@ import maya.cmds as cmds
 import maya.OpenMaya as omo
 # (Open Maya Old)
 
+# https://gist.github.com/chris-lesage/17834ce88917b9446cae553bd8e23a4d
 def soft_selection_weights():
     ''' create and return a list of the soft selection weights '''
     #TODO: Would be nice to rewrite this using the new API. Low priority.
